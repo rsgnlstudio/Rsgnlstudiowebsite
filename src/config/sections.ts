@@ -19,11 +19,13 @@ export interface SectionConfig {
   night: number;
 }
 
-// Placeholder values; tune once the scene exists.
+// "intro" is the composed first viewport: low in the meadow, looking across
+// the field to the mountains. FOVs are authored for a 16:10 screen; CameraRig
+// adapts them to other aspect ratios. The other keyframes are placeholders.
 export const homeSections = [
   {
     id: "intro",
-    camera: { position: [0, 2, 10], lookAt: [0, 1, 0], fov: 45 },
+    camera: { position: [0, 1.05, 0], lookAt: [0, 0.6, -40], fov: 50 },
     night: 0,
   },
   {

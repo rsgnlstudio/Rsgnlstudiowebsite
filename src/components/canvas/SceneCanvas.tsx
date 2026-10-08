@@ -2,7 +2,9 @@
 
 import { Canvas } from "@react-three/fiber";
 import { lazy, Suspense, useEffect, useRef } from "react";
+import { qualityPresets } from "@/config/look";
 import { homeSections } from "@/config/sections";
+import { useLookStore } from "@/store/look";
 import { useSceneStore } from "@/store/scene";
 import { FrameloopController } from "./FrameloopController";
 import { Scene } from "./Scene";
@@ -21,6 +23,7 @@ const initialCamera = homeSections[0].camera;
  */
 export default function SceneCanvas() {
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const tier = useLookStore((s) => s.tier);
 
   // Hide the canvas while sceneMode is "hidden", without re-rendering.
   useEffect(() => {
@@ -43,7 +46,8 @@ export default function SceneCanvas() {
       className="pointer-events-none fixed inset-0 z-0"
     >
       <Canvas
-        dpr={[1, 1.5]}
+        dpr={qualityPresets[tier].dpr}
+        flat // unlit, painted colors: no tone mapping
         gl={{
           antialias: false, // EffectComposer handles multisampling
           powerPreference: "high-performance",
