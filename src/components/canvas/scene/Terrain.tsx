@@ -146,14 +146,17 @@ void main() {
   // Cross-fade the day and top view paint with the camera, rather than
   // morphing one pattern, so nothing swims during the transition. The
   // ground underneath is darker, like a toned canvas between strokes.
+  // The day paint is laid out for the low camera only: seen from any
+  // higher, its strokes stretch into big smears, so it hands over early.
+  float topPaint = smoothstep(0.04, 0.24, uTopView);
   vec3 col = vec3(0.0);
-  if (uTopView < 1.0) {
+  if (topPaint < 1.0) {
     float d = max(-p.y, 0.6);
     vec2 q = vec2(p.x / d * KU, log(d) * KD);
-    col += paintGround(q, 0.0, toned(p)) * (1.0 - uTopView);
+    col += paintGround(q, 0.0, toned(p)) * (1.0 - topPaint);
   }
-  if (uTopView > 0.0) {
-    col += paintGround(p * KT, 2.0, toned(p)) * uTopView;
+  if (topPaint > 0.0) {
+    col += paintGround(p * KT, 2.0, toned(p)) * topPaint;
   }
 
   col = applyHaze(col, dist);
