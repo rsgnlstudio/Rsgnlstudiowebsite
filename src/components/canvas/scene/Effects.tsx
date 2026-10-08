@@ -2,9 +2,9 @@
 
 import { useFrame, useThree } from "@react-three/fiber";
 import { EffectComposer } from "@react-three/postprocessing";
-import { BloomEffect, DepthOfFieldEffect } from "postprocessing";
+import { BloomEffect, DepthOfFieldEffect, EffectPass } from "postprocessing";
 import { useEffect, useMemo } from "react";
-import { type Camera, Vector3 } from "three";
+import { type Camera, MathUtils, Vector3 } from "three";
 import { qualityPresets } from "@/config/look";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { useLookStore } from "@/store/look";
@@ -54,19 +54,27 @@ function applyLook({ dof, bloom, finish }: EffectSet, camera: Camera, time: numb
   const look = useLookStore.getState();
   dof.cocMaterial.focusDistance = centreFocusDistance(camera);
   dof.cocMaterial.focusRange = look.focusRange;
-  dof.bokehScale = look.blurStrength;
-  // Only HDR highlights bloom (sun, moon, stars, glowing flowers, fireflies).
+  // The dust world blurs its own specks into bokeh, so depth of field hands
+  // over to it as the painting dissolves.
+  const dust = MathUtils.clamp(sharedUniforms.uDissolve.value / 0.7, 0, 1);
+  dof.bokehScale = look.blurStrength * (1 - dust);
+  // Only HDR highlights bloom (sun, moon, stars, glowing flowers, fireflies,
+  // the cursor light and the dust it lights).
   bloom.intensity = look.glow * (0.45 + 0.6 * sharedUniforms.uGlow.value);
   finish.time = time;
   finish.grain = look.grain;
-  finish.vignette = look.vignette;
+  // Night closes in around the light.
+  finish.vignette = MathUtils.lerp(look.vignette, Math.max(look.vignette, 0.55), dust);
+  finish.fringe = look.fringe * (0.5 + 0.5 * dust);
+  finish.canvas = 1 - dust;
 }
 
 /**
  * Post-processing, in order:
  * 1. depth of field, focused on the ground at the centre of the frame, and
  *    bloom on the HDR highlights,
- * 2. the finish: canvas texture, grain and vignette.
+ * 2. the finish, in its own pass as it samples the frame at offsets:
+ *    chromatic fringe, canvas texture, grain and vignette.
  * The near foreground fakes its blur with pre-blurred textures.
  */
 export function Effects() {
@@ -100,8 +108,12 @@ export function Effects() {
   );
   useEffect(() => () => bloom.dispose(), [bloom]);
 
-  const finish = useMemo(() => new PainterlyEffect(), []);
-  useEffect(() => () => finish.dispose(), [finish]);
+  // Disposing the pass disposes its effect too.
+  const { finish, finishPass } = useMemo(() => {
+    const effect = new PainterlyEffect();
+    return { finish: effect, finishPass: new EffectPass(camera, effect) };
+  }, [camera]);
+  useEffect(() => () => finishPass.dispose(), [finishPass]);
 
   useFrame(() => {
     // Reduced motion: freeze the grain pattern.
@@ -112,7 +124,7 @@ export function Effects() {
     <EffectComposer multisampling={preset.multisampling}>
       <primitive object={dof} />
       <primitive object={bloom} />
-      <primitive object={finish} />
+      <primitive object={finishPass} />
     </EffectComposer>
   );
 }

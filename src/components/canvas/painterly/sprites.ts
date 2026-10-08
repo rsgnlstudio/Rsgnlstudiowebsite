@@ -64,8 +64,9 @@ export function createSpriteGeometry(data: SpriteInstances, segments = 4) {
  * face the camera around its vertical axis, bending in the wind with the tip
  * moving most. In the night top view (uTopView -> 1) it tips over to face the
  * camera, lying on the ground like a tree drawn on a map, scaled by
- * uTopScale. Needs uniforms uGrid (atlas cols, rows), uSway, uTime, uWind,
- * uTopView and uTopScale.
+ * uTopScale. Passes the world position on as vWorld (for the dissolve).
+ * Needs uniforms uGrid (atlas cols, rows), uSway, uTime, uWind, uTopView and
+ * uTopScale.
  *
  * With the SQUEEZE define, x positions are scaled by uniform uSqueeze and the
  * sprite is re-seated on the terrain (used to pull tree lines into view on
@@ -95,6 +96,7 @@ varying vec2 vLocal;
 varying float vTint;
 varying vec3 vVar;
 varying float vDist;
+varying vec3 vWorld;
 
 ${noiseGLSL}
 ${windGLSL}
@@ -139,6 +141,7 @@ void main() {
   vTint = aTint;
   vVar = aVar;
   vDist = length(toCam);
+  vWorld = world;
 
   gl_Position = projectionMatrix * viewMatrix * vec4(world, 1.0);
 }

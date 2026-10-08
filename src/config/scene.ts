@@ -40,3 +40,14 @@ export const nightCamera: CameraKeyframe = {
   up: [0, 0, -1],
   fov: 50,
 };
+
+/**
+ * `night` range over which the painted day world dissolves into the night
+ * dust world (and reassembles on the way back). It starts as the camera
+ * lifts off and ends just before it reaches the top view, so the whole
+ * flight is one slow crumble.
+ */
+export const DISSOLVE_RANGE = [0.12, 0.86] as const;
+
+/** Height above the ground of the light that follows the cursor at night. */
+export const CURSOR_LIGHT_HEIGHT = 7;

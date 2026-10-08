@@ -18,6 +18,7 @@ const COLORS = [
   "sun",
   "sunGlow",
   "moon",
+  "void",
 ] as const satisfies readonly PaletteKey[];
 
 const vertexShader = /* glsl */ `
@@ -37,6 +38,7 @@ uniform vec3 uSunDir;
 uniform float uSunStrength;
 uniform vec3 uMoonDir;
 uniform float uMoonStrength;
+uniform float uDissolve;
 varying vec3 vDir;
 ${noiseGLSL}
 
@@ -103,6 +105,10 @@ void main() {
   float moonDisc = smoothstep(0.99955, 0.99972, moonDot + rim * 0.3);
   col = mix(col, uMoon * 2.2, moonDisc * uMoonStrength);
 
+  // Night: the sky gives way to the dark the dust floats in, faintly clouded.
+  float fog = fbm(dir.xz * 2.2 + dir.y * 1.3 + uTime * 0.004);
+  col = mix(col, uVoid * (0.55 + 0.9 * fog), smoothstep(0.0, 0.75, uDissolve));
+
   gl_FragColor = vec4(col, 1.0);
 }
 `;
@@ -110,7 +116,8 @@ void main() {
 /**
  * Painted sky dome: gradient and clouds from the palette, the sun (sinking
  * behind the mountains as `night` rises, with a sunset glow along the
- * horizon) and the moon.
+ * horizon) and the moon. As the day dissolves into dust, it fades to the
+ * dark void of the night world.
  */
 export function Sky() {
   const mesh = useRef<Mesh>(null);
@@ -127,6 +134,7 @@ export function Sky() {
           uSunStrength: sharedUniforms.uSunStrength,
           uMoonDir: sharedUniforms.uMoonDir,
           uMoonStrength: sharedUniforms.uMoonStrength,
+          uDissolve: sharedUniforms.uDissolve,
         },
         side: BackSide,
         depthWrite: false,

@@ -5,6 +5,7 @@ import { PlaneGeometry, ShaderMaterial } from "three";
 import type { PaletteKey } from "@/config/palette";
 import { terrainHeight } from "../painterly/landscape";
 import { paletteGLSL, paletteUniformsFor, sharedUniforms } from "../painterly/palette";
+import { dissolveGLSL, paintDissolveGLSL } from "../painterly/dissolve";
 import { colorGLSL, hazeGLSL, noiseGLSL } from "../painterly/shaderChunks";
 import { viewUniforms } from "../painterly/view";
 import { Mountains } from "./Mountains";
@@ -21,6 +22,7 @@ const COLORS = [
   "flowerBlue",
   "flowerGlow",
   "haze",
+  "dustEdge",
 ] as const satisfies readonly PaletteKey[];
 
 const vertexShader = /* glsl */ `
@@ -36,10 +38,13 @@ const fragmentShader = /* glsl */ `
 ${paletteGLSL(COLORS)}
 uniform float uGlow;
 uniform float uTopView;
+uniform float uDissolve;
 varying vec3 vWorld;
 ${noiseGLSL}
 ${colorGLSL}
 ${hazeGLSL}
+${dissolveGLSL}
+${paintDissolveGLSL}
 
 // A grid of flower dabs painted over col; keep is the share of cells
 // with a dab. Some glow at night (HDR, so they bloom).
@@ -73,6 +78,7 @@ vec3 ground(vec2 p, float aniso) {
 }
 
 void main() {
+  vec3 edge = dissolvePaint(vWorld);
   vec2 p = vWorld.xz;
   float dist = distance(cameraPosition, vWorld);
 
@@ -92,7 +98,7 @@ void main() {
   }
 
   col = applyHaze(col, dist);
-  gl_FragColor = vec4(col, 1.0);
+  gl_FragColor = vec4(col + edge, 1.0);
 }
 `;
 
@@ -123,6 +129,7 @@ export function Terrain() {
           ...paletteUniformsFor(COLORS),
           uGlow: sharedUniforms.uGlow,
           uTopView: viewUniforms.uTopView,
+          uDissolve: sharedUniforms.uDissolve,
         },
       }),
     [],

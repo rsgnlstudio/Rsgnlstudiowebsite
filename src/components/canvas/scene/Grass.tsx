@@ -6,14 +6,15 @@ import { qualityPresets } from "@/config/look";
 import type { PaletteKey } from "@/config/palette";
 import { useLookStore } from "@/store/look";
 import { getBrushTextures, GRASS_ATLAS } from "../painterly/brushTextures";
+import { dissolveGLSL, paintDissolveGLSL } from "../painterly/dissolve";
 import { FIELD, overheadPoint, terrainHeight } from "../painterly/landscape";
 import { paletteGLSL, paletteUniformsFor, sharedUniforms } from "../painterly/palette";
 import { mulberry32, valueNoise } from "../painterly/random";
-import { alphaGLSL, colorGLSL, hazeGLSL } from "../painterly/shaderChunks";
+import { alphaGLSL, colorGLSL, hazeGLSL, noiseGLSL } from "../painterly/shaderChunks";
 import { viewUniforms } from "../painterly/view";
 import { allocateSprites, createSpriteGeometry, spriteVertexShader } from "../painterly/sprites";
 
-const COLORS = ["grassDeep", "grassMid", "grassLight", "groundWarm", "fieldShadow", "haze"] as const satisfies readonly PaletteKey[];
+const COLORS = ["grassDeep", "grassMid", "grassLight", "groundWarm", "fieldShadow", "haze", "dustEdge"] as const satisfies readonly PaletteKey[];
 
 const fragmentShader = /* glsl */ `
 ${paletteGLSL(COLORS)}
@@ -22,14 +23,20 @@ varying vec2 vUv;
 varying vec2 vLocal;
 varying float vTint;
 varying vec3 vVar;
+uniform float uDissolve;
 varying float vDist;
+varying vec3 vWorld;
+${noiseGLSL}
 ${colorGLSL}
 ${hazeGLSL}
 ${alphaGLSL}
+${dissolveGLSL}
+${paintDissolveGLSL}
 
 void main() {
   vec4 tex = texture2D(uAtlas, vUv);
   if (sharpAlpha(tex.a) < 0.5) discard;
+  vec3 edge = dissolvePaint(vWorld);
 
   // vTint = how sunlit this tuft is; tex.r = tone of the individual blade.
   float tone = tex.r * (0.15 + 0.85 * vTint) * mix(0.55, 1.15, vLocal.y);
@@ -40,7 +47,7 @@ void main() {
   // Warm aubergine shadow at the roots, deep contrast against the flowers.
   col = mix(uFieldShadow * 0.6, col, smoothstep(0.0, 0.75, vLocal.y));
 
-  gl_FragColor = vec4(applyHaze(col, vDist), 1.0);
+  gl_FragColor = vec4(applyHaze(col, vDist) + edge, 1.0);
 }
 `;
 

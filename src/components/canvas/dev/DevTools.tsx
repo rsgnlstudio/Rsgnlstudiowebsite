@@ -106,6 +106,14 @@ export default function DevTools() {
     flowerDensity: lookControl("flowerDensity", 0.1, 2, 0.05, "flower density"),
     wind: lookControl("wind", 0, 3, 0.05),
     glow: lookControl("glow", 0, 3, 0.05),
+    fringe: lookControl("fringe", 0, 1, 0.01),
+    night: folder({
+      lightIntensity: lookControl("lightIntensity", 0, 8, 0.05, "light intensity"),
+      lightRadius: lookControl("lightRadius", 5, 80, 0.5, "light radius"),
+      dustSize: lookControl("dustSize", 0.3, 4, 0.05, "dust size"),
+      dustBokeh: lookControl("dustBokeh", 0, 3, 0.05, "dust bokeh"),
+      dustKick: lookControl("dustKick", 0, 3, 0.05, "dust kick"),
+    }),
   }));
 
   const [, setPalette] = useControls(

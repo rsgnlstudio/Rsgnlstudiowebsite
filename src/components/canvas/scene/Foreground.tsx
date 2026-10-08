@@ -10,7 +10,8 @@ import {
 import type { PaletteKey } from "@/config/palette";
 import { FLOWER_ATLAS, getBrushTextures, LEAF_ATLAS } from "../painterly/brushTextures";
 import { paletteGLSL, paletteUniformsFor, sharedUniforms } from "../painterly/palette";
-import { colorGLSL } from "../painterly/shaderChunks";
+import { dissolveGLSL, paintDissolveGLSL } from "../painterly/dissolve";
+import { colorGLSL, noiseGLSL } from "../painterly/shaderChunks";
 import { viewUniforms } from "../painterly/view";
 
 /**
@@ -67,6 +68,7 @@ uniform float uTopView;
 varying vec2 vUv;
 varying float vTint;
 varying float vFade;
+varying vec3 vDissolvePos;
 
 void main() {
   float halfH = aDepth * uTanHalfFov;
@@ -85,6 +87,9 @@ void main() {
   vec2 anchor = aAnchor * (1.0 + uTopView * 1.5);
   vec3 view = vec3(anchor * vec2(halfW, halfH) + rotated + uParallax, -aDepth);
   gl_Position = projectionMatrix * vec4(view, 1.0);
+  // Locked to the camera, so it dissolves in screen space.
+  vec2 screen = view.xy / vec2(halfW, halfH);
+  vDissolvePos = vec3(screen.x * 30.0, 0.0, -screen.y * 30.0 - 60.0);
 
   float col = mod(aCell, uGrid.x);
   float row = floor(aCell / uGrid.x);
@@ -94,7 +99,7 @@ void main() {
 }
 `;
 
-const LEAF_COLORS = ["leafDark", "leafMid", "leafLight"] as const satisfies readonly PaletteKey[];
+const LEAF_COLORS = ["leafDark", "leafMid", "leafLight", "dustEdge"] as const satisfies readonly PaletteKey[];
 const FLOWER_COLORS = [
   "flowerPink",
   "flowerPinkDeep",
@@ -102,6 +107,7 @@ const FLOWER_COLORS = [
   "flowerCenter",
   "grassDeep",
   "grassMid",
+  "dustEdge",
 ] as const satisfies readonly PaletteKey[];
 
 const leafFragment = /* glsl */ `
@@ -109,10 +115,16 @@ ${paletteGLSL(LEAF_COLORS)}
 uniform sampler2D uAtlas;
 varying vec2 vUv;
 varying float vFade;
+uniform float uDissolve;
+varying vec3 vDissolvePos;
+${noiseGLSL}
+${dissolveGLSL}
+${paintDissolveGLSL}
 void main() {
   vec4 tex = texture2D(uAtlas, vUv);
   vec3 col = mix(uLeafDark, uLeafMid, tex.r);
   col = mix(col, uLeafLight, tex.g * 0.6);
+  col += dissolvePaint(vDissolvePos);
   gl_FragColor = vec4(col, smoothstep(0.05, 0.55, tex.a) * vFade);
 }
 `;
@@ -123,6 +135,11 @@ uniform sampler2D uAtlas;
 varying vec2 vUv;
 varying float vTint;
 varying float vFade;
+uniform float uDissolve;
+varying vec3 vDissolvePos;
+${noiseGLSL}
+${dissolveGLSL}
+${paintDissolveGLSL}
 ${colorGLSL}
 void main() {
   vec4 tex = texture2D(uAtlas, vUv);
@@ -130,6 +147,7 @@ void main() {
   vec3 col = petal * (0.5 + 0.6 * tex.r);
   col = mix(col, uFlowerCenter * (0.7 + 0.4 * tex.r), smoothstep(0.3, 0.7, tex.g));
   col = mix(col, mix(uGrassDeep, uGrassMid, tex.r), smoothstep(0.3, 0.7, tex.b));
+  col += dissolvePaint(vDissolvePos);
   gl_FragColor = vec4(col, smoothstep(0.08, 0.6, tex.a) * vFade);
 }
 `;

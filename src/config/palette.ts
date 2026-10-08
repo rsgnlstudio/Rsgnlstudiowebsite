@@ -52,6 +52,12 @@ export const PALETTE_KEYS = [
   "leafDark",
   "leafMid",
   "leafLight",
+  // Night dust world (seen from about night 0.35 on, as the painting dissolves)
+  "void",
+  "dust",
+  "dustLit",
+  "dustEdge",
+  "cursorLight",
 ] as const;
 
 export type PaletteKey = (typeof PALETTE_KEYS)[number];
@@ -103,6 +109,11 @@ export const dayPalette: Palette = {
   leafMid: "#2f5a2c",
   leafLight: "#9cc450",
 
+  void: "#0b0a1c",
+  dust: "#3a3a7a",
+  dustLit: "#ffd8a8",
+  dustEdge: "#ffb066",
+  cursorLight: "#ffd2a0",
 };
 
 /** Sunset: the sun sinks behind the mountains, everything burns orange and magenta. */
@@ -150,6 +161,11 @@ export const duskPalette: Palette = {
   leafMid: "#3e2a22",
   leafLight: "#a8703a",
 
+  void: "#0e0816",
+  dust: "#3a2a64",
+  dustLit: "#ffc08a",
+  dustEdge: "#ff7a30",
+  cursorLight: "#ffc28c",
 };
 
 /** Cold moonlit night; flowers and fireflies glow. */
@@ -197,6 +213,11 @@ export const nightPalette: Palette = {
   leafMid: "#081a26",
   leafLight: "#1a4a52",
 
+  void: "#010309",
+  dust: "#123c78",
+  dustLit: "#8ee6ff",
+  dustEdge: "#3cc8ff",
+  cursorLight: "#a8e4ff",
 };
 
 export const palettes: Record<PaletteSet, Palette> = {
