@@ -1,0 +1,35 @@
+@import "tailwindcss";
+@import "lenis/dist/lenis.css";
+
+/*
+ * Design tokens. All values are placeholders; replace them with the real
+ * brand values. Tokens become Tailwind utilities (e.g. bg-background,
+ * font-display, text-heading, p-section).
+ */
+@theme {
+  /* Colors */
+  --color-background: #000000;
+  --color-foreground: #ffffff;
+  --color-muted: #808080;
+  --color-accent: #808080;
+
+  /* Font families */
+  --font-sans: ui-sans-serif, system-ui, sans-serif;
+  --font-display: ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, monospace;
+
+  /* Type scale */
+  --text-display: 4rem;
+  --text-display--line-height: 1;
+  --text-heading: 2rem;
+  --text-heading--line-height: 1.2;
+  --text-body: 1rem;
+  --text-body--line-height: 1.5;
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1.4;
+
+  /* Spacing (base unit drives p-4, gap-2, etc.) */
+  --spacing: 0.25rem;
+  --spacing-gutter: 1.5rem;
+  --spacing-section: 8rem;
+}
