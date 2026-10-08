@@ -1,19 +1,13 @@
 "use client";
 
 import { Canvas } from "@react-three/fiber";
-import { lazy, Suspense, useEffect, useRef } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import { qualityPresets } from "@/config/look";
 import { homeSections } from "@/config/sections";
 import { useLookStore } from "@/store/look";
 import { useSceneStore } from "@/store/scene";
 import { FrameloopController } from "./FrameloopController";
 import { Scene } from "./Scene";
-
-// Statically false in production, so leva is tree-shaken out.
-const DevTools =
-  process.env.NODE_ENV === "development"
-    ? lazy(() => import("./dev/DevTools"))
-    : null;
 
 const initialCamera = homeSections[0].camera;
 
@@ -40,8 +34,7 @@ export default function SceneCanvas() {
   }, []);
 
   return (
-    <>
-      <div
+    <div
         ref={wrapperRef}
         aria-hidden
         className="pointer-events-none fixed inset-0 z-0"
@@ -66,13 +59,6 @@ export default function SceneCanvas() {
             <Scene />
           </Suspense>
         </Canvas>
-      </div>
-      {/* DOM panel; outside the wrapper, which ignores pointer events. */}
-      {DevTools && (
-        <Suspense fallback={null}>
-          <DevTools />
-        </Suspense>
-      )}
-    </>
+    </div>
   );
 }

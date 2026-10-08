@@ -19,8 +19,6 @@ export interface SceneState {
   timeOfDay: TimeOfDay;
   /** 0 = day, 1 = night. Animated toward timeOfDay by CameraRig. */
   night: number;
-  /** Dev-only manual override for `night` (leva). null = not overridden. */
-  nightOverride: number | null;
   /** Set by the current page; "hidden" pauses rendering. */
   sceneMode: SceneMode;
 
@@ -29,7 +27,6 @@ export interface SceneState {
   setScrollProgress: (progress: number) => void;
   setTimeOfDay: (timeOfDay: TimeOfDay) => void;
   setNight: (night: number) => void;
-  setNightOverride: (night: number | null) => void;
   setSceneMode: (mode: SceneMode) => void;
   /** Clears scroll-derived state, e.g. when a page unmounts. */
   resetScroll: () => void;
@@ -41,7 +38,6 @@ export const useSceneStore = create<SceneState>()((set) => ({
   scrollProgress: 0,
   timeOfDay: "day",
   night: 0,
-  nightOverride: null,
   sceneMode: DEFAULT_SCENE_MODE,
 
   setActiveSection: (activeSection) => set({ activeSection }),
@@ -49,7 +45,6 @@ export const useSceneStore = create<SceneState>()((set) => ({
   setScrollProgress: (scrollProgress) => set({ scrollProgress }),
   setTimeOfDay: (timeOfDay) => set({ timeOfDay }),
   setNight: (night) => set({ night }),
-  setNightOverride: (nightOverride) => set({ nightOverride }),
   setSceneMode: (sceneMode) => set({ sceneMode }),
   resetScroll: () =>
     set({ activeSection: null, sectionProgress: 0, scrollProgress: 0 }),
