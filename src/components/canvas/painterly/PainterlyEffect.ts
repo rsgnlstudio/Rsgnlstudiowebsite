@@ -1,10 +1,12 @@
-import { Effect } from "postprocessing";
+import { Effect, EffectAttribute } from "postprocessing";
 import { Uniform } from "three";
 
 const fragmentShader = /* glsl */ `
 uniform float uTime;
 uniform float uGrain;
 uniform float uVignette;
+uniform float uFringe;
+uniform float uCanvas;
 
 float grainHash(vec2 p) {
   vec3 p3 = fract(vec3(p.xyx) * 0.1031);
@@ -21,13 +23,20 @@ float valueNoise(vec2 p) {
 }
 
 void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor) {
-  vec3 color = inputColor.rgb;
+  // Lens: red and blue drift apart toward the frame edges.
+  vec2 fromCentre = uv - 0.5;
+  vec2 shift = fromCentre * dot(fromCentre, fromCentre) * uFringe * 0.03;
+  vec3 color = vec3(
+    texture2D(inputBuffer, uv - shift).r,
+    inputColor.g,
+    texture2D(inputBuffer, uv + shift).b
+  );
   vec2 px = uv * resolution;
 
-  // Canvas: a faint linen weave and mottled ground under the paint.
+  // Canvas (day only): a faint linen weave and mottled ground under the paint.
   float weave = sin(px.x * 1.9) * sin(px.y * 1.9 + sin(px.x * 0.31) * 1.2);
   float mottle = valueNoise(px / 140.0) - 0.5;
-  color *= 1.0 + weave * 0.018 + mottle * 0.05;
+  color *= 1.0 + (weave * 0.018 + mottle * 0.05) * uCanvas;
 
   // Fine, slowly animated luminance grain (new pattern ~24 times a second).
   float frame = floor(uTime * 24.0);
@@ -44,14 +53,21 @@ void mainImage(const in vec4 inputColor, const in vec2 uv, out vec4 outputColor)
 }
 `;
 
-/** Final finish over the painted frame: canvas texture, film grain, vignette. */
+/**
+ * Final finish over the frame: chromatic fringe, canvas texture, film grain,
+ * vignette. It samples the frame at offsets (CONVOLUTION), so it must run in
+ * its own EffectPass after depth of field and bloom.
+ */
 export class PainterlyEffect extends Effect {
   constructor() {
     super("PainterlyEffect", fragmentShader, {
+      attributes: EffectAttribute.CONVOLUTION,
       uniforms: new Map<string, Uniform>([
         ["uTime", new Uniform(0)],
         ["uGrain", new Uniform(0.3)],
         ["uVignette", new Uniform(0.3)],
+        ["uFringe", new Uniform(0.35)],
+        ["uCanvas", new Uniform(1)],
       ]),
     });
   }
@@ -66,5 +82,13 @@ export class PainterlyEffect extends Effect {
 
   set vignette(value: number) {
     this.uniforms.get("uVignette")!.value = value;
+  }
+
+  set fringe(value: number) {
+    this.uniforms.get("uFringe")!.value = value;
+  }
+
+  set canvas(value: number) {
+    this.uniforms.get("uCanvas")!.value = value;
   }
 }

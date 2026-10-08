@@ -32,7 +32,7 @@ void main() {
   vec3 drift = vec3(sin(t + aSeed.y * 6.3) * 0.8, sin(t * 1.3 + aSeed.z * 6.3) * 0.35, cos(t * 0.9 + aSeed.w * 6.3) * 0.8);
   vec4 view = viewMatrix * vec4(aBase + drift, 1.0);
   // Larger from the top view, so they still read as specks from up there.
-  view.xy += position.xy * (0.07 + aSeed.x * 0.06) * (1.0 + uTopView * 5.0);
+  view.xy += position.xy * (0.07 + aSeed.x * 0.06) * (1.0 + uTopView * 2.2);
   gl_Position = projectionMatrix * view;
   float blink = smoothstep(0.2, 0.9, sin(uTime * (0.6 + aSeed.w) + aSeed.y * 20.0) * 0.5 + 0.5);
   vBright = blink * smoothstep(aSeed.z * 0.5, aSeed.z * 0.5 + 0.5, uGlow);
@@ -48,7 +48,7 @@ void main() {
   float d = length(vUv - 0.5) * 2.0;
   float a = (1.0 - smoothstep(0.0, 1.0, d)) * vBright;
   if (a < 0.01) discard;
-  gl_FragColor = vec4(uFirefly * 4.0 * a, a);
+  gl_FragColor = vec4(uFirefly * 2.6 * a, a);
 }
 `;
 

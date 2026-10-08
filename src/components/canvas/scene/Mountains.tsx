@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { BufferGeometry, Float32BufferAttribute, ShaderMaterial, Vector4 } from "three";
 import type { PaletteKey } from "@/config/palette";
 import { paletteGLSL, paletteUniformsFor, sharedUniforms } from "../painterly/palette";
+import { dissolveGLSL, paintDissolveGLSL } from "../painterly/dissolve";
 import { noiseGLSL } from "../painterly/shaderChunks";
 
 const COLORS = [
@@ -13,6 +14,7 @@ const COLORS = [
   "haze",
   "skyHorizon",
   "sunGlow",
+  "dustEdge",
 ] as const satisfies readonly PaletteKey[];
 
 /** Ridge layers, nearest first: distance, base height, ridge amplitude. */
@@ -39,9 +41,12 @@ ${paletteGLSL(COLORS)}
 uniform vec4 uLayers[${LAYERS.length}];
 uniform vec3 uSunDir;
 uniform float uDusk;
+uniform float uDissolve;
 varying vec3 vWorld;
 varying float vLayer;
 ${noiseGLSL}
+${dissolveGLSL}
+${paintDissolveGLSL}
 
 float ridge(float x, vec4 layer) {
   float n = 0.0;
@@ -65,6 +70,8 @@ void main() {
   float top = ridge(vWorld.x, layer)
     + (strokes(vWorld.xy * vec2(0.08, 0.3), vec2(1.0, 0.3), 2.0) - 0.5) * layer.z * 0.12;
   if (vWorld.y > top) discard;
+  // Vertical planes: fold height into depth so the crests crumble first.
+  vec3 edge = dissolvePaint(vec3(vWorld.x, 0.0, vWorld.z - vWorld.y * 2.0));
 
   float depth = vLayer / ${(LAYERS.length - 1).toFixed(1)};
   vec3 col = mix(uMountainNear, uMountainFar, depth);
@@ -84,7 +91,7 @@ void main() {
   float crest = smoothstep(top - layer.z * 0.25, top, vWorld.y);
   col = mix(col, uSunGlow * 1.2, crest * sunSide * uDusk * 0.7);
 
-  gl_FragColor = vec4(col, 1.0);
+  gl_FragColor = vec4(col + edge, 1.0);
 }
 `;
 
@@ -120,6 +127,7 @@ export function Mountains() {
           ...paletteUniformsFor(COLORS),
           uSunDir: sharedUniforms.uSunDir,
           uDusk: sharedUniforms.uDusk,
+          uDissolve: sharedUniforms.uDissolve,
           uLayers: {
             value: LAYERS.map((l, i) => new Vector4(i * 13.7 + 2, l.base, l.amp, l.freq)),
           },

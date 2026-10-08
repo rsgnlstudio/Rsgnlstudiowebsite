@@ -1,4 +1,5 @@
 import { Color, MathUtils, Vector3 } from "three";
+import { DISSOLVE_RANGE } from "@/config/scene";
 import {
   PALETTE_KEYS,
   type Palette,
@@ -70,7 +71,16 @@ export const sharedUniforms = {
   uSunStrength: { value: 1 },
   uMoonDir: { value: new Vector3(0, -1, 0) },
   uMoonStrength: { value: 0 },
+  /**
+   * Dissolve threshold, -0.1 (all painted) .. 1.1 (all dust). Compared with
+   * dissolveField() (painterly/dissolve.ts): painted surfaces are gone where
+   * the field is below it, dust exists there.
+   */
+  uDissolve: { value: -0.1 },
 };
+
+/** Painted surfaces are fully gone above this, dust is fully gone below 0. */
+export const DISSOLVE_DONE = 1.1;
 
 const direction = (target: Vector3, azimuth: number, elevation: number) =>
   target.set(
@@ -81,8 +91,8 @@ const direction = (target: Vector3, azimuth: number, elevation: number) =>
 
 /**
  * Applies `night` to the scene: mixes the palette day -> dusk -> night, sinks
- * the sun behind the mountains in the gap between the trees, raises the moon and
- * turns up the night glow.
+ * the sun behind the mountains in the gap between the trees, raises the moon,
+ * turns up the night glow and moves the day -> dust dissolve.
  */
 export function updateLight(night: number) {
   const n = MathUtils.clamp(night, 0, 1);
@@ -103,4 +113,7 @@ export function updateLight(night: number) {
   u.uSunStrength.value = 1 - MathUtils.smoothstep(n, 0.5, 0.65);
   direction(u.uMoonDir.value, 0.14, MathUtils.lerp(-0.15, 0.25, MathUtils.smoothstep(n, 0.5, 1)));
   u.uMoonStrength.value = MathUtils.smoothstep(n, 0.55, 0.95);
+  // Linear in night (already eased), so the front moves at an even pace.
+  const dissolve = MathUtils.clamp((n - DISSOLVE_RANGE[0]) / (DISSOLVE_RANGE[1] - DISSOLVE_RANGE[0]), 0, 1);
+  u.uDissolve.value = MathUtils.lerp(-0.1, DISSOLVE_DONE, dissolve);
 }

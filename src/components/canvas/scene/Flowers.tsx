@@ -6,10 +6,11 @@ import { qualityPresets } from "@/config/look";
 import type { PaletteKey } from "@/config/palette";
 import { useLookStore } from "@/store/look";
 import { FLOWER_ATLAS, getBrushTextures } from "../painterly/brushTextures";
+import { dissolveGLSL, paintDissolveGLSL } from "../painterly/dissolve";
 import { blueBandX, FIELD, overheadPoint, terrainHeight } from "../painterly/landscape";
 import { paletteGLSL, paletteUniformsFor, sharedUniforms } from "../painterly/palette";
 import { mulberry32, pickWeighted, valueNoise } from "../painterly/random";
-import { alphaGLSL, colorGLSL, hazeGLSL } from "../painterly/shaderChunks";
+import { alphaGLSL, colorGLSL, hazeGLSL, noiseGLSL } from "../painterly/shaderChunks";
 import { viewUniforms } from "../painterly/view";
 import { allocateSprites, createSpriteGeometry, spriteVertexShader } from "../painterly/sprites";
 
@@ -27,6 +28,7 @@ const COLORS = [
   "grassMid",
   "grassLight",
   "haze",
+  "dustEdge",
 ] as const satisfies readonly PaletteKey[];
 
 // Tint slots, matching flowerColor() in the shader (2 = white).
@@ -59,10 +61,15 @@ varying vec2 vUv;
 varying vec2 vLocal;
 varying float vTint;
 varying vec3 vVar;
+uniform float uDissolve;
 varying float vDist;
+varying vec3 vWorld;
+${noiseGLSL}
 ${colorGLSL}
 ${hazeGLSL}
 ${alphaGLSL}
+${dissolveGLSL}
+${paintDissolveGLSL}
 
 vec3 flowerColor(float i) {
   if (i < 0.5) return uFlowerPink;
@@ -77,6 +84,7 @@ vec3 flowerColor(float i) {
 void main() {
   vec4 tex = texture2D(uAtlas, vUv);
   if (sharpAlpha(tex.a) < 0.5) discard;
+  vec3 edge = dissolvePaint(vWorld);
 
   vec3 petal = vary(flowerColor(vTint), vVar);
   vec3 col = petal * (0.42 + 0.72 * tex.r);
@@ -92,7 +100,7 @@ void main() {
   float pale = vTint > 1.5 && vTint < 2.5 || vTint > 4.5 ? 1.0 : 0.4;
   col += uFlowerGlow * uGlow * petalMask * glowing * pale * (0.6 + 0.7 * tex.r);
 
-  gl_FragColor = vec4(applyHaze(col, vDist), 1.0);
+  gl_FragColor = vec4(applyHaze(col, vDist) + edge, 1.0);
 }
 `;
 
