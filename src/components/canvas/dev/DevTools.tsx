@@ -107,6 +107,7 @@ export default function DevTools() {
     wind: lookControl("wind", 0, 3, 0.05),
     glow: lookControl("glow", 0, 3, 0.05),
     fringe: lookControl("fringe", 0, 1, 0.01),
+    wetBlend: lookControl("wetBlend", 0, 1, 0.01, "wet blend"),
     night: folder({
       lightIntensity: lookControl("lightIntensity", 0, 8, 0.05, "light intensity"),
       lightRadius: lookControl("lightRadius", 5, 80, 0.5, "light radius"),

@@ -1,45 +1,24 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { DoubleSide, ShaderMaterial } from "three";
 import { qualityPresets } from "@/config/look";
-import type { PaletteKey } from "@/config/palette";
 import { useLookStore } from "@/store/look";
-import { FLOWER_ATLAS, getBrushTextures } from "../painterly/brushTextures";
-import { dissolveGLSL, paintDissolveGLSL } from "../painterly/dissolve";
 import { blueBandX, FIELD, overheadPoint, terrainHeight } from "../painterly/landscape";
-import { paletteGLSL, paletteUniformsFor, sharedUniforms } from "../painterly/palette";
+import { FLOWER_KIND, paintFlower, PLANT_COLORS } from "../painterly/plants";
 import { mulberry32, pickWeighted, valueNoise } from "../painterly/random";
-import { alphaGLSL, colorGLSL, hazeGLSL, noiseGLSL } from "../painterly/shaderChunks";
-import { viewUniforms } from "../painterly/view";
-import { allocateSprites, createSpriteGeometry, spriteVertexShader } from "../painterly/sprites";
+import { StrokeBuffer } from "../painterly/strokes";
+import { StrokeLayer } from "./StrokeLayer";
 
-const COLORS = [
-  "flowerPink",
-  "flowerPinkDeep",
-  "flowerWhite",
-  "flowerYellow",
-  "flowerOrange",
-  "flowerBlue",
-  "flowerPeriwinkle",
-  "flowerCenter",
-  "flowerGlow",
-  "grassDeep",
-  "grassMid",
-  "grassLight",
-  "haze",
-  "dustEdge",
-] as const satisfies readonly PaletteKey[];
-
-// Tint slots, matching flowerColor() in the shader (2 = white).
+// Tint slots, matching PETAL_TINTS in painterly/plants.ts (2 = white).
 const PINK = 0;
 const PINK_DEEP = 1;
+const WHITE = 2;
 const YELLOW = 3;
 const ORANGE = 4;
 const BLUE = 5;
 const PERIWINKLE = 6;
 
-/** Per atlas cell: relative frequency, height range (m), tint weights. */
+/** Per flower kind (FLOWER_KIND): relative frequency, height range (m), tint weights. */
 const SPECIES = [
   { weight: 22, height: [0.4, 0.75], tints: [5, 2.5, 2.5, 0, 0, 0, 0] }, // cosmos
   { weight: 14, height: [0.35, 0.65], tints: [0, 0, 8, 1, 0, 0, 0] }, // daisy
@@ -53,71 +32,58 @@ const SPECIES = [
 const BLUE_SPECIES = [0, 0, 0, 8, 0, 3, 0, 0];
 const FAR_SPECIES = [2, 1, 2, 1, 1, 10, 1, 3];
 
-const fragmentShader = /* glsl */ `
-${paletteGLSL(COLORS)}
-uniform sampler2D uAtlas;
-uniform float uGlow;
-varying vec2 vUv;
-varying vec2 vLocal;
-varying float vTint;
-varying vec3 vVar;
-uniform float uDissolve;
-varying float vDist;
-varying vec3 vWorld;
-${noiseGLSL}
-${colorGLSL}
-${hazeGLSL}
-${alphaGLSL}
-${dissolveGLSL}
-${paintDissolveGLSL}
-
-vec3 flowerColor(float i) {
-  if (i < 0.5) return uFlowerPink;
-  if (i < 1.5) return uFlowerPinkDeep;
-  if (i < 2.5) return uFlowerWhite;
-  if (i < 3.5) return uFlowerYellow;
-  if (i < 4.5) return uFlowerOrange;
-  if (i < 5.5) return uFlowerBlue;
-  return uFlowerPeriwinkle;
-}
-
-void main() {
-  vec4 tex = texture2D(uAtlas, vUv);
-  if (sharpAlpha(tex.a) < 0.5) discard;
-  vec3 edge = dissolvePaint(vWorld);
-
-  vec3 petal = vary(flowerColor(vTint), vVar);
-  vec3 col = petal * (0.42 + 0.72 * tex.r);
-  vec3 centre = vary(uFlowerCenter, vec3(vVar.x * 0.5, 1.0, vVar.z)) * (0.55 + 0.6 * tex.r);
-  col = mix(col, centre, step(0.5, tex.g));
-  vec3 stem = mix(uGrassDeep, uGrassMid, tex.r);
-  stem = mix(stem, uGrassLight, smoothstep(0.75, 1.0, tex.r) * 0.6);
-  col = mix(col, stem * mix(0.5, 1.0, vLocal.y), step(0.5, tex.b));
-
-  // Night: some flowers glow, the pale and blue ones most (HDR, so they bloom).
-  float petalMask = (1.0 - step(0.5, tex.g)) * (1.0 - step(0.5, tex.b));
-  float glowing = step(0.72, fract(vVar.z * 37.0 + vVar.y * 11.0));
-  float pale = vTint > 1.5 && vTint < 2.5 || vTint > 4.5 ? 1.0 : 0.4;
-  col += uFlowerGlow * uGlow * petalMask * glowing * pale * (0.6 + 0.7 * tex.r);
-
-  gl_FragColor = vec4(applyHaze(col, vDist) + edge, 1.0);
-}
-`;
+/**
+ * Big flowers right by the lens, framing the view from both sides: part of
+ * the meadow, so they move with it, and soft as they sit before the focus.
+ * x and d (distance into the field) in metres.
+ */
+const NEAR_FLOWERS = [
+  { x: -1.05, d: 1.3, height: 0.78, kind: FLOWER_KIND.cosmos, tint: PINK },
+  { x: -0.7, d: 1.9, height: 0.85, kind: FLOWER_KIND.rose, tint: PINK_DEEP },
+  { x: -1.4, d: 2.4, height: 0.95, kind: FLOWER_KIND.daisy, tint: WHITE },
+  { x: -0.35, d: 1.15, height: 0.55, kind: FLOWER_KIND.sideCosmos, tint: PINK },
+  { x: -1.75, d: 3.1, height: 0.95, kind: FLOWER_KIND.lupine, tint: PERIWINKLE },
+  { x: 0.2, d: 1.05, height: 0.45, kind: FLOWER_KIND.buttercup, tint: YELLOW },
+  { x: 0.6, d: 1.45, height: 0.72, kind: FLOWER_KIND.rose, tint: PINK },
+  { x: 0.98, d: 1.85, height: 0.9, kind: FLOWER_KIND.cosmos, tint: WHITE },
+  { x: 1.35, d: 2.6, height: 1.0, kind: FLOWER_KIND.cosmos, tint: PINK },
+  { x: 1.8, d: 3.3, height: 0.95, kind: FLOWER_KIND.lupine, tint: BLUE },
+] as const;
 
 /** Share of flowers spread over the night top view rather than the day wedge. */
 const OVERHEAD_SHARE = 0.35;
 
-function scatterFlowers(count: number) {
-  const data = allocateSprites(count);
+function paintFlowers(count: number) {
+  const out = new StrokeBuffer();
   const rng = mulberry32(1234);
+  for (const flower of NEAR_FLOWERS) {
+    const z = -flower.d;
+    paintFlower(
+      {
+        out,
+        rng,
+        root: [flower.x, terrainHeight(flower.x, z) - 0.04, z],
+        height: flower.height,
+        phase: rng() * Math.PI * 2,
+        light: 1.1 + rng() * 0.4,
+        variation: [(rng() - 0.5) * 0.1, 1, 0.95 + rng() * 0.1],
+        detail: 1,
+      },
+      flower.kind,
+      flower.tint,
+      0.4,
+    );
+  }
   for (let i = 0; i < count; i++) {
     let x: number;
     let d: number;
     let grow: number;
+    let detail: number;
     if (rng() < OVERHEAD_SHARE) {
       // Spread over the night top view, sized to read from up there.
       [x, d] = overheadPoint(rng);
       grow = 2.2;
+      detail = 0.35;
     } else {
       // Most flowers in the midground, where the eye lands.
       const band = rng();
@@ -130,6 +96,8 @@ function scatterFlowers(count: number) {
       x = (rng() * 2 - 1) * (d * 1.1 + 1.5);
       // Far flowers grow so they stay readable.
       grow = 1 + Math.max(0, d - 10) * 0.03;
+      // Close flowers get every petal, far ones become dabs.
+      detail = Math.min(1, Math.max(0, 1 - (d - 4) / 30));
     }
     const z = -d;
 
@@ -140,8 +108,8 @@ function scatterFlowers(count: number) {
       : d > 30
         ? FAR_SPECIES
         : SPECIES.map((s) => s.weight);
-    const cell = pickWeighted(rng, weights);
-    const species = SPECIES[cell];
+    const kind = pickWeighted(rng, weights);
+    const species = SPECIES[kind];
 
     // Tint: clustered drifts of the same color, like a real meadow.
     const drift = valueNoise(x * 0.12, z * 0.12, 7);
@@ -150,51 +118,61 @@ function scatterFlowers(count: number) {
       if (t === PINK || t === PINK_DEEP) return w * (1.4 - drift);
       return w;
     });
-    const tint = inBlue && cell !== 3 ? (rng() < 0.7 ? BLUE : PERIWINKLE) : pickWeighted(rng, tints);
+    const tint = inBlue && kind !== 3 ? (rng() < 0.7 ? BLUE : PERIWINKLE) : pickWeighted(rng, tints);
 
     const [h0, h1] = species.height;
-    // Far flowers grow so they stay readable as dabs of color.
-
     const height = (h0 + rng() * (h1 - h0)) * grow;
+    // Sunlit drifts and shaded hollows across the field.
+    const sun = valueNoise(x * 0.09, z * 0.09, 3);
+    // Night: some flowers glow, the pale and blue ones most.
+    const pale = tint === WHITE || tint >= BLUE;
+    const glow = rng() < 0.28 ? (pale ? 1 : 0.4) : 0;
 
-    data.offset.set([x, terrainHeight(x, z) - 0.04, z], i * 3);
-    data.size.set([height * 0.5 * (rng() < 0.5 ? -1 : 1), height], i * 2);
-    data.lean[i] = (rng() - 0.5) * 0.3;
-    data.cell[i] = cell;
-    data.tint[i] = tint;
-    data.variation.set([(rng() - 0.5) * 0.22, 0.85 + rng() * 0.3, 0.85 + rng() * 0.28], i * 3);
-    data.phase[i] = rng() * Math.PI * 2;
+    paintFlower(
+      {
+        out,
+        rng,
+        root: [x, terrainHeight(x, z) - 0.04, z],
+        height,
+        phase: rng() * Math.PI * 2,
+        light: 0.7 + sun * 0.9 + (rng() - 0.5) * 0.3,
+        variation: [(rng() - 0.5) * 0.22, 0.85 + rng() * 0.3, 0.88 + rng() * 0.24],
+        detail,
+      },
+      kind,
+      tint,
+      glow,
+    );
   }
-  return data;
+  return out;
 }
 
-/** The midground flower field: one instanced draw for every flower. */
+/**
+ * The flower field, painted stroke by stroke (petals, centres, stems and
+ * leaves), from the big flowers by the lens to dabs on the horizon: one
+ * instanced draw for every stroke of every flower.
+ */
 export function Flowers() {
   const tier = useLookStore((s) => s.tier);
   const density = useLookStore((s) => s.flowerDensity);
   const count = Math.round(qualityPresets[tier].flowers * density);
 
-  const geometry = useMemo(() => createSpriteGeometry(scatterFlowers(count)), [count]);
+  const geometry = useMemo(() => paintFlowers(count).createGeometry(), [count]);
   useEffect(() => () => geometry.dispose(), [geometry]);
 
-  const material = useMemo(
-    () =>
-      new ShaderMaterial({
-        vertexShader: spriteVertexShader,
-        fragmentShader,
-        side: DoubleSide,
-        uniforms: {
-          ...paletteUniformsFor(COLORS),
-          ...sharedUniforms,
-          uAtlas: { value: getBrushTextures().flowers },
-          uGrid: { value: [FLOWER_ATLAS.cols, FLOWER_ATLAS.rows] },
-          uSway: { value: 0.07 },
-          uTopView: viewUniforms.uTopView,
-          uTopScale: { value: 1 },
-        },
-      }),
-    [],
+  return (
+    <StrokeLayer
+      name="flowers"
+      geometry={geometry}
+      options={{
+        colors: PLANT_COLORS,
+        shadow: "fieldShadow",
+        light: "flowerWhite",
+        sway: 0.07,
+        rootFade: 0.3,
+        relief: 0.7,
+        backlight: 1,
+      }}
+    />
   );
-
-  return <mesh name="flowers" geometry={geometry} material={material} frustumCulled={false} />;
 }

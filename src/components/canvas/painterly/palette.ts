@@ -48,6 +48,15 @@ export function paletteUniformsFor(keys: readonly PaletteKey[]) {
   );
 }
 
+/**
+ * The live palette colors as an array, for a `uniform vec3 uColors[n]` that
+ * shaders index per instance. The entries are the same Color objects as the
+ * named uniforms, so they follow the palette every frame.
+ */
+export function paletteArrayFor(keys: readonly PaletteKey[]) {
+  return keys.map((key) => paletteUniforms[uniformName(key)].value);
+}
+
 /** GLSL `uniform vec3 uKey;` declarations matching paletteUniformsFor. */
 export function paletteGLSL(keys: readonly PaletteKey[]) {
   return keys.map((key) => `uniform vec3 ${uniformName(key)};`).join("\n");
@@ -108,8 +117,10 @@ export function updateLight(night: number) {
   u.uNight.value = n;
   u.uDusk.value = MathUtils.smoothstep(n, 0.12, 0.45) * (1 - MathUtils.smoothstep(n, 0.55, 0.85));
   u.uGlow.value = MathUtils.smoothstep(n, 0.55, 1);
-  // The sun touches the ridges around n = 0.45 and is gone by 0.6.
-  direction(u.uSunDir.value, -0.06, MathUtils.lerp(0.62, -0.22, MathUtils.smoothstep(n, 0, 0.8)));
+  // By day the sun hangs low in the gap between the trees, so the meadow is
+  // backlit and the sky glows. It touches the ridges around n = 0.4 and is
+  // gone by 0.6.
+  direction(u.uSunDir.value, -0.06, MathUtils.lerp(0.19, -0.22, MathUtils.smoothstep(n, 0.2, 0.8)));
   u.uSunStrength.value = 1 - MathUtils.smoothstep(n, 0.5, 0.65);
   direction(u.uMoonDir.value, 0.14, MathUtils.lerp(-0.15, 0.25, MathUtils.smoothstep(n, 0.5, 1)));
   u.uMoonStrength.value = MathUtils.smoothstep(n, 0.55, 0.95);

@@ -48,10 +48,6 @@ export const PALETTE_KEYS = [
   "flowerCenter",
   "flowerGlow",
   "firefly",
-  // Foreground leaves
-  "leafDark",
-  "leafMid",
-  "leafLight",
   // Night dust world (seen from about night 0.35 on, as the painting dissolves)
   "void",
   "dust",
@@ -105,10 +101,6 @@ export const dayPalette: Palette = {
   flowerGlow: "#ffe2b0",
   firefly: "#e4ff9a",
 
-  leafDark: "#13261a",
-  leafMid: "#2f5a2c",
-  leafLight: "#9cc450",
-
   void: "#0b0a1c",
   dust: "#3a3a7a",
   dustLit: "#ffd8a8",
@@ -157,10 +149,6 @@ export const duskPalette: Palette = {
   flowerGlow: "#ffb070",
   firefly: "#ffe08a",
 
-  leafDark: "#140c10",
-  leafMid: "#3e2a22",
-  leafLight: "#a8703a",
-
   void: "#0e0816",
   dust: "#3a2a64",
   dustLit: "#ffc08a",
@@ -208,10 +196,6 @@ export const nightPalette: Palette = {
   flowerCenter: "#c4d482",
   flowerGlow: "#5cc0ff",
   firefly: "#c8ff6a",
-
-  leafDark: "#01040a",
-  leafMid: "#081a26",
-  leafLight: "#1a4a52",
 
   void: "#010309",
   dust: "#123c78",

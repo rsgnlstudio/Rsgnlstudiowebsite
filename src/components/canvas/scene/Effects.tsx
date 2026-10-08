@@ -4,12 +4,14 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { EffectComposer } from "@react-three/postprocessing";
 import { BloomEffect, DepthOfFieldEffect, EffectPass } from "postprocessing";
 import { useEffect, useMemo } from "react";
-import { type Camera, MathUtils, Vector3 } from "three";
+import { MathUtils, type PerspectiveCamera, Vector3 } from "three";
 import { qualityPresets } from "@/config/look";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { useLookStore } from "@/store/look";
 import { rayGroundDistance } from "../painterly/landscape";
 import { PainterlyEffect } from "../painterly/PainterlyEffect";
+import { VolumetricMist } from "../painterly/VolumetricMist";
+import { WetCanvasPass, wetUniforms } from "../painterly/WetCanvasPass";
 import { sharedUniforms } from "../painterly/palette";
 
 const COC_SOURCE = "float magnitude=smoothstep(0.0,focusRange,abs(signedDistance));";
@@ -18,7 +20,9 @@ const COC_SOURCE = "float magnitude=smoothstep(0.0,focusRange,abs(signedDistance
  * postprocessing ramps blur symmetrically over `focusRange`, which makes the
  * trees as blurry as the mountains. Patch the CoC so the far side ramps over
  * focusRange (trees soft, mountains softer) and the near side ramps relative
- * to the focus distance (the closest grass goes fully soft).
+ * to the focus distance (the closest grass goes fully soft). The sky (on
+ * the far plane) only blurs a little: it is painted soft already, and fully
+ * blurred the sun breaks up into rings of bokeh dots.
  */
 function patchCircleOfConfusion(effect: DepthOfFieldEffect) {
   const material = effect.cocMaterial;
@@ -29,13 +33,14 @@ function patchCircleOfConfusion(effect: DepthOfFieldEffect) {
   material.fragmentShader = material.fragmentShader.replace(
     COC_SOURCE,
     `float magnitude = signedDistance < 0.0
-      ? smoothstep(focusDistance * 0.3, focusDistance * 0.85, -signedDistance)
-      : smoothstep(1.0, focusRange, signedDistance);`,
+      ? smoothstep(focusDistance * 0.12, focusDistance * 0.6, -signedDistance)
+      : smoothstep(1.0, focusRange, signedDistance) * (depth > 0.9999 ? 0.25 : 1.0);`,
   );
   material.needsUpdate = true;
 }
 
 interface EffectSet {
+  wetCanvas: WetCanvasPass;
   dof: DepthOfFieldEffect;
   bloom: BloomEffect;
   finish: PainterlyEffect;
@@ -43,16 +48,25 @@ interface EffectSet {
 
 const forward = new Vector3();
 
-/** Distance to the ground at the centre of the frame, where focus sits. */
-function centreFocusDistance(camera: Camera) {
+/**
+ * Where focus sits: on the ground this far below the centre of the frame
+ * (in half-frame heights), i.e. the near meadow a few metres out. Everything
+ * beyond melts into soft paint, the flowers by the lens blur the other way.
+ */
+const FOCUS_BELOW_CENTRE = 0.4;
+
+/** Distance to the ground at the focus point of the frame. */
+function focusDistance(camera: PerspectiveCamera) {
+  const tan = Math.tan(MathUtils.degToRad(camera.fov / 2));
   // From the quaternion: CameraRig set it this frame, matrixWorld lags.
-  return rayGroundDistance(camera.position, forward.set(0, 0, -1).applyQuaternion(camera.quaternion));
+  forward.set(0, -FOCUS_BELOW_CENTRE * tan, -1).normalize().applyQuaternion(camera.quaternion);
+  return rayGroundDistance(camera.position, forward);
 }
 
 /** Copies the live look settings onto the effects. */
-function applyLook({ dof, bloom, finish }: EffectSet, camera: Camera, time: number) {
+function applyLook({ wetCanvas, dof, bloom, finish }: EffectSet, camera: PerspectiveCamera, time: number) {
   const look = useLookStore.getState();
-  dof.cocMaterial.focusDistance = centreFocusDistance(camera);
+  dof.cocMaterial.focusDistance = focusDistance(camera);
   dof.cocMaterial.focusRange = look.focusRange;
   // The dust world blurs its own specks into bokeh, so depth of field hands
   // over to it as the painting dissolves.
@@ -67,15 +81,20 @@ function applyLook({ dof, bloom, finish }: EffectSet, camera: Camera, time: numb
   finish.vignette = MathUtils.lerp(look.vignette, Math.max(look.vignette, 0.55), dust);
   finish.fringe = look.fringe * (0.5 + 0.5 * dust);
   finish.canvas = 1 - dust;
+  // Wet in wet by day only; the dust world has no paint to mix.
+  const day = 1 - MathUtils.clamp(sharedUniforms.uDissolve.value / 0.3, 0, 1);
+  wetUniforms.uWetAmount.value = wetCanvas.ready ? look.wetBlend * day : 0;
 }
 
 /**
  * Post-processing, in order:
- * 1. depth of field, focused on the ground at the centre of the frame, and
+ * 0. the wet canvas: a blurred copy of the frame the strokes mix into on the
+ *    next frame (WetCanvasPass); the frame passes through unchanged,
+ * 0. volumetric mist, raymarched against the depth (VolumetricMist),
+ * 1. depth of field, focused on the near meadow (FOCUS_BELOW_CENTRE), and
  *    bloom on the HDR highlights,
  * 2. the finish, in its own pass as it samples the frame at offsets:
  *    chromatic fringe, canvas texture, grain and vignette.
- * The near foreground fakes its blur with pre-blurred textures.
  */
 export function Effects() {
   const camera = useThree((s) => s.camera);
@@ -86,7 +105,7 @@ export function Effects() {
   const dof = useMemo(() => {
     const { focusRange, blurStrength } = useLookStore.getState();
     const effect = new DepthOfFieldEffect(camera, {
-      focusDistance: centreFocusDistance(camera),
+      focusDistance: focusDistance(camera as PerspectiveCamera),
       focusRange,
       bokehScale: blurStrength,
       resolutionScale: preset.dofResolution,
@@ -95,6 +114,13 @@ export function Effects() {
     return effect;
   }, [camera, preset.dofResolution]);
   useEffect(() => () => dof.dispose(), [dof]);
+
+  const wetCanvas = useMemo(() => new WetCanvasPass(), []);
+  useEffect(() => () => wetCanvas.dispose(), [wetCanvas]);
+
+  // Its own pass: depth of field has to see the mist to blur it.
+  const mistPass = useMemo(() => new EffectPass(camera, new VolumetricMist(camera)), [camera]);
+  useEffect(() => () => mistPass.dispose(), [mistPass]);
 
   const bloom = useMemo(
     () =>
@@ -117,11 +143,13 @@ export function Effects() {
 
   useFrame(() => {
     // Reduced motion: freeze the grain pattern.
-    applyLook({ dof, bloom, finish }, camera, reducedMotion ? 0 : sharedUniforms.uTime.value);
+    applyLook({ wetCanvas, dof, bloom, finish }, camera as PerspectiveCamera, reducedMotion ? 0 : sharedUniforms.uTime.value);
   });
 
   return (
     <EffectComposer multisampling={preset.multisampling}>
+      <primitive object={wetCanvas} />
+      <primitive object={mistPass} />
       <primitive object={dof} />
       <primitive object={bloom} />
       <primitive object={finishPass} />
