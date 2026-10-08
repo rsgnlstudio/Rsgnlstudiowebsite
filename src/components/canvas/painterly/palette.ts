@@ -25,12 +25,7 @@ const parseAll = (palettes: Record<PaletteSet, Palette>) => ({
   night: toColors(palettes.night),
 });
 
-let colors = parseAll(useLookStore.getState().palettes);
-
-// Re-parse only when leva edits a palette, not every frame.
-useLookStore.subscribe((state, prev) => {
-  if (state.palettes !== prev.palettes) colors = parseAll(state.palettes);
-});
+const colors = parseAll(useLookStore.getState().palettes);
 
 /**
  * One shared uniform per palette color, e.g. `uSkyTop`. Every material that

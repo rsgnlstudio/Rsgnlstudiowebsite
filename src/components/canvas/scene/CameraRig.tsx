@@ -69,8 +69,7 @@ const pointer = new Vector2();
  * Moves `night` toward the store's timeOfDay over DAY_NIGHT_DURATION, eased,
  * and blends the camera with it: from the mode's first keyframe in the
  * meadow (day) up to `nightCamera`, high above and looking straight down
- * (night). Clicking mid-transition turns it around from where it is. While
- * the dev `nightOverride` is set, the camera follows the override instead.
+ * (night). Clicking mid-transition turns it around from where it is.
  *
  * Also fits the FOV to the aspect ratio and adds a slight idle drift plus
  * mouse parallax (both off when reduced motion is preferred). Reads the store
@@ -106,16 +105,12 @@ export function CameraRig() {
     const keyframe = sectionsByMode[store.sceneMode][0]?.camera;
     if (!keyframe) return;
 
-    if (store.nightOverride === null) {
-      const goal = nightFor[store.timeOfDay];
-      const duration = reduced.current ? DAY_NIGHT_DURATION_REDUCED : DAY_NIGHT_DURATION;
-      const step = MathUtils.clamp(goal - progress.current, -delta / duration, delta / duration);
-      progress.current += step;
-      const night = ease(progress.current);
-      if (night !== store.night) store.setNight(night);
-    } else {
-      progress.current = unease(store.night);
-    }
+    const goal = nightFor[store.timeOfDay];
+    const duration = reduced.current ? DAY_NIGHT_DURATION_REDUCED : DAY_NIGHT_DURATION;
+    const step = MathUtils.clamp(goal - progress.current, -delta / duration, delta / duration);
+    progress.current += step;
+    const night = ease(progress.current);
+    if (night !== store.night) store.setNight(night);
     const t = MathUtils.clamp(store.night, 0, 1);
 
     // Portrait: tilt down so the taller frame holds more meadow, less sky.

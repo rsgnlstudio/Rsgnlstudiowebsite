@@ -17,6 +17,8 @@
   --color-on-night: #f4efe6;
 
   /* Type scale */
+  --text-headline: clamp(3rem, 9vw, 9rem);
+  --text-headline--line-height: 0.95;
   --text-display: 4rem;
   --text-display--line-height: 1;
   --text-heading: 2rem;
@@ -29,6 +31,8 @@
   /* Spacing (base unit drives p-4, gap-2, etc.) */
   --spacing: 0.25rem;
   --spacing-gutter: 1.5rem;
+  /* Distance of fixed overlays (the hero headline) from the viewport edges */
+  --spacing-edge: clamp(2rem, 5vw, 5rem);
   --spacing-section: 8rem;
 }
 

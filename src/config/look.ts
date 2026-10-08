@@ -1,6 +1,6 @@
 /**
- * Tunable look of the painterly scene. Defaults live here; leva (dev only)
- * edits the runtime copy in src/store/look.ts.
+ * Tunable look of the painterly scene. The canvas reads the runtime copy in
+ * src/store/look.ts.
  */
 
 export interface LookSettings {
