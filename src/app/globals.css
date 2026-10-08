@@ -13,11 +13,6 @@
   --color-muted: #808080;
   --color-accent: #808080;
 
-  /* Font families */
-  --font-sans: ui-sans-serif, system-ui, sans-serif;
-  --font-display: ui-sans-serif, system-ui, sans-serif;
-  --font-mono: ui-monospace, monospace;
-
   /* Type scale */
   --text-display: 4rem;
   --text-display--line-height: 1;
@@ -32,4 +27,15 @@
   --spacing: 0.25rem;
   --spacing-gutter: 1.5rem;
   --spacing-section: 8rem;
+}
+
+/*
+ * Font families. Calendas Plus (src/fonts/calendas.ts) is the default for all
+ * text, so font-sans and font-display both resolve to it. `inline` makes the
+ * utilities reference --font-calendas (set by next/font on <html>) directly.
+ */
+@theme inline {
+  --font-sans: var(--font-calendas);
+  --font-display: var(--font-calendas);
+  --font-mono: ui-monospace, monospace;
 }

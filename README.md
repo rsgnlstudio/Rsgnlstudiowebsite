@@ -59,6 +59,7 @@ src/
                        instanced sprites, landscape shape, BrushStrokePass, PainterlyEffect, RNG
       dev/             Dev-only tools (leva controls, r3f-perf), lazy-loaded in development
     sections/          DOM sections and per-page scroll controllers (e.g. HomeScroll)
+  fonts/               Calendas Plus (woff2) loaded with next/font/local
   config/              Section config (camera keyframes, night targets), scene modes, palette, look and quality presets
   hooks/               useSectionScroll, useSceneMode, usePrefersReducedMotion
   lib/                 GSAP setup (plugin registration), the Lenis + GSAP ticker integration, quality tier detection
@@ -82,6 +83,7 @@ Built:
 - Lenis + GSAP ScrollTrigger scroll hook with full cleanup on unmount
 - `sceneMode` that pauses the frameloop and hides the canvas when `"hidden"`
 - leva controls (night override, look, palettes) and r3f-perf, dev only
+- Calendas Plus as the default typeface (`font-sans` and `font-display`), self-hosted via `next/font/local`
 - First viewport (`intro`): meadow with sky, clouds, sun, moon, stars, layered mountains, conifers, instanced grass and flowers, fireflies, and a camera-locked foreground
 - Depth of field and bloom, then brushstroke repainting (`BrushStrokePass`) with stroke size by object size, then canvas texture, grain and vignette
 - Day, dusk and night palettes; a sunset transition driven by `night`, eased from the section config
