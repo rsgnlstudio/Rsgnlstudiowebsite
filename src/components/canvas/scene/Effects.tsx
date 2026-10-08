@@ -69,8 +69,9 @@ function applyLook({ wetCanvas, dof, bloom, finish }: EffectSet, camera: Perspec
   dof.cocMaterial.focusDistance = focusDistance(camera);
   dof.cocMaterial.focusRange = look.focusRange;
   // The dust world blurs its own specks into bokeh, so depth of field hands
-  // over to it as the painting dissolves.
-  const dust = MathUtils.clamp(sharedUniforms.uDissolve.value / 0.7, 0, 1);
+  // over to it as the painting morphs into dust.
+  const morph = sharedUniforms.uMorph.value;
+  const dust = MathUtils.clamp((morph - 0.08) / 0.6, 0, 1);
   dof.bokehScale = look.blurStrength * (1 - dust);
   // Only HDR highlights bloom (sun, moon, stars, glowing flowers, fireflies,
   // the cursor light and the dust it lights).
@@ -82,7 +83,7 @@ function applyLook({ wetCanvas, dof, bloom, finish }: EffectSet, camera: Perspec
   finish.fringe = look.fringe * (0.5 + 0.5 * dust);
   finish.canvas = 1 - dust;
   // Wet in wet by day only; the dust world has no paint to mix.
-  const day = 1 - MathUtils.clamp(sharedUniforms.uDissolve.value / 0.3, 0, 1);
+  const day = 1 - MathUtils.clamp((morph - 0.08) / 0.25, 0, 1);
   wetUniforms.uWetAmount.value = wetCanvas.ready ? look.wetBlend * day : 0;
 }
 

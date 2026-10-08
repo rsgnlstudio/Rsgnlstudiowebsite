@@ -10,13 +10,13 @@ import { Fireflies } from "./Fireflies";
 
 /**
  * The night world: the meadow as glowing dust, fireflies, and the light that
- * follows the cursor. It appears where the painted world dissolves and stops
- * rendering by day.
+ * follows the cursor. It condenses as the painted world morphs into the
+ * night and stops rendering by day.
  */
 export function DustWorld() {
   const group = useRef<Group>(null);
   useFrame(() => {
-    if (group.current) group.current.visible = sharedUniforms.uDissolve.value > 0;
+    if (group.current) group.current.visible = sharedUniforms.uMorph.value > 0;
   });
   return (
     <group ref={group} name="dust-world">

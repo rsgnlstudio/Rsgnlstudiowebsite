@@ -6,18 +6,15 @@ import { qualityPresets } from "@/config/look";
 import type { PaletteKey } from "@/config/palette";
 import { useLookStore } from "@/store/look";
 import { CONIFER_EDGE_SHARE, scatterConifers } from "../painterly/conifers";
-import { dissolveGLSL } from "../painterly/dissolve";
 import { dustUniforms } from "../painterly/dust";
 import { terrainHeight } from "../painterly/landscape";
 import { paletteGLSL, paletteUniformsFor, sharedUniforms } from "../painterly/palette";
+import { NIGHT_LIGHT_KEYS, nightLightGLSL, nightLightUniforms } from "../painterly/nightLight";
 import { mulberry32, type Rng, valueNoise } from "../painterly/random";
 import { noiseGLSL } from "../painterly/shaderChunks";
 
 const COLORS = [
-  "dust",
-  "dustLit",
-  "dustEdge",
-  "cursorLight",
+  ...NIGHT_LIGHT_KEYS,
   "flowerPink",
   "flowerBlue",
   "flowerPeriwinkle",
@@ -37,19 +34,19 @@ const MOTE = 3;
  */
 const TREE_SQUASH = 0.5;
 
+/**
+ * Share of its distance each speck is pulled toward the camera in depth, so
+ * the painted surface it sits on (still drawn mid-morph) doesn't hide it.
+ */
+const DEPTH_PULL = 0.06;
+
 const vertexShader = /* glsl */ `
+#define DEPTH_PULL ${DEPTH_PULL.toFixed(3)}
 attribute vec4 aSeed; // size, phase, brightness, lift
 attribute vec2 aInfo; // kind, flower tint
 
-uniform float uTime;
 uniform float uWind;
 uniform float uGlow;
-uniform float uDissolve;
-uniform vec3 uMoonDir;
-uniform vec3 uLightPos;
-uniform float uLightStrength;
-uniform float uLightIntensity;
-uniform float uLightRadius;
 uniform sampler2D uTrail;
 uniform vec4 uTrailRect;
 uniform float uFocus;
@@ -63,7 +60,7 @@ varying vec3 vColor;
 varying float vSoft;
 
 ${noiseGLSL}
-${dissolveGLSL}
+${nightLightGLSL}
 
 vec3 flowerColor(float i) {
   if (i < 0.5) return uFlowerPink;
@@ -84,20 +81,15 @@ void main() {
   bool mote = kind > 2.5;
   bool flower = kind > 1.5 && !mote;
 
-  // Dust exists where the painting has dissolved. "age" is how long ago (in
-  // dissolve units) this speck broke free; motes just fade in at the end.
-  float age = mote ? uDissolve - 0.75 : uDissolve - dissolveField(position);
-  if (age <= 0.0) {
+  // The dust condenses everywhere at once as the paint sinks into the dark,
+  // under the same light; motes come in at the end.
+  float appear = mote ? smoothstep(0.71, 0.96, uMorph) : smoothstep(0.2, 0.75, uMorph);
+  if (appear <= 0.0) {
     hide();
     return;
   }
-  float appear = smoothstep(0.0, mote ? 0.3 : 0.015, age);
-  // Freshly released dust lifts off the surface, glowing, then settles.
-  float release = 1.0 - smoothstep(0.0, 0.3, age);
 
   vec3 p = position;
-  p += normal * release * (0.4 + aSeed.w * 1.6);
-  p.y += release * release * aSeed.w * 3.0;
 
   // Idle: every speck hangs in the air and drifts a little.
   float t = uTime * (0.15 + aSeed.y * 0.2) + aSeed.y * 40.0;
@@ -121,31 +113,21 @@ void main() {
   float near = length(away);
   p += away / max(near, 1e-3) * (1.0 - smoothstep(0.0, 10.0, near)) * 1.6 * uLightStrength * uKick;
 
-  // Light: a faint moonlit base, then the cursor light (HDR near it, so it
-  // blooms), the glow of stirred-up dust, and embers at the dissolve front.
+  // Light (painterly/nightLight.ts): a faint moonlit base, then the cursor
+  // light (HDR near it, so it blooms) and the glow of stirred-up dust.
   vec3 n = normalize(normal);
-  vec3 toLight = uLightPos - p;
-  float lightDist = length(toLight);
-  float facing = dot(n, toLight / max(lightDist, 1e-3));
-  float diffuse = mote || flower ? 0.85 : mix(max(facing, 0.0), facing * 0.5 + 0.5, 0.2);
-  float reach = lightDist / uLightRadius;
-  float falloff = uLightStrength * uLightIntensity / (1.0 + reach * reach * 22.0) * (1.0 - smoothstep(0.55, 1.0, reach));
-
+  float diffuse = mote || flower ? 0.85 : cursorDiffuse(p, n);
+  float falloff = cursorFalloff(p);
   float moon = max(dot(n, uMoonDir), 0.0);
-  // Slow drifts of brighter dust, so the dark field is never flat.
-  float breathe = 0.45 + 1.1 * vnoise(position.xz * 0.035 + vec2(uTime * 0.012, -uTime * 0.008));
-  vec3 col = uDust * (0.06 + 0.45 * moon) * breathe * aSeed.z;
-  vec3 lit = mix(uCursorLight, uDustLit, smoothstep(0.6, 2.5, falloff));
-  col += lit * diffuse * falloff * (0.6 + 0.6 * aSeed.z);
+  vec3 col = moonBase(position, n) * aSeed.z;
+  col += cursorColor(falloff) * diffuse * falloff * (0.6 + 0.6 * aSeed.z);
   col += uDustLit * energy * (0.5 + aSeed.z) * 1.1;
-  col += uDustEdge * release * release * 1.3;
 
   if (flower) {
     // Flowers keep a faint color of their own and some glow (bioluminescent).
     vec3 petal = flowerColor(aInfo.y);
     col = petal * (0.08 + 0.25 * moon) * aSeed.z + petal * falloff * 1.4 * diffuse;
     col += uFlowerGlow * uGlow * 0.35 * step(0.75, aSeed.z) * aSeed.z;
-    col += uDustEdge * release * release * 1.3;
   }
   if (mote) col = mix(uDust, uDustLit, 0.5) * (0.05 + falloff * 0.5) * aSeed.z;
 
@@ -162,7 +144,9 @@ void main() {
   vColor *= min(sharp * sharp, 1.0) * max(sharp, 1.0) * max(sharp, 1.0) / (size * size);
   vSoft = clamp(coc / size, 0.0, 1.0);
   gl_PointSize = size * uPixelRatio;
-  gl_Position = projectionMatrix * view;
+  // Drawn a little nearer the camera than it is (same spot on screen, only
+  // the depth changes), so the paint it sits on doesn't hide it mid-morph.
+  gl_Position = projectionMatrix * vec4(view.xyz * (1.0 - DEPTH_PULL), 1.0);
 }
 `;
 
@@ -305,8 +289,8 @@ function buildDust(preset: (typeof qualityPresets)["high"], conifers: number) {
 
 /**
  * The night world: the meadow, its trees and flowers as fine dust, in one
- * draw call. Each speck appears where the painting dissolves, glows as it
- * breaks free and settles. In the dark only a faint moonlit haze of it shows;
+ * draw call. It condenses everywhere at once as the painting sinks into the
+ * dark, lit by the same night light (painterly/nightLight.ts). In the dark only a faint moonlit haze of it shows;
  * the cursor light (CursorLight) reveals the shapes, and its wake kicks the
  * dust up. Out-of-focus specks open into bokeh discs.
  */
@@ -326,6 +310,7 @@ export function Dust() {
           ...paletteUniformsFor(COLORS),
           ...sharedUniforms,
           ...dustUniforms,
+          ...nightLightUniforms,
         },
         transparent: true,
         blending: AdditiveBlending,

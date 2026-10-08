@@ -51,9 +51,6 @@ void main() {
 }
 `;
 
-/** Below this the night world isn't showing yet, so nothing needs updating. */
-const DUST_VISIBLE = 0;
-
 const ndc = new Vector3();
 const ray = new Vector3();
 const hit = new Vector3();
@@ -87,8 +84,8 @@ export function CursorLight() {
   const wander = useRef(0);
 
   useFrame((state, delta) => {
-    const dissolve = sharedUniforms.uDissolve.value;
-    if (dissolve <= DUST_VISIBLE) {
+    const morph = sharedUniforms.uMorph.value;
+    if (morph <= 0) {
       dustUniforms.uLightStrength.value = 0;
       return;
     }
@@ -122,7 +119,9 @@ export function CursorLight() {
     const vz = (g.z - lastGround.z) / Math.max(dt, 1e-4);
     const speed = Math.hypot(vx, vz);
 
-    const strength = MathUtils.smoothstep(dissolve, 0.45, 1.05);
+    // Comes up early in the morph: the paint takes on its light before the
+    // dust condenses under it.
+    const strength = MathUtils.smoothstep(morph, 0.1, 0.75);
     dustUniforms.uLightStrength.value = strength;
     dustUniforms.uLightPos.value.set(g.x, g.y + CURSOR_LIGHT_HEIGHT, g.z);
     dustUniforms.uLightIntensity.value = look.lightIntensity;

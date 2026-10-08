@@ -12,7 +12,7 @@ import { Vegetation } from "./scene/Vegetation";
 
 /**
  * Two worlds that share one layout: the painted day meadow and the night
- * dust world. `night` dissolves one into the other (see painterly/dissolve).
+ * dust world. `night` morphs one into the other (see painterly/nightLight).
  */
 export function Scene() {
   return (

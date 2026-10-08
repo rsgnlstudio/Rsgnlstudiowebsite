@@ -42,12 +42,13 @@ export const nightCamera: CameraKeyframe = {
 };
 
 /**
- * `night` range over which the painted day world dissolves into the night
- * dust world (and reassembles on the way back). It starts as the camera
- * lifts off and ends just before it reaches the top view, so the whole
- * flight is one slow crumble.
+ * `night` range over which the painted day world morphs into the night dust
+ * world (and back): everywhere at once, the paint takes on the night light
+ * and sinks into the dark while the dust condenses under the same light. It
+ * starts as the camera lifts off and ends just before it reaches the top
+ * view, so the whole flight is one slow change of light.
  */
-export const DISSOLVE_RANGE = [0.12, 0.86] as const;
+export const MORPH_RANGE = [0.12, 0.86] as const;
 
 /** Height above the ground of the light that follows the cursor at night. */
 export const CURSOR_LIGHT_HEIGHT = 7;

@@ -48,11 +48,10 @@ export const PALETTE_KEYS = [
   "flowerCenter",
   "flowerGlow",
   "firefly",
-  // Night dust world (seen from about night 0.35 on, as the painting dissolves)
+  // Night dust world (and the night light the painting takes on as it turns into it)
   "void",
   "dust",
   "dustLit",
-  "dustEdge",
   "cursorLight",
 ] as const;
 
@@ -104,7 +103,6 @@ export const dayPalette: Palette = {
   void: "#0b0a1c",
   dust: "#3a3a7a",
   dustLit: "#ffd8a8",
-  dustEdge: "#ffb066",
   cursorLight: "#ffd2a0",
 };
 
@@ -152,7 +150,6 @@ export const duskPalette: Palette = {
   void: "#0e0816",
   dust: "#3a2a64",
   dustLit: "#ffc08a",
-  dustEdge: "#ff7a30",
   cursorLight: "#ffc28c",
 };
 
@@ -200,7 +197,6 @@ export const nightPalette: Palette = {
   void: "#010309",
   dust: "#123c78",
   dustLit: "#8ee6ff",
-  dustEdge: "#3cc8ff",
   cursorLight: "#a8e4ff",
 };
 

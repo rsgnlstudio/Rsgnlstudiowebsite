@@ -5,7 +5,7 @@ import { PlaneGeometry, ShaderMaterial } from "three";
 import type { PaletteKey } from "@/config/palette";
 import { terrainHeight } from "../painterly/landscape";
 import { paletteGLSL, paletteUniformsFor, sharedUniforms } from "../painterly/palette";
-import { dissolveGLSL, paintDissolveGLSL } from "../painterly/dissolve";
+import { NIGHT_LIGHT_KEYS, nightLightGLSL, nightLightUniforms } from "../painterly/nightLight";
 import { colorGLSL, hazeGLSL, noiseGLSL } from "../painterly/shaderChunks";
 import { brushGLSL, getBrushAtlas } from "../painterly/brushes";
 import { strokeFieldGLSL } from "../painterly/strokeField";
@@ -25,7 +25,7 @@ const COLORS = [
   "flowerBlue",
   "flowerGlow",
   "haze",
-  "dustEdge",
+  ...NIGHT_LIGHT_KEYS,
 ] as const satisfies readonly PaletteKey[];
 
 const vertexShader = /* glsl */ `
@@ -42,7 +42,6 @@ ${paletteGLSL(COLORS)}
 uniform sampler2D uBrushes;
 uniform float uGlow;
 uniform float uTopView;
-uniform float uDissolve;
 uniform sampler2D uWet;
 uniform float uWetAmount;
 uniform vec2 uScreen;
@@ -50,8 +49,7 @@ varying vec3 vWorld;
 ${noiseGLSL}
 ${colorGLSL}
 ${hazeGLSL}
-${dissolveGLSL}
-${paintDissolveGLSL}
+${nightLightGLSL}
 ${brushGLSL}
 ${wetGLSL}
 
@@ -139,7 +137,6 @@ vec3 paintGround(vec2 p, float layer, vec3 under) {
 }
 
 void main() {
-  vec3 edge = dissolvePaint(vWorld);
   vec2 p = vWorld.xz;
   float dist = distance(cameraPosition, vWorld);
 
@@ -163,7 +160,7 @@ void main() {
   // The ground takes on the colors painted over it (flowers, grass), so the
   // meadow reads as one wet mass of paint.
   col = wetMix(col, 0.5);
-  gl_FragColor = vec4(col + edge, 1.0);
+  gl_FragColor = vec4(morphPaint(col, vWorld), 1.0);
 }
 `;
 
@@ -195,7 +192,7 @@ export function Terrain() {
           ...paletteUniformsFor(COLORS),
           uGlow: sharedUniforms.uGlow,
           uTopView: viewUniforms.uTopView,
-          uDissolve: sharedUniforms.uDissolve,
+          ...nightLightUniforms,
           uBrushes: { value: getBrushAtlas() },
           ...wetUniforms,
         },
