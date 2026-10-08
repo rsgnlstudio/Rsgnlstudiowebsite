@@ -11,6 +11,7 @@ import {
 import { qualityPresets } from "@/config/look";
 import type { PaletteKey } from "@/config/palette";
 import { useLookStore } from "@/store/look";
+import { gustGLSL, gustUniforms } from "../painterly/gust";
 import { terrainHeight } from "../painterly/landscape";
 import { paletteGLSL, paletteUniformsFor, sharedUniforms } from "../painterly/palette";
 import { mulberry32 } from "../painterly/random";
@@ -27,6 +28,7 @@ uniform float uSunStrength;
 uniform float uNight;
 varying vec2 vUv;
 varying float vBright;
+${gustGLSL}
 void main() {
   // Lazy drift on the breeze, rising and sinking a little.
   float t = uTime * (0.08 + aSeed.x * 0.1) * max(uWind, 0.2);
@@ -38,6 +40,8 @@ void main() {
   vec3 world = aBase + drift;
   world.x = mod(world.x + 40.0, 80.0) - 40.0;
   vec4 view = viewMatrix * vec4(world, 1.0);
+  // Blown away from the cursor.
+  view.xy += cursorGust(world, aSeed.y * 6.3) * -view.z * 0.12;
   view.xy += position.xy * (0.007 + aSeed.x * 0.012) * (1.0 + -view.z * 0.05);
   gl_Position = projectionMatrix * view;
 
@@ -67,6 +71,7 @@ void main() {
 /**
  * Pollen drifting over the meadow by day, glowing where the low sun shines
  * through it: the day's small bit of magic (the fireflies are the night's).
+ * The cursor's wind blows it aside.
  */
 export function Pollen() {
   const tier = useLookStore((s) => s.tier);
@@ -105,6 +110,7 @@ export function Pollen() {
         uniforms: {
           ...paletteUniformsFor(COLORS),
           ...sharedUniforms,
+          ...gustUniforms,
         },
         transparent: true,
         blending: AdditiveBlending,

@@ -10,6 +10,7 @@ import type { PaletteKey } from "@/config/palette";
 import { homeSections } from "@/config/sections";
 import { brushGLSL, getBrushAtlas } from "./brushes";
 import { dissolveGLSL, paintDissolveGLSL } from "./dissolve";
+import { gustGLSL, gustUniforms } from "./gust";
 import { terrainHeightGLSL } from "./landscape";
 import { paletteArrayFor, paletteGLSL, paletteUniformsFor, sharedUniforms } from "./palette";
 import { colorGLSL, hazeGLSL, noiseGLSL, windGLSL } from "./shaderChunks";
@@ -27,7 +28,7 @@ import { wetGLSL, wetUniforms } from "./WetCanvasPass";
  * The frame turns to face the camera like a billboard (and tips over to face
  * it in the night top view), so a plant always reads like it was painted from
  * this side, while the strokes stay fixed to the plant and move only with
- * the wind.
+ * the wind (the breeze, and the gusts from the cursor, see gust.ts).
  *
  * Paint is translucent where it is thin (see brushes.ts), so a layer draws
  * in two passes, the usual way to render foliage: the opaque core of every
@@ -186,6 +187,7 @@ varying float vRise;
 
 ${noiseGLSL}
 ${windGLSL}
+${gustGLSL}
 ${terrainHeightGLSL}
 
 // The stroke's path in the plant frame: a cubic Bezier from aStart to
@@ -207,11 +209,17 @@ vec3 strokePath(float t) {
 }
 
 // A point of the plant, bent by the wind: the higher a point sits on the
-// plant, the further it swings.
-vec3 inWind(vec3 q, float bend) {
+// plant, the further it swings. bend: angle sideways (x) and toward the
+// camera (z) in the plant frame, in radians. A plant lies down at most
+// almost flat, never folds under.
+vec3 inWind(vec3 q, vec2 bend) {
   float h = max(q.y, 0.0);
   float reach = h * h / max(aRoot.w, 0.05);
-  return vec3(q.x + sin(bend) * reach, q.y - (1.0 - cos(bend)) * reach, q.z);
+  float angle = length(bend);
+  vec2 dir = angle > 1e-5 ? bend / angle : vec2(0.0);
+  angle = min(angle, 1.4);
+  vec2 swing = dir * sin(angle) * reach;
+  return vec3(q.x + swing.x, q.y - (1.0 - cos(angle)) * reach, q.z + swing.y);
 }
 
 void main() {
@@ -228,6 +236,11 @@ void main() {
   vec2 facing = normalize(toCam.xz + vec2(0.0, 1e-4));
   vec3 right = vec3(facing.y, 0.0, -facing.x);
   vec3 up = vec3(0.0, 1.0, 0.0);
+  // The cursor's gust, measured on screen at the plant's middle and scaled
+  // like the layer's own sway: away from the cursor sideways, and toward
+  // the camera below it (away above it).
+  vec2 gust = cursorGust(base + vec3(0.0, aRoot.w * 0.6, 0.0), aMotion.x) * aMotion.y * uSway / 0.08;
+  vec2 bend = vec2(windSway(base, aMotion.x) * uSway * aMotion.y + gust.x, -gust.y);
   // Top view: the frame tips over to face the camera.
   vec3 camRight = vec3(viewMatrix[0][0], viewMatrix[1][0], viewMatrix[2][0]);
   vec3 camUp = vec3(viewMatrix[0][1], viewMatrix[1][1], viewMatrix[2][1]);
@@ -240,7 +253,6 @@ void main() {
   scale *= 1.0 - atFeet * smoothstep(0.3, 0.8, uTopView);
 
   // The point on the curve and, just ahead of it, the local direction.
-  float bend = windSway(base, aMotion.x) * uSway * aMotion.y;
   vec3 path = strokePath(u);
   // Height above the root, in metres.
   vRise = path.y;
@@ -438,6 +450,7 @@ export function createStrokeMaterial(options: StrokeMaterialOptions, pass: "core
       uBacklight: { value: options.backlight ?? 0 },
       uRootFade: { value: options.rootFade ?? 0.3 },
       ...wetUniforms,
+      ...gustUniforms,
       uSqueeze: viewUniforms.uTreeSqueeze,
       uTopView: viewUniforms.uTopView,
       uPxPerUnit: viewUniforms.uPxPerUnit,

@@ -105,6 +105,7 @@ export default function DevTools() {
     vignette: lookControl("vignette", 0, 1, 0.01),
     flowerDensity: lookControl("flowerDensity", 0.1, 2, 0.05, "flower density"),
     wind: lookControl("wind", 0, 3, 0.05),
+    cursorWind: lookControl("cursorWind", 0, 2, 0.05, "cursor wind"),
     glow: lookControl("glow", 0, 3, 0.05),
     fringe: lookControl("fringe", 0, 1, 0.01),
     wetBlend: lookControl("wetBlend", 0, 1, 0.01, "wet blend"),

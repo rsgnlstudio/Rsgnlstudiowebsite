@@ -8,13 +8,13 @@ import {
   type PerspectiveCamera,
   PlaneGeometry,
   ShaderMaterial,
-  Vector2,
   Vector3,
 } from "three";
 import { qualityPresets } from "@/config/look";
 import type { PaletteKey } from "@/config/palette";
 import { CURSOR_LIGHT_HEIGHT, nightCamera } from "@/config/scene";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
+import { useWindowPointer } from "@/hooks/useWindowPointer";
 import { useLookStore } from "@/store/look";
 import { DustTrail, dustUniforms } from "../painterly/dust";
 import { rayGroundDistance, terrainHeight } from "../painterly/landscape";
@@ -81,26 +81,7 @@ export function CursorLight() {
   const trail = useMemo(() => new DustTrail(size), [size]);
   useEffect(() => () => trail.dispose(), [trail]);
 
-  // The canvas ignores pointer events, so listen on the window.
-  const pointer = useRef({ position: new Vector2(), active: false });
-  useEffect(() => {
-    const onMove = (event: PointerEvent) => {
-      pointer.current.position.set(
-        (event.clientX / window.innerWidth) * 2 - 1,
-        -(event.clientY / window.innerHeight) * 2 + 1,
-      );
-      pointer.current.active = event.pointerType === "mouse";
-    };
-    const onLeave = () => {
-      pointer.current.active = false;
-    };
-    window.addEventListener("pointermove", onMove, { passive: true });
-    document.documentElement.addEventListener("pointerleave", onLeave);
-    return () => {
-      window.removeEventListener("pointermove", onMove);
-      document.documentElement.removeEventListener("pointerleave", onLeave);
-    };
-  }, []);
+  const pointer = useWindowPointer();
 
   const ground = useRef(new Vector3(...nightCamera.lookAt));
   const wander = useRef(0);

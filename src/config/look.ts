@@ -17,6 +17,8 @@ export interface LookSettings {
   flowerDensity: number;
   /** Wind sway multiplier; 0 freezes the vegetation. */
   wind: number;
+  /** Day: strength of the wind blowing out from the cursor; 0 turns it off. */
+  cursorWind: number;
   /** Glow (bloom) multiplier for the sun, moon, stars and glowing flowers. */
   glow: number;
   /** Night: brightness of the light that follows the cursor. */
@@ -42,6 +44,7 @@ export const defaultLook: LookSettings = {
   vignette: 0,
   flowerDensity: 0.3,
   wind: 1.7,
+  cursorWind: 1,
   glow: 1.15,
   lightIntensity: 2.6,
   lightRadius: 30,
