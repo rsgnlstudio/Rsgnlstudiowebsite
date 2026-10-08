@@ -4,9 +4,8 @@
  */
 
 export interface LookSettings {
-  /** Distance from the camera (world units) that is perfectly sharp. */
-  focusDistance: number;
-  /** Distance beyond the focus over which blur ramps to full. */
+  /** Distance beyond the focus over which blur ramps to full. The focus
+   * itself follows the ground at the centre of the frame (see Effects). */
   focusRange: number;
   /** Bokeh size multiplier for the depth-of-field effect. */
   blurStrength: number;
@@ -18,25 +17,18 @@ export interface LookSettings {
   flowerDensity: number;
   /** Wind sway multiplier; 0 freezes the vegetation. */
   wind: number;
-  /** Repaint the frame with brushstrokes (off shows the raw render). */
-  brushStrokes: boolean;
-  /** Brushstroke size multiplier. */
-  strokeScale: number;
   /** Glow (bloom) multiplier for the sun, moon, stars and glowing flowers. */
   glow: number;
 }
 
 export const defaultLook: LookSettings = {
-  focusDistance: 10,
-  focusRange: 70,
-  blurStrength: 2,
-  grain: 0.32,
-  vignette: 0.35,
-  flowerDensity: 1,
-  wind: 1,
-  brushStrokes: true,
-  strokeScale: 1,
-  glow: 1,
+  focusRange: 120,
+  blurStrength: 6.9,
+  grain: 0.3,
+  vignette: 0,
+  flowerDensity: 0.3,
+  wind: 1.7,
+  glow: 1.15,
 };
 
 export type QualityTier = "high" | "low";
@@ -50,9 +42,6 @@ export interface QualityPreset {
   conifers: number;
   /** Depth-of-field buffer resolution relative to the canvas. */
   dofResolution: number;
-  /** Number of brushstroke layers, coarse to fine (max 4). The finest
-   * layer is the most expensive effect, so the low tier drops it. */
-  strokeLayers: number;
   fireflies: number;
   stars: number;
   multisampling: number;
@@ -65,7 +54,6 @@ export const qualityPresets: Record<QualityTier, QualityPreset> = {
     grass: 10000,
     conifers: 150,
     dofResolution: 0.5,
-    strokeLayers: 4,
     fireflies: 260,
     stars: 900,
     multisampling: 0,
@@ -76,7 +64,6 @@ export const qualityPresets: Record<QualityTier, QualityPreset> = {
     grass: 4200,
     conifers: 100,
     dofResolution: 0.35,
-    strokeLayers: 3,
     fireflies: 120,
     stars: 500,
     multisampling: 0,

@@ -62,7 +62,10 @@ export function createSpriteGeometry(data: SpriteInstances, segments = 4) {
 /**
  * Vertex shader for SpriteInstances: a cylindrical billboard that turns to
  * face the camera around its vertical axis, bending in the wind with the tip
- * moving most. Needs uniforms uGrid (atlas cols, rows), uSway, uTime, uWind.
+ * moving most. In the night top view (uTopView -> 1) it tips over to face the
+ * camera, lying on the ground like a tree drawn on a map, scaled by
+ * uTopScale. Needs uniforms uGrid (atlas cols, rows), uSway, uTime, uWind,
+ * uTopView and uTopScale.
  *
  * With the SQUEEZE define, x positions are scaled by uniform uSqueeze and the
  * sprite is re-seated on the terrain (used to pull tree lines into view on
@@ -81,6 +84,8 @@ uniform vec2 uGrid;
 uniform float uSway;
 uniform float uTime;
 uniform float uWind;
+uniform float uTopView;
+uniform float uTopScale;
 #ifdef SQUEEZE
 uniform float uSqueeze;
 #endif
@@ -104,13 +109,27 @@ void main() {
   vec3 toCam = cameraPosition - base;
   vec2 facing = normalize(toCam.xz + vec2(0.0, 1e-4));
   vec3 right = vec3(facing.y, 0.0, -facing.x);
+  vec3 up = vec3(0.0, 1.0, 0.0);
+  // Top view: billboard toward the camera's screen axes instead.
+  vec3 camRight = vec3(viewMatrix[0][0], viewMatrix[1][0], viewMatrix[2][0]);
+  vec3 camUp = vec3(viewMatrix[0][1], viewMatrix[1][1], viewMatrix[2][1]);
+  right = normalize(mix(right, camRight, uTopView));
+  up = normalize(mix(up, camUp, uTopView));
 
+  vec2 size = aSize * mix(1.0, uTopScale, uTopView);
+  // The crowd right at the day camera's feet clumps into specks from above.
+  float atFeet = step(0.0, -base.z) * step(-base.z, 5.0) * step(abs(base.x), 8.0);
+  size *= 1.0 - atFeet * smoothstep(0.3, 0.8, uTopView);
   float t = uv.y;
   float bend = aLean + windSway(base, aPhase) * uSway;
-  vec2 local = vec2(position.x * aSize.x, t * aSize.y);
-  local.x += sin(bend) * aSize.y * t * t;
-  local.y -= (1.0 - cos(bend)) * aSize.y * t * t;
-  vec3 world = base + right * local.x + vec3(0.0, local.y, 0.0);
+  vec2 local = vec2(position.x * size.x, t * size.y);
+  local.x += sin(bend) * size.y * t * t;
+  local.y -= (1.0 - cos(bend)) * size.y * t * t;
+  vec3 world = base + right * local.x + up * local.y;
+  // Tipped-over sprites stay above the rolling ground, tips over roots.
+  if (uTopView > 0.0) {
+    world.y = max(world.y, terrainHeight(world.x, world.z) + (0.1 + 0.4 * t) * uTopView);
+  }
 
   float col = mod(aCell, uGrid.x);
   float row = floor(aCell / uGrid.x);

@@ -6,10 +6,11 @@ import { qualityPresets } from "@/config/look";
 import type { PaletteKey } from "@/config/palette";
 import { useLookStore } from "@/store/look";
 import { getBrushTextures, GRASS_ATLAS } from "../painterly/brushTextures";
-import { FIELD, terrainHeight } from "../painterly/landscape";
+import { FIELD, overheadPoint, terrainHeight } from "../painterly/landscape";
 import { paletteGLSL, paletteUniformsFor, sharedUniforms } from "../painterly/palette";
 import { mulberry32, valueNoise } from "../painterly/random";
 import { alphaGLSL, colorGLSL, hazeGLSL } from "../painterly/shaderChunks";
+import { viewUniforms } from "../painterly/view";
 import { allocateSprites, createSpriteGeometry, spriteVertexShader } from "../painterly/sprites";
 
 const COLORS = ["grassDeep", "grassMid", "grassLight", "groundWarm", "fieldShadow", "haze"] as const satisfies readonly PaletteKey[];
@@ -43,20 +44,34 @@ void main() {
 }
 `;
 
+/** Share of tufts spread over the night top view rather than the day wedge. */
+const OVERHEAD_SHARE = 0.35;
+
 function scatterGrass(count: number) {
   const data = allocateSprites(count);
   const rng = mulberry32(98765);
   for (let i = 0; i < count; i++) {
-    const band = rng();
-    const d =
-      band < 0.1
-        ? FIELD.near + rng() * 3
-        : band < 0.78
-          ? 4 + Math.pow(rng(), 1.2) * 22
-          : 26 + Math.pow(rng(), 1.4) * (FIELD.far - 26);
-    const x = (rng() * 2 - 1) * (d * 1.1 + 1.5);
+    let x: number;
+    let d: number;
+    let grow: number;
+    if (rng() < OVERHEAD_SHARE) {
+      // Spread over the night top view, sized to read from up there.
+      [x, d] = overheadPoint(rng);
+      grow = 2;
+    } else {
+      const band = rng();
+      d =
+        band < 0.1
+          ? FIELD.near + rng() * 3
+          : band < 0.78
+            ? 4 + Math.pow(rng(), 1.2) * 22
+            : 26 + Math.pow(rng(), 1.4) * (FIELD.far - 26);
+      x = (rng() * 2 - 1) * (d * 1.1 + 1.5);
+      // Far tufts grow so they stay readable.
+      grow = 1 + Math.max(0, d - 10) * 0.035;
+    }
     const z = -d;
-    const grow = 1 + Math.max(0, d - 10) * 0.035;
+
     const height = (0.4 + rng() * 0.55) * grow;
     const sun = valueNoise(x * 0.09, z * 0.09, 3);
 
@@ -93,6 +108,8 @@ export function Grass() {
           uAtlas: { value: getBrushTextures().grass },
           uGrid: { value: [GRASS_ATLAS.cols, GRASS_ATLAS.rows] },
           uSway: { value: 0.09 },
+          uTopView: viewUniforms.uTopView,
+          uTopScale: { value: 1 },
         },
       }),
     [],

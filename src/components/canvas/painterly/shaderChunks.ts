@@ -51,10 +51,14 @@ vec3 vary(vec3 c, vec3 v) {
 }
 `;
 
-/** Needs `uniform vec3 uHaze;` declared before it. */
+/**
+ * Needs `uniform vec3 uHaze;` declared before it. Haze starts further out the
+ * higher the camera is, so the night top view isn't washed out.
+ */
 export const hazeGLSL = /* glsl */ `
 vec3 applyHaze(vec3 c, float dist) {
-  float f = 1.0 - exp(-max(dist - 18.0, 0.0) * 0.0065);
+  float start = 18.0 + max(cameraPosition.y - 2.0, 0.0);
+  float f = 1.0 - exp(-max(dist - start, 0.0) * 0.0065);
   return mix(c, uHaze, clamp(f, 0.0, 0.92));
 }
 `;
@@ -72,8 +76,7 @@ float sharpAlpha(float a) {
 /** Needs uTime and uWind. Returns a sideways sway for a point at `pos`. */
 export const windGLSL = /* glsl */ `
 float windSway(vec3 pos, float phase) {
-  // Slow and coherent: under the brushstroke pass, fast motion reads as
-  // flicker, so the meadow breathes rather than shivers.
+  // Slow and coherent, so the meadow breathes rather than shivers.
   float gust = vnoise(pos.xz * 0.04 + vec2(uTime * 0.05, uTime * 0.02));
   float sway = sin(uTime * 0.45 + phase * 0.3 + pos.x * 0.12 + pos.z * 0.08) * 0.7
     + sin(uTime * 0.8 + phase) * 0.15;

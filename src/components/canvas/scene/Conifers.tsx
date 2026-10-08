@@ -96,6 +96,8 @@ export function Conifers() {
           uGrid: { value: [CONIFER_ATLAS.cols, CONIFER_ATLAS.rows] },
           uSway: { value: 0.01 },
           uSqueeze: viewUniforms.uTreeSqueeze,
+          uTopView: viewUniforms.uTopView,
+          uTopScale: { value: 0.5 },
         },
       }),
     [],

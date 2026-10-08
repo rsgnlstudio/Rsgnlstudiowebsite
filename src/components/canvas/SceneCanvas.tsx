@@ -9,7 +9,7 @@ import { useSceneStore } from "@/store/scene";
 import { FrameloopController } from "./FrameloopController";
 import { Scene } from "./Scene";
 
-// Statically false in production, so leva and r3f-perf are tree-shaken out.
+// Statically false in production, so leva is tree-shaken out.
 const DevTools =
   process.env.NODE_ENV === "development"
     ? lazy(() => import("./dev/DevTools"))
@@ -40,36 +40,39 @@ export default function SceneCanvas() {
   }, []);
 
   return (
-    <div
-      ref={wrapperRef}
-      aria-hidden
-      className="pointer-events-none fixed inset-0 z-0"
-    >
-      <Canvas
-        dpr={qualityPresets[tier].dpr}
-        flat // unlit, painted colors: no tone mapping
-        gl={{
-          antialias: false, // EffectComposer handles multisampling
-          powerPreference: "high-performance",
-          stencil: false,
-        }}
-        camera={{
-          position: [...initialCamera.position],
-          fov: initialCamera.fov,
-          near: 0.1,
-          far: 1000,
-        }}
+    <>
+      <div
+        ref={wrapperRef}
+        aria-hidden
+        className="pointer-events-none fixed inset-0 z-0"
       >
-        <FrameloopController />
-        <Suspense fallback={null}>
-          <Scene />
-        </Suspense>
-        {DevTools && (
+        <Canvas
+          dpr={qualityPresets[tier].dpr}
+          flat // unlit, painted colors: no tone mapping
+          gl={{
+            antialias: false, // EffectComposer handles multisampling
+            powerPreference: "high-performance",
+            stencil: false,
+          }}
+          camera={{
+            position: [...initialCamera.position],
+            fov: initialCamera.fov,
+            near: 0.1,
+            far: 1000,
+          }}
+        >
+          <FrameloopController />
           <Suspense fallback={null}>
-            <DevTools />
+            <Scene />
           </Suspense>
-        )}
-      </Canvas>
-    </div>
+        </Canvas>
+      </div>
+      {/* DOM panel; outside the wrapper, which ignores pointer events. */}
+      {DevTools && (
+        <Suspense fallback={null}>
+          <DevTools />
+        </Suspense>
+      )}
+    </>
   );
 }
