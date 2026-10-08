@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { BufferGeometry, Float32BufferAttribute, ShaderMaterial, Vector4 } from "three";
 import type { PaletteKey } from "@/config/palette";
 import { paletteGLSL, paletteUniformsFor, sharedUniforms } from "../painterly/palette";
-import { dissolveGLSL, paintDissolveGLSL } from "../painterly/dissolve";
+import { NIGHT_LIGHT_KEYS, nightLightGLSL, nightLightUniforms } from "../painterly/nightLight";
 import { brushGLSL, getBrushAtlas } from "../painterly/brushes";
 import { noiseGLSL } from "../painterly/shaderChunks";
 import { strokeFieldGLSL } from "../painterly/strokeField";
@@ -16,7 +16,7 @@ const COLORS = [
   "haze",
   "skyHorizon",
   "sunGlow",
-  "dustEdge",
+  ...NIGHT_LIGHT_KEYS,
 ] as const satisfies readonly PaletteKey[];
 
 /** Ridge layers, nearest first: distance, base height, ridge amplitude. */
@@ -43,13 +43,11 @@ ${paletteGLSL(COLORS)}
 uniform vec4 uLayers[${LAYERS.length}];
 uniform vec3 uSunDir;
 uniform float uDusk;
-uniform float uDissolve;
 uniform sampler2D uBrushes;
 varying vec3 vWorld;
 varying float vLayer;
 ${noiseGLSL}
-${dissolveGLSL}
-${paintDissolveGLSL}
+${nightLightGLSL}
 ${brushGLSL}
 
 float ridge(float x, vec4 layer) {
@@ -135,9 +133,7 @@ void main() {
   if (p.y > top - gLayer.z * 0.03 && paint.a < 0.45) discard;
   vec3 col = fieldLayer(p, dx, dy, size * 0.5, vec2(1.7, 0.55), 0.5, 0.0, vLayer * 2.0 + 1.0, paint.rgb, 0.5, 0.25).rgb;
 
-  // Vertical planes: fold height into depth so the crests crumble first.
-  vec3 edge = dissolvePaint(vec3(vWorld.x, 0.0, vWorld.z - vWorld.y * 2.0));
-  gl_FragColor = vec4(col + edge, 1.0);
+  gl_FragColor = vec4(morphPaint(col, vWorld), 1.0);
 }
 `;
 
@@ -176,7 +172,7 @@ export function Mountains() {
           ...paletteUniformsFor(COLORS),
           uSunDir: sharedUniforms.uSunDir,
           uDusk: sharedUniforms.uDusk,
-          uDissolve: sharedUniforms.uDissolve,
+          ...nightLightUniforms,
           uLayers: {
             value: LAYERS.map((l, i) => new Vector4(i * 13.7 + 2, l.base, l.amp, l.freq)),
           },

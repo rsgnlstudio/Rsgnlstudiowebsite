@@ -6,6 +6,7 @@ import { BackSide, type Mesh, ShaderMaterial } from "three";
 import type { PaletteKey } from "@/config/palette";
 import { paletteGLSL, paletteUniformsFor, sharedUniforms } from "../painterly/palette";
 import { brushGLSL, getBrushAtlas } from "../painterly/brushes";
+import { voidGLSL } from "../painterly/nightLight";
 import { noiseGLSL } from "../painterly/shaderChunks";
 import { strokeFieldGLSL } from "../painterly/strokeField";
 
@@ -40,10 +41,11 @@ uniform vec3 uSunDir;
 uniform float uSunStrength;
 uniform vec3 uMoonDir;
 uniform float uMoonStrength;
-uniform float uDissolve;
+uniform float uMorph;
 uniform sampler2D uBrushes;
 varying vec3 vDir;
 ${noiseGLSL}
+${voidGLSL}
 ${brushGLSL}
 
 float cloudField(vec2 p) {
@@ -140,9 +142,9 @@ void main() {
   float moonDisc = smoothstep(0.99955, 0.99972, moonDot);
   col = mix(col, uMoon * 2.2, moonDisc * uMoonStrength);
 
-  // Night: the sky gives way to the dark the dust floats in, faintly clouded.
-  float fog = fbm(dir.xz * 2.2 + dir.y * 1.3 + uTime * 0.004);
-  col = mix(col, uVoid * (0.55 + 0.9 * fog), smoothstep(0.0, 0.75, uDissolve));
+  // Night: the sky gives way to the dark the dust floats in, faintly
+  // clouded, along with the paint (morphPaint).
+  col = mix(col, voidColor(dir), smoothstep(0.08, 0.9, uMorph));
 
   gl_FragColor = vec4(col, 1.0);
 }
@@ -152,7 +154,7 @@ void main() {
  * Painted sky dome, brushed in broad strokes: each stroke is one color of
  * the gradient and clouds underneath (from the palette), the sun (sinking
  * behind the mountains as `night` rises, with a sunset glow along the
- * horizon) and the moon. As the day dissolves into dust, it fades to the
+ * horizon) and the moon. As the day morphs into the night, it fades to the
  * dark void of the night world.
  */
 export function Sky() {
@@ -170,7 +172,7 @@ export function Sky() {
           uSunStrength: sharedUniforms.uSunStrength,
           uMoonDir: sharedUniforms.uMoonDir,
           uMoonStrength: sharedUniforms.uMoonStrength,
-          uDissolve: sharedUniforms.uDissolve,
+          uMorph: sharedUniforms.uMorph,
           uBrushes: { value: getBrushAtlas() },
         },
         side: BackSide,

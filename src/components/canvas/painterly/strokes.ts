@@ -9,9 +9,9 @@ import {
 import type { PaletteKey } from "@/config/palette";
 import { homeSections } from "@/config/sections";
 import { brushGLSL, getBrushAtlas } from "./brushes";
-import { dissolveGLSL, paintDissolveGLSL } from "./dissolve";
 import { gustGLSL, gustUniforms } from "./gust";
 import { terrainHeightGLSL } from "./landscape";
+import { NIGHT_LIGHT_KEYS, nightLightGLSL, nightLightUniforms } from "./nightLight";
 import { paletteArrayFor, paletteGLSL, paletteUniformsFor, sharedUniforms } from "./palette";
 import { colorGLSL, hazeGLSL, noiseGLSL, windGLSL } from "./shaderChunks";
 import { viewUniforms } from "./view";
@@ -293,7 +293,14 @@ void main() {
 }
 `;
 
-const BASE_KEYS = ["haze", "dustEdge", "flowerGlow", "sunGlow", "groundMid", "grassMid"] as const satisfies readonly PaletteKey[];
+const BASE_KEYS = [
+  "haze",
+  "flowerGlow",
+  "sunGlow",
+  "groundMid",
+  "grassMid",
+  ...NIGHT_LIGHT_KEYS,
+] as const satisfies readonly PaletteKey[];
 
 function strokeFragmentShader(count: number, shadow: PaletteKey, light: PaletteKey) {
   const name = (key: string) => `u${key[0].toUpperCase()}${key.slice(1)}`;
@@ -303,7 +310,6 @@ uniform sampler2D uBrushes;
 uniform vec3 uColors[${count}];
 ${paletteGLSL(keys)}
 uniform float uGlow;
-uniform float uDissolve;
 uniform float uHazeScale;
 uniform float uRelief;
 uniform float uBacklight;
@@ -330,8 +336,7 @@ const float CORE = 0.9;
 ${noiseGLSL}
 ${colorGLSL}
 ${hazeGLSL}
-${dissolveGLSL}
-${paintDissolveGLSL}
+${nightLightGLSL}
 ${brushGLSL}
 ${wetGLSL}
 
@@ -348,7 +353,6 @@ void main() {
 #else
   if (opacity < CORE) discard;
 #endif
-  vec3 edge = dissolvePaint(vWorld);
 
   // Impasto slope from neighbouring texels, turned into screen space.
   vec2 du = vec2(BRUSH_TEXEL.x * 1.5, 0.0);
@@ -386,7 +390,8 @@ void main() {
   // are lost into their surroundings instead of cut out against them.
   float pickup = 0.4 + 0.4 * (1.0 - brush.b) + 0.5 * (1.0 - smoothstep(0.15, 0.95, opacity));
   col = wetMix(col, pickup);
-  col += edge;
+  // Day -> night: re-lit by the night light, then sunk into the void.
+  col = morphPaint(col, vWorld);
 #ifdef FRINGE
   gl_FragColor = vec4(col, opacity);
 #else
@@ -440,6 +445,7 @@ export function createStrokeMaterial(options: StrokeMaterialOptions, pass: "core
     uniforms: {
       ...paletteUniformsFor(keys),
       ...sharedUniforms,
+      ...nightLightUniforms,
       uColors: { value: paletteArrayFor(options.colors) as Color[] },
       uBrushes: { value: getBrushAtlas() },
       uSway: { value: options.sway ?? 0.08 },

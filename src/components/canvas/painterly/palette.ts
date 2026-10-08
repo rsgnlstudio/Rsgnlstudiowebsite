@@ -1,5 +1,5 @@
 import { Color, MathUtils, Vector3 } from "three";
-import { DISSOLVE_RANGE } from "@/config/scene";
+import { MORPH_RANGE } from "@/config/scene";
 import {
   PALETTE_KEYS,
   type Palette,
@@ -81,15 +81,12 @@ export const sharedUniforms = {
   uMoonDir: { value: new Vector3(0, -1, 0) },
   uMoonStrength: { value: 0 },
   /**
-   * Dissolve threshold, -0.1 (all painted) .. 1.1 (all dust). Compared with
-   * dissolveField() (painterly/dissolve.ts): painted surfaces are gone where
-   * the field is below it, dust exists there.
+   * Day -> night morph, 0 (painted day) .. 1 (dust night). The same
+   * everywhere: the paint is re-lit by the night light (painterly/nightLight.ts)
+   * and sinks into the void, while the dust condenses under the same light.
    */
-  uDissolve: { value: -0.1 },
+  uMorph: { value: 0 },
 };
-
-/** Painted surfaces are fully gone above this, dust is fully gone below 0. */
-export const DISSOLVE_DONE = 1.1;
 
 const direction = (target: Vector3, azimuth: number, elevation: number) =>
   target.set(
@@ -101,7 +98,7 @@ const direction = (target: Vector3, azimuth: number, elevation: number) =>
 /**
  * Applies `night` to the scene: mixes the palette day -> dusk -> night, sinks
  * the sun behind the mountains in the gap between the trees, raises the moon,
- * turns up the night glow and moves the day -> dust dissolve.
+ * turns up the night glow and moves the day -> dust morph.
  */
 export function updateLight(night: number) {
   const n = MathUtils.clamp(night, 0, 1);
@@ -124,7 +121,6 @@ export function updateLight(night: number) {
   u.uSunStrength.value = 1 - MathUtils.smoothstep(n, 0.5, 0.65);
   direction(u.uMoonDir.value, 0.14, MathUtils.lerp(-0.15, 0.25, MathUtils.smoothstep(n, 0.5, 1)));
   u.uMoonStrength.value = MathUtils.smoothstep(n, 0.55, 0.95);
-  // Linear in night (already eased), so the front moves at an even pace.
-  const dissolve = MathUtils.clamp((n - DISSOLVE_RANGE[0]) / (DISSOLVE_RANGE[1] - DISSOLVE_RANGE[0]), 0, 1);
-  u.uDissolve.value = MathUtils.lerp(-0.1, DISSOLVE_DONE, dissolve);
+  // Linear in night (already eased); the shaders shape it further.
+  u.uMorph.value = MathUtils.clamp((n - MORPH_RANGE[0]) / (MORPH_RANGE[1] - MORPH_RANGE[0]), 0, 1);
 }

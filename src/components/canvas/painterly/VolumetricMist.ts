@@ -130,13 +130,12 @@ void mainImage(const in vec4 inputColor, const in vec2 uv, const in float depth,
  * scene's depth, so it wraps around trees and flowers instead of clipping
  * like a flat card. Lit by the low sun: shadowed where cloud lies between a
  * point and the sun, glowing where the sun shines through. It thins out as
- * the camera rises to the night view and each bank goes as the dissolve
- * reaches it. Runs in its own pass before depth of field, so it blurs with
+ * the camera rises to the night view and as the day morphs into the night.
+ * Runs in its own pass before depth of field, so it blurs with
  * what's behind it.
  */
 export class VolumetricMist extends Effect {
   private readonly camera: Camera;
-  private readonly centres: Vector3[];
 
   constructor(camera: Camera) {
     const banks = BANKS.map(([x, d, y, radius]) => new Vector4(x, terrainHeight(x, -d) + y, -d, radius));
@@ -157,7 +156,6 @@ export class VolumetricMist extends Effect {
       ]),
     });
     this.camera = camera;
-    this.centres = banks.map((b) => new Vector3(b.x, b.y, b.z));
   }
 
   override update() {
@@ -168,13 +166,11 @@ export class VolumetricMist extends Effect {
     u.get("uCamPos")!.value.setFromMatrixPosition(this.camera.matrixWorld);
     // Gone as the camera rises: from above it would just veil the meadow.
     u.get("uFade")!.value = 1 - smoothstep(viewUniforms.uTopView.value, 0.15, 0.5);
-    // The dissolve takes the banks one by one as its front passes them, far
-    // ones first (roughly where dissolveField puts each bank's centre).
+    // And it thins out everywhere at once as the day morphs into the night.
     const density = u.get("uDensity")!.value as number[];
-    const front = sharedUniforms.uDissolve.value;
+    const clear = 1 - smoothstep(sharedUniforms.uMorph.value, 0.1, 0.6);
     BANKS.forEach((bank, i) => {
-      const field = 0.18 + 0.36 * (1 - smoothstep(-this.centres[i].z, -30, 260));
-      density[i] = bank[4] * (1 - smoothstep(front, field - 0.1, field + 0.1));
+      density[i] = bank[4] * clear;
     });
   }
 }

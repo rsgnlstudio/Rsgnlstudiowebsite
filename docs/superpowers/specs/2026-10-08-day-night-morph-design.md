@@ -53,23 +53,25 @@ dust condenses everywhere at once under that same light.
   - `night = paint luminance/hue darkened to the moonlit base + cursor light
     falloff on it` (HDR near the light, so it blooms),
   - `col = mix(col, night, smoothstep(0.0, 0.5, uMorph))`,
-  - `col = mix(col, uVoid, smoothstep(0.45, 1.0, uMorph))`.
-- At `uMorph = 1` the paint equals `uVoid`, the background the dust night sits
-  on, so hiding `PaintedWorld` there is invisible.
+  - `col = mix(col, voidColor(viewDir), smoothstep(0.5, 1.0, uMorph))`
+    (`voidColor` is the same faintly clouded dark the sky fades to).
+- At `uMorph = 1` the paint equals `voidColor`, the background the dust night
+  sits on, so hiding `PaintedWorld` there is invisible.
 - Brush, stroke layout, wind and wet canvas code are untouched; at
   `uMorph = 0` the new terms are exactly zero.
 
 ### 3. Dust condenses everywhere
 
-- Dust brightness fades in globally: `appear = smoothstep(0.25, 0.85, uMorph)`
+- Dust brightness fades in globally: `appear = smoothstep(0.2, 0.75, uMorph)`
   (motes keep a later fade-in), overlapping the paint as it darkens, under the
   same light model.
 - Remove the per-speck `release` lift and ember glow (they only made sense
   with a moving front).
 - While the paint is drawn it writes depth, and the specks sit on its surface.
-  Pull specks slightly toward the camera in view space, scaled by
-  `1 - smoothstep(0.9, 1.0, uMorph)`, so the paint doesn't hide them. At
-  `uMorph = 1` the offset is zero.
+  Pull specks 6% toward the camera in depth only (the view
+  vector is scaled, so the screen position and point size are unchanged), so
+  the paint doesn't hide them. With the paint gone at night it changes
+  nothing visible.
 
 ### Cleanup
 
@@ -83,3 +85,12 @@ dust condenses everywhere at once under that same light.
 - `npm run lint`, `npm run typecheck`, `npm run build`.
 - With the leva override, screenshot `night` at 0, 0.3, 0.55, 0.7, 0.85 and 1.
 - Screenshot `night = 0` and `1` on `main` and compare: they must match.
+
+## Outcome notes
+
+- The cursor light comes up over `uMorph` 0.1–0.75, so it shows on the paint
+  before the dust condenses.
+- On `main` some night specks never finish the old "release" (where the
+  dissolve field is high), so a few patches glow cyan (`dustEdge`) for good.
+  That glow belonged to the moving front and is gone with it; otherwise the
+  night end state matches.
