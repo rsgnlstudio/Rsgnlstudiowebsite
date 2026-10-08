@@ -52,6 +52,7 @@ src/
       scene/           Scene parts: CameraRig, Sky, Lights, Terrain, Vegetation, Stars, Effects
       dev/             Dev-only tools (leva controls, r3f-perf), lazy-loaded in development
     sections/          DOM sections and per-page scroll controllers (e.g. HomeScroll)
+  fonts/               Calendas Plus (woff2) loaded with next/font/local
   config/              Section config (camera keyframes, night targets) and scene modes
   hooks/               useSectionScroll, useSceneMode, usePrefersReducedMotion
   lib/                 GSAP setup (plugin registration) and the Lenis + GSAP ticker integration
@@ -75,6 +76,7 @@ Scaffolded:
 - Lenis + GSAP ScrollTrigger scroll hook with full cleanup on unmount
 - `sceneMode` that pauses the frameloop and hides the canvas when `"hidden"`
 - leva `night` override and r3f-perf (dev only)
+- Calendas Plus as the default typeface (`font-sans` and `font-display`), self-hosted via `next/font/local`
 - Placeholder design tokens in `src/app/globals.css`
 
 Still placeholders:
