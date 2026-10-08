@@ -19,6 +19,7 @@
   /* Type scale */
   --text-headline: clamp(3rem, 9vw, 9rem);
   --text-headline--line-height: 0.95;
+  --text-headline--letter-spacing: -0.04em;
   --text-display: 4rem;
   --text-display--line-height: 1;
   --text-heading: 2rem;
