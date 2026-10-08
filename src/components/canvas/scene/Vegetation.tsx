@@ -2,12 +2,13 @@
 
 import { Conifers } from "./Conifers";
 import { Flowers } from "./Flowers";
-import { Foreground } from "./Foreground";
 import { Grass } from "./Grass";
+import { Pollen } from "./Pollen";
 
 /**
- * All instanced painted vegetation, back to front: conifer silhouettes, the
- * grass and flower field, and the camera-locked out-of-focus foreground.
+ * All painted vegetation, back to front: the conifers, then the grass and
+ * the flower field, which runs right up to the lens, and the pollen
+ * drifting over it.
  */
 export function Vegetation() {
   return (
@@ -15,7 +16,7 @@ export function Vegetation() {
       <Conifers />
       <Grass />
       <Flowers />
-      <Foreground />
+      <Pollen />
     </group>
   );
 }

@@ -28,8 +28,9 @@ Before calling work done, run lint, typecheck, and build.
 - Each page claims the scene with `useSceneMode(mode)`. The default and fallback mode is `"hidden"`, which pauses the frameloop and hides the canvas. To add a mode, extend `SCENE_MODES` and `sectionsByMode` in `src/config/scene.ts`.
 - Don't add routes or assume a navigation structure unless asked.
 - Never hardcode a color in a shader or material. Add it to `src/config/palette.ts` (day, dusk and night) and read it through `paletteUniformsFor` / `paletteGLSL` from `src/components/canvas/painterly/palette.ts`. `Lights` calls `updateLight(night)` every frame (palette, sun, moon, glow). Anything that should glow at night must output HDR (> 1) color scaled by `uGlow`, so bloom picks it up. 
-- Materials are unlit `ShaderMaterial`s. Vegetation is instanced (`painterly/sprites.ts`): one draw call per kind. Don't add per-object meshes for things that repeat.
-- Tunable look values live in `src/config/look.ts` (defaults and quality presets) and `src/store/look.ts` (runtime, canvas-internal, edited by leva). Per-frame code reads it with `getState()`. The depth-of-field focus is not a setting: `Effects` focuses on the ground at the centre of the frame.
+- Materials are unlit `ShaderMaterial`s. Don't add per-object meshes for things that repeat.
+- The day world is built from brushstrokes, never from a brush filter over the frame. Plants are painted as strokes (`painterly/plants.ts`) into a `StrokeBuffer` and drawn with `StrokeLayer` (instanced, one layer per kind, opaque core plus translucent fringe). Big surfaces use `strokeFieldGLSL`. Brushes come from the simulated atlas in `painterly/brushes.ts`; its alpha is paint opacity, so thin paint stays translucent. Nothing in a stroke may change over time except through the wind (anything else reads as jitter). Painted materials mix with the wet canvas (`wetMix` from `painterly/WetCanvasPass.ts`) so colors bleed between neighbours.
+- Tunable look values live in `src/config/look.ts` (defaults and quality presets) and `src/store/look.ts` (runtime, canvas-internal, edited by leva). Per-frame code reads it with `getState()`. The depth-of-field focus is not a setting: `Effects` focuses on the near meadow, on the ground a little below the centre of the frame (`FOCUS_BELOW_CENTRE`).
 - `terrainHeight` in `painterly/landscape.ts` has a GLSL twin (`terrainHeightGLSL`). Keep the two in sync.
 
 ## Conventions
@@ -44,5 +45,5 @@ Before calling work done, run lint, typecheck, and build.
 
 ## Known quirks
 
-- `Effects` patches postprocessing's circle-of-confusion shader by string replacement (`patchCircleOfConfusion`). If postprocessing changes that shader, it logs a warning and falls back to the default ramp. Recheck after upgrading.
+- `Effects` patches postprocessing's circle-of-confusion shader by string replacement (`patchCircleOfConfusion`; it also limits the sky's blur via the CoC shader's `depth`). If postprocessing changes that shader, it logs a warning and falls back to the default ramp. Recheck after upgrading.
 - `THREE.Clock` deprecation warnings in the console come from @react-three/fiber 9.8 internals, not from our code.

@@ -1,76 +1,66 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { DoubleSide, ShaderMaterial } from "three";
 import { qualityPresets } from "@/config/look";
-import type { PaletteKey } from "@/config/palette";
 import { useLookStore } from "@/store/look";
-import { CONIFER_ATLAS, getBrushTextures } from "../painterly/brushTextures";
 import { scatterConifers } from "../painterly/conifers";
-import { dissolveGLSL, paintDissolveGLSL } from "../painterly/dissolve";
-import { paletteGLSL, paletteUniformsFor, sharedUniforms } from "../painterly/palette";
-import { alphaGLSL, colorGLSL, hazeGLSL, noiseGLSL } from "../painterly/shaderChunks";
-import { viewUniforms } from "../painterly/view";
-import { createSpriteGeometry, spriteVertexShader } from "../painterly/sprites";
+import { paintConifer, PLANT_COLORS } from "../painterly/plants";
+import { mulberry32 } from "../painterly/random";
+import { StrokeBuffer } from "../painterly/strokes";
+import { StrokeLayer } from "./StrokeLayer";
 
-const COLORS = ["coniferDark", "coniferLight", "haze", "dustEdge"] as const satisfies readonly PaletteKey[];
-
-const fragmentShader = /* glsl */ `
-${paletteGLSL(COLORS)}
-uniform sampler2D uAtlas;
-varying vec2 vUv;
-varying vec2 vLocal;
-varying float vTint;
-varying vec3 vVar;
-uniform float uDissolve;
-varying float vDist;
-varying vec3 vWorld;
-${noiseGLSL}
-${colorGLSL}
-${hazeGLSL}
-${alphaGLSL}
-${dissolveGLSL}
-${paintDissolveGLSL}
-
-void main() {
-  vec4 tex = texture2D(uAtlas, vUv);
-  if (sharpAlpha(tex.a) < 0.5) discard;
-  vec3 edge = dissolvePaint(vWorld);
-  vec3 col = mix(uConiferDark, uConiferLight, pow(tex.r, 2.0));
-  col = vary(col, vVar);
-  // Distant trees sink further into the haze than the ground does.
-  gl_FragColor = vec4(applyHaze(col, vDist * vTint) + edge, 1.0);
+function paintConifers(count: number) {
+  const layout = scatterConifers(count);
+  const out = new StrokeBuffer();
+  const rng = mulberry32(777);
+  for (let i = 0; i < layout.count; i++) {
+    const far = layout.far[i] === 1;
+    paintConifer(
+      {
+        out,
+        rng,
+        root: [layout.offset[i * 3], layout.offset[i * 3 + 1], layout.offset[i * 3 + 2]],
+        height: layout.size[i * 2 + 1],
+        phase: layout.phase[i],
+        light: 1 + rng() * 0.3,
+        variation: [layout.variation[i * 3], layout.variation[i * 3 + 1], layout.variation[i * 3 + 2]],
+        detail: far ? 0 : 1,
+      },
+      layout.size[i * 2],
+      far,
+    );
+  }
+  return out;
 }
-`;
 
-/** Near-black conifer silhouettes at the edges of the meadow. */
+/**
+ * The conifers framing the meadow, each painted as a trunk smear and tiers
+ * of near-black branch jabs with a few sunlit tips.
+ */
 export function Conifers() {
   const tier = useLookStore((s) => s.tier);
   const count = qualityPresets[tier].conifers;
 
-  const geometry = useMemo(() => createSpriteGeometry(scatterConifers(count), 2), [count]);
+  const geometry = useMemo(() => paintConifers(count).createGeometry(6), [count]);
   useEffect(() => () => geometry.dispose(), [geometry]);
 
-  const material = useMemo(
-    () =>
-      new ShaderMaterial({
-        vertexShader: spriteVertexShader,
-        fragmentShader,
-        side: DoubleSide,
-        defines: { SQUEEZE: "" },
-        uniforms: {
-          ...paletteUniformsFor(COLORS),
-          ...sharedUniforms,
-          uAtlas: { value: getBrushTextures().conifer },
-          uGrid: { value: [CONIFER_ATLAS.cols, CONIFER_ATLAS.rows] },
-          uSway: { value: 0.01 },
-          uSqueeze: viewUniforms.uTreeSqueeze,
-          uTopView: viewUniforms.uTopView,
-          uTopScale: { value: 0.5 },
-        },
-      }),
-    [],
+  return (
+    <StrokeLayer
+      name="conifers"
+      geometry={geometry}
+      options={{
+        colors: PLANT_COLORS,
+        shadow: "mountainNear",
+        light: "grassMid",
+        sway: 0.012,
+        topScale: 0.5,
+        squeeze: true,
+        minPx: 2.5,
+        hazeScale: 0.35,
+        rootFade: 2.5,
+        relief: 0,
+        backlight: 0,
+      }}
+    />
   );
-
-  return <mesh name="conifers" geometry={geometry} material={material} frustumCulled={false} />;
 }

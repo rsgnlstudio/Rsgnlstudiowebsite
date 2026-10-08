@@ -5,7 +5,7 @@
 
 export interface LookSettings {
   /** Distance beyond the focus over which blur ramps to full. The focus
-   * itself follows the ground at the centre of the frame (see Effects). */
+   * itself follows the near meadow, below the centre of the frame (see Effects). */
   focusRange: number;
   /** Bokeh size multiplier for the depth-of-field effect. */
   blurStrength: number;
@@ -31,11 +31,13 @@ export interface LookSettings {
   dustKick: number;
   /** Strength of the chromatic fringe toward the frame edges, 0..1. */
   fringe: number;
+  /** How much strokes pick up the wet paint around them (wet in wet), 0..1. */
+  wetBlend: number;
 }
 
 export const defaultLook: LookSettings = {
-  focusRange: 120,
-  blurStrength: 6.9,
+  focusRange: 45,
+  blurStrength: 4.5,
   grain: 0.3,
   vignette: 0,
   flowerDensity: 0.3,
@@ -47,6 +49,7 @@ export const defaultLook: LookSettings = {
   dustBokeh: 1,
   dustKick: 1,
   fringe: 0.35,
+  wetBlend: 0.85,
 };
 
 export type QualityTier = "high" | "low";
@@ -61,6 +64,8 @@ export interface QualityPreset {
   /** Depth-of-field buffer resolution relative to the canvas. */
   dofResolution: number;
   fireflies: number;
+  /** Glowing pollen drifting over the meadow by day. */
+  pollen: number;
   stars: number;
   multisampling: number;
   /** Night dust points: ground, trees, flower clusters, floating motes. */
@@ -77,6 +82,7 @@ export const qualityPresets: Record<QualityTier, QualityPreset> = {
     conifers: 150,
     dofResolution: 0.5,
     fireflies: 260,
+    pollen: 320,
     stars: 900,
     multisampling: 0,
     dust: { ground: 240000, trees: 90000, flowers: 36000, motes: 900 },
@@ -89,6 +95,7 @@ export const qualityPresets: Record<QualityTier, QualityPreset> = {
     conifers: 100,
     dofResolution: 0.35,
     fireflies: 120,
+    pollen: 140,
     stars: 500,
     multisampling: 0,
     dust: { ground: 100000, trees: 40000, flowers: 15000, motes: 400 },

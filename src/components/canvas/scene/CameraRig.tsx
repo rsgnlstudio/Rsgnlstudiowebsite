@@ -156,16 +156,14 @@ export function CameraRig() {
       camera.updateProjectionMatrix();
     }
 
-    // The camera-locked foreground counter-moves like a world-fixed object.
-    viewUniforms.uTanHalfFov.value = Math.tan(MathUtils.degToRad(fov / 2));
-    viewUniforms.uAspect.value = camera.aspect;
-    viewUniforms.uParallax.value.set(-offset.x, -offset.y);
     viewUniforms.uTreeSqueeze.value = MathUtils.lerp(
       MathUtils.clamp(0.4 + 0.6 * (camera.aspect / REFERENCE_ASPECT), 0.4, 1),
       1,
       t,
     );
     viewUniforms.uTopView.value = t;
+    viewUniforms.uPxPerUnit.value =
+      (state.size.height * state.viewport.dpr) / (2 * Math.tan(MathUtils.degToRad(fov / 2)));
   });
 
   return null;
