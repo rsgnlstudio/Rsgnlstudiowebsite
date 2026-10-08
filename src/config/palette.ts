@@ -52,8 +52,6 @@ export const PALETTE_KEYS = [
   "leafDark",
   "leafMid",
   "leafLight",
-  // Dark paint showing between brushstrokes
-  "underpaint",
 ] as const;
 
 export type PaletteKey = (typeof PALETTE_KEYS)[number];
@@ -105,7 +103,6 @@ export const dayPalette: Palette = {
   leafMid: "#2f5a2c",
   leafLight: "#9cc450",
 
-  underpaint: "#5a2238",
 };
 
 /** Sunset: the sun sinks behind the mountains, everything burns orange and magenta. */
@@ -153,7 +150,6 @@ export const duskPalette: Palette = {
   leafMid: "#3e2a22",
   leafLight: "#a8703a",
 
-  underpaint: "#3c1022",
 };
 
 /** Cold moonlit night; flowers and fireflies glow. */
@@ -201,7 +197,6 @@ export const nightPalette: Palette = {
   leafMid: "#081a26",
   leafLight: "#1a4a52",
 
-  underpaint: "#060a26",
 };
 
 export const palettes: Record<PaletteSet, Palette> = {

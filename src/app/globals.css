@@ -12,6 +12,9 @@
   --color-foreground: #ffffff;
   --color-muted: #808080;
   --color-accent: #808080;
+  /* Text drawn over the scene: dark over the day sky, light over the night */
+  --color-on-day: #2a2118;
+  --color-on-night: #f4efe6;
 
   /* Type scale */
   --text-display: 4rem;

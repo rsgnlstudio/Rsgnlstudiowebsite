@@ -11,9 +11,10 @@ import {
 import { qualityPresets } from "@/config/look";
 import type { PaletteKey } from "@/config/palette";
 import { useLookStore } from "@/store/look";
-import { terrainHeight } from "../painterly/landscape";
+import { overheadPoint, terrainHeight } from "../painterly/landscape";
 import { paletteGLSL, paletteUniformsFor, sharedUniforms } from "../painterly/palette";
 import { mulberry32 } from "../painterly/random";
+import { viewUniforms } from "../painterly/view";
 
 const COLORS = ["firefly"] as const satisfies readonly PaletteKey[];
 
@@ -23,13 +24,15 @@ attribute vec4 aSeed;
 uniform float uTime;
 uniform float uWind;
 uniform float uGlow;
+uniform float uTopView;
 varying vec2 vUv;
 varying float vBright;
 void main() {
   float t = uTime * (0.25 + aSeed.x * 0.3) * max(uWind, 0.15);
   vec3 drift = vec3(sin(t + aSeed.y * 6.3) * 0.8, sin(t * 1.3 + aSeed.z * 6.3) * 0.35, cos(t * 0.9 + aSeed.w * 6.3) * 0.8);
   vec4 view = viewMatrix * vec4(aBase + drift, 1.0);
-  view.xy += position.xy * (0.07 + aSeed.x * 0.06);
+  // Larger from the top view, so they still read as specks from up there.
+  view.xy += position.xy * (0.07 + aSeed.x * 0.06) * (1.0 + uTopView * 5.0);
   gl_Position = projectionMatrix * view;
   float blink = smoothstep(0.2, 0.9, sin(uTime * (0.6 + aSeed.w) + aSeed.y * 20.0) * 0.5 + 0.5);
   vBright = blink * smoothstep(aSeed.z * 0.5, aSeed.z * 0.5 + 0.5, uGlow);
@@ -59,8 +62,8 @@ export function Fireflies() {
     const base = new Float32Array(count * 3);
     const seed = new Float32Array(count * 4);
     for (let i = 0; i < count; i++) {
-      const d = 3 + Math.pow(rng(), 1.3) * 40;
-      const x = (rng() * 2 - 1) * (d * 1.1 + 1);
+      // Night is seen from above, so they spread over the whole top view.
+      const [x, d] = overheadPoint(rng, false);
       const z = -d;
       base.set([x, terrainHeight(x, z) + 0.3 + rng() * 1.6, z], i * 3);
       seed.set([rng(), rng(), rng(), rng()], i * 4);
@@ -82,7 +85,11 @@ export function Fireflies() {
       new ShaderMaterial({
         vertexShader,
         fragmentShader,
-        uniforms: { ...paletteUniformsFor(COLORS), ...sharedUniforms },
+        uniforms: {
+          ...paletteUniformsFor(COLORS),
+          ...sharedUniforms,
+          uTopView: viewUniforms.uTopView,
+        },
         transparent: true,
         blending: AdditiveBlending,
         depthWrite: false,

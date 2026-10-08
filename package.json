@@ -31,16 +31,10 @@
     "eslint": "^9",
     "eslint-config-next": "16.4.0",
     "leva": "^0.10.1",
-    "r3f-perf": "^7.2.3",
     "tailwindcss": "^4",
     "typescript": "^5"
   },
   "engines": {
     "node": ">=22"
-  },
-  "overrides": {
-    "r3f-perf": {
-      "@react-three/drei": "$@react-three/drei"
-    }
   }
 }

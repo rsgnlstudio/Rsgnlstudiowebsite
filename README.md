@@ -1,6 +1,6 @@
 # RSGNL Studio Website
 
-The RSGNL Studio website. A 3D nature landscape sits behind the page as a single fixed WebGL canvas, while normal HTML sections scroll on top of it. As each section becomes active, the camera moves to that section's keyframe. On one section it pulls back and the world turns from day to night. The whole scene is driven by one `night` value (0 = day, 1 = night) plus one camera keyframe per section. All text stays in the DOM for SEO and accessibility.
+The RSGNL Studio website. A 3D nature landscape sits behind the page as a single fixed WebGL canvas, while normal HTML sections scroll on top of it. A Day/Night switch at the top centre turns the world from day to night: the sun sets while the camera flies up from the meadow to a top view high above it. The whole scene is driven by one `night` value (0 = day, 1 = night). All text stays in the DOM for SEO and accessibility.
 
 ## Stack
 
@@ -17,7 +17,6 @@ The RSGNL Studio website. A 3D nature landscape sits behind the page as a single
 | lenis | Smooth scrolling, driven by GSAP's ticker |
 | zustand | Small store that bridges DOM and canvas without re-renders |
 | leva (dev) | Debug panel, e.g. to scrub `night` by hand |
-| r3f-perf (dev) | Draw-call, FPS, and GPU stats overlay |
 
 ## Getting started
 
@@ -36,14 +35,15 @@ npm run typecheck  # generate route types, then tsc --noEmit
 ## Architecture
 
 - **The canvas lives in the root layout and the DOM sits on top.** `src/app/layout.tsx` renders `SceneCanvasLoader`, a small client wrapper that loads `SceneCanvas` with `next/dynamic` and `ssr: false`. The canvas is `position: fixed`, full-viewport, behind `<main>`, and has `pointer-events: none`. Because it lives in the layout, it stays mounted when routes change.
-- **The zustand store is the only bridge.** `src/store/scene.ts` holds `activeSection`, `sectionProgress`, `scrollProgress`, `night`, `nightOverride`, and `sceneMode`. The DOM writes to it and the canvas reads from it. Per-frame code reads it with `useSceneStore.getState()` inside `useFrame` and never subscribes, so scrolling causes no React re-renders.
-- **The section config is the single source of truth.** `src/config/sections.ts` gives each section an `id`, a camera keyframe (`position`, `lookAt`, `fov`), and a target `night` value. The page renders its `<section>`s from this config, the scroll hook registers one trigger per entry, and the scene reads the same entries through `sectionsByMode` in `src/config/scene.ts`.
+- **The zustand store is the only bridge.** `src/store/scene.ts` holds `activeSection`, `sectionProgress`, `scrollProgress`, `timeOfDay`, `night`, `nightOverride`, and `sceneMode`. The DOM writes to it and the canvas reads from it. Per-frame code reads it with `useSceneStore.getState()` inside `useFrame` and never subscribes, so scrolling causes no React re-renders.
+- **The section config is the single source of truth.** `src/config/sections.ts` gives each section an `id` and a camera keyframe (`position`, `lookAt`, optional `up`, `fov`). The page renders its `<section>`s from this config, the scroll hook registers one trigger per entry, and the scene reads the same entries through `sectionsByMode` in `src/config/scene.ts`.
 - **Scroll drives the store.** A page calls `useSectionScroll(sections)`. This hook creates Lenis (synced with GSAP's ticker and ScrollTrigger), registers one ScrollTrigger per section plus one for the whole page, and writes `activeSection`, `sectionProgress`, and `scrollProgress`. When the page unmounts, or Next hides it with `<Activity>`, the hook kills every trigger and destroys Lenis.
-- **Camera and `night` follow scroll (partly built).** `CameraRig` places the camera on the mode's first keyframe, fits the FOV to the aspect ratio, computes idle drift and mouse parallax (off with reduced motion), and moves `night` toward the active section's target at a steady pace (about 7 s for a full day to night), so the sunset plays out. It skips `night` while `nightOverride` is set. Still to come: interpolating the camera between keyframes using `sectionProgress`.
+- **The Day/Night switch drives `night` and the camera.** `DayNightSwitch` (top centre, pill shaped) only writes `timeOfDay` to the store. `CameraRig` moves `night` toward it over `DAY_NIGHT_DURATION` (4 s, eased; clicking mid-way turns it around) and blends the camera with the same value, position and rotation together: from the mode's first keyframe in the meadow (day) to `nightCamera` in `src/config/scene.ts`, high above the meadow and looking straight down (night). It also fits the FOV to the aspect ratio and adds idle drift and mouse parallax (off with reduced motion). While `nightOverride` is set, the camera follows the override. Still to come: interpolating the camera between section keyframes using `sectionProgress`.
+- **The top view.** As the camera rises (`viewUniforms.uTopView`), the instanced sprites turn from upright billboards to face the camera, lying on the ground like trees drawn on a map, the camera-locked foreground slides out of frame, and the ground swaps its sideways day strokes for even ones. Part of the grass and flowers, and all fireflies, are scattered over the area seen from above (`OVERHEAD` in `painterly/landscape.ts`), and the terrain reaches past the day camera so its edge never shows.
 - **The scene is painted, not lit.** Every material is an unlit `ShaderMaterial`. Colors come from `src/config/palette.ts` in three sets: warm day, sunset (dusk) and cold night. `src/components/canvas/painterly/palette.ts` turns them into shared uniforms (`uSkyTop`, `uFlowerPink`, …). `Lights` calls `updateLight(night)` once per frame. That mixes day to dusk over `night` 0–0.5 and dusk to night over 0.5–1, sinks the sun behind the mountains, raises the moon, and turns up the night glow (glowing flowers, fireflies, stars, bloom).
-- **Every frame is repainted with brushstrokes.** `painterly/BrushStrokePass.ts` runs after depth of field and bloom. It builds a quarter-resolution feature-size map (how big the shape under each pixel is), lays a soft toned underpainting, then paints four layers of oriented strokes from 40 px to 6.5 px, and blends the result with the previous frame to settle flicker. Big shapes (sky, near blossoms, leaf masses) get broad strokes; finer layers fade in only where shapes are small. Stroke colors come from the frame, and strokes reach across object borders so neighbouring shapes blend. Procedural brush textures on the sprites (`painterly/brushTextures.ts`, swappable for hand-painted PNGs) add texture below that.
+- **Post-processing.** Depth of field focuses on the ground at the centre of the frame (a ray march against `terrainHeight` every frame), then bloom on the HDR highlights, then the finish (`PainterlyEffect`: canvas texture, grain, vignette). Procedural brush textures on the sprites (`painterly/brushTextures.ts`, swappable for hand-painted PNGs) give the painted look.
 - **Three depth layers.** Background: `Sky` (gradient, painted clouds, sun and moon), `Stars`, `Mountains` (layered ridges fading into haze) and `Conifers`. Midground: instanced `Grass` and `Flowers` (one draw call each) on the `Terrain`, plus `Fireflies` at night. Foreground: `Foreground`, branches and big flowers locked to the camera in view space and anchored to the frame edges, so they frame every aspect ratio. Its blur is pre-baked into the textures and it writes no depth, so the real depth of field never touches it.
-- **Look settings and quality tiers.** `src/config/look.ts` holds the tunable defaults (focus, blur, grain, density, wind, stroke size, glow) and two quality presets. `src/store/look.ts` is the runtime copy, canvas-internal and edited by leva. The tier is detected once (`src/lib/quality.ts`). Phones and weak machines get "low": fewer instances, a lower dpr, a smaller DoF buffer, and three stroke layers instead of four. Use `?quality=low|high` to force a tier.
+- **Look settings and quality tiers.** `src/config/look.ts` holds the tunable defaults (focus range, blur, grain, vignette, density, wind, glow) and two quality presets. `src/store/look.ts` is the runtime copy, canvas-internal and edited by leva. The tier is detected once (`src/lib/quality.ts`). Phones and weak machines get "low": fewer instances, a lower dpr and a smaller DoF buffer. Use `?quality=low|high` to force a tier.
 - **Pages control the scene through `sceneMode`.** A page claims the canvas with `useSceneMode("home")`. On unmount it falls back to `"hidden"`, which stops the frameloop and hides the canvas. A new route that doesn't call `useSceneMode` therefore gets a paused, invisible canvas. To add a mode, extend `SCENE_MODES` and `sectionsByMode` in `src/config/scene.ts`.
 
 ## Folder structure
@@ -55,24 +55,21 @@ src/
     canvas/            Canvas setup: SceneCanvas, the client-only loader, frameloop control
       scene/           Scene parts: CameraRig, Sky, Lights, Terrain (+ Mountains), Vegetation
                        (+ Conifers, Grass, Flowers, Fireflies, Foreground), Stars, Effects
-      painterly/       Shared toolkit: palette and light uniforms, GLSL chunks, brush textures,
-                       instanced sprites, landscape shape, BrushStrokePass, PainterlyEffect, RNG
-      dev/             Dev-only tools (leva controls, r3f-perf), lazy-loaded in development
+      painterly/       Shared toolkit: palette, light and view uniforms, GLSL chunks, brush
+                       textures, instanced sprites, landscape shape, PainterlyEffect, RNG
+      dev/             Dev-only tools (leva panel), lazy-loaded in development
+    nav/               Navigation (the Day/Night switch)
     sections/          DOM sections and per-page scroll controllers (e.g. HomeScroll)
   fonts/               Calendas Plus (woff2) loaded with next/font/local
-  config/              Section config (camera keyframes, night targets), scene modes, palette, look and quality presets
+  config/              Section config (camera keyframes), scene modes and the night camera, palette, look and quality presets
   hooks/               useSectionScroll, useSceneMode, usePrefersReducedMotion
   lib/                 GSAP setup (plugin registration), the Lenis + GSAP ticker integration, quality tier detection
   store/               The zustand store bridging DOM and canvas, plus the canvas-internal look store
-loaders/               Turbopack loader that works around an r3f-perf source-map issue
 ```
 
 ## Dev tooling
 
-Both tools load only when `NODE_ENV === "development"` and are absent from production bundles.
-
-- **leva**: run `npm run dev`. The panel opens in the top-right corner. Under **Scene**, turn on **override** and drag **night** to set `night` by hand. **log store** prints the current store state to the console. **Look** has focus distance and range, blur strength, grain, vignette, flower density, wind, glow, stroke size and a brushstrokes toggle (off shows the raw render). **Palette** has every day, dusk and night color.
-- **r3f-perf**: shows in the bottom-right corner of the viewport in dev.
+- **leva**: loads only when `NODE_ENV === "development"` and is absent from production bundles. Run `npm run dev` and press **2** to show the panel (top right), **1** to hide it. Under **Scene**, turn on **override** and drag **night** to set `night` by hand. **log store** prints the current store state to the console. **Look** has focus range, blur strength, grain, vignette, flower density, wind and glow. **Palette** has every day, dusk and night color. **reset** restores the defaults from `src/config/look.ts` and `src/config/palette.ts`.
 
 ## Status
 
@@ -82,11 +79,11 @@ Built:
 - Zustand store, section config, and scene modes
 - Lenis + GSAP ScrollTrigger scroll hook with full cleanup on unmount
 - `sceneMode` that pauses the frameloop and hides the canvas when `"hidden"`
-- leva controls (night override, look, palettes) and r3f-perf, dev only
+- leva panel (night override, look, palettes, reset), dev only, toggled with the 2 and 1 keys
 - Calendas Plus as the default typeface (`font-sans` and `font-display`), self-hosted via `next/font/local`
 - First viewport (`intro`): meadow with sky, clouds, sun, moon, stars, layered mountains, conifers, instanced grass and flowers, fireflies, and a camera-locked foreground
-- Depth of field and bloom, then brushstroke repainting (`BrushStrokePass`) with stroke size by object size, then canvas texture, grain and vignette
-- Day, dusk and night palettes; a sunset transition driven by `night`, eased from the section config
+- Depth of field focused on the centre of the frame, bloom, then canvas texture, grain and vignette
+- Day, dusk and night palettes; a 4 s sunset plus camera flight to the top view, from the Day/Night switch
 - Aspect-aware camera (FOV, tilt, tree lines pulled in on portrait), idle drift and mouse parallax, reduced-motion support
 - High/low quality tiers
 

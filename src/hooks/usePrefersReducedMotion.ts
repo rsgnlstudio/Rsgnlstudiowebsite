@@ -11,8 +11,8 @@ function subscribe(onChange: () => void) {
 }
 
 /**
- * True when the user prefers reduced motion. Not wired in yet; intended for
- * disabling Lenis smoothing and shortening camera transitions.
+ * True when the user prefers reduced motion. Used to shorten the day/night
+ * transition and stop the camera drift; intended for disabling Lenis smoothing.
  */
 export function usePrefersReducedMotion(): boolean {
   return useSyncExternalStore(

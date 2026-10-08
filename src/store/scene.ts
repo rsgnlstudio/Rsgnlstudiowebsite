@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { DEFAULT_SCENE_MODE, type SceneMode } from "@/config/scene";
+import { DEFAULT_SCENE_MODE, type SceneMode, type TimeOfDay } from "@/config/scene";
 
 /**
  * The only bridge between DOM and canvas.
@@ -15,7 +15,9 @@ export interface SceneState {
   sectionProgress: number;
   /** 0..1 progress through the whole page. */
   scrollProgress: number;
-  /** 0 = day, 1 = night. */
+  /** Day or night, as picked in the Day/Night switch. `night` follows it. */
+  timeOfDay: TimeOfDay;
+  /** 0 = day, 1 = night. Animated toward timeOfDay by CameraRig. */
   night: number;
   /** Dev-only manual override for `night` (leva). null = not overridden. */
   nightOverride: number | null;
@@ -25,6 +27,7 @@ export interface SceneState {
   setActiveSection: (id: string | null) => void;
   setSectionProgress: (progress: number) => void;
   setScrollProgress: (progress: number) => void;
+  setTimeOfDay: (timeOfDay: TimeOfDay) => void;
   setNight: (night: number) => void;
   setNightOverride: (night: number | null) => void;
   setSceneMode: (mode: SceneMode) => void;
@@ -36,6 +39,7 @@ export const useSceneStore = create<SceneState>()((set) => ({
   activeSection: null,
   sectionProgress: 0,
   scrollProgress: 0,
+  timeOfDay: "day",
   night: 0,
   nightOverride: null,
   sceneMode: DEFAULT_SCENE_MODE,
@@ -43,6 +47,7 @@ export const useSceneStore = create<SceneState>()((set) => ({
   setActiveSection: (activeSection) => set({ activeSection }),
   setSectionProgress: (sectionProgress) => set({ sectionProgress }),
   setScrollProgress: (scrollProgress) => set({ scrollProgress }),
+  setTimeOfDay: (timeOfDay) => set({ timeOfDay }),
   setNight: (night) => set({ night }),
   setNightOverride: (nightOverride) => set({ nightOverride }),
   setSceneMode: (sceneMode) => set({ sceneMode }),

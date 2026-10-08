@@ -6,10 +6,11 @@ import { qualityPresets } from "@/config/look";
 import type { PaletteKey } from "@/config/palette";
 import { useLookStore } from "@/store/look";
 import { FLOWER_ATLAS, getBrushTextures } from "../painterly/brushTextures";
-import { blueBandX, FIELD, terrainHeight } from "../painterly/landscape";
+import { blueBandX, FIELD, overheadPoint, terrainHeight } from "../painterly/landscape";
 import { paletteGLSL, paletteUniformsFor, sharedUniforms } from "../painterly/palette";
 import { mulberry32, pickWeighted, valueNoise } from "../painterly/random";
 import { alphaGLSL, colorGLSL, hazeGLSL } from "../painterly/shaderChunks";
+import { viewUniforms } from "../painterly/view";
 import { allocateSprites, createSpriteGeometry, spriteVertexShader } from "../painterly/sprites";
 
 const COLORS = [
@@ -95,19 +96,33 @@ void main() {
 }
 `;
 
+/** Share of flowers spread over the night top view rather than the day wedge. */
+const OVERHEAD_SHARE = 0.35;
+
 function scatterFlowers(count: number) {
   const data = allocateSprites(count);
   const rng = mulberry32(1234);
   for (let i = 0; i < count; i++) {
-    // Most flowers in the midground, where the eye lands.
-    const band = rng();
-    const d =
-      band < 0.05
-        ? FIELD.near + rng() * 3.5
-        : band < 0.75
-          ? 4.5 + Math.pow(rng(), 1.1) * 22
-          : 24 + Math.pow(rng(), 1.5) * (FIELD.far - 24);
-    const x = (rng() * 2 - 1) * (d * 1.1 + 1.5);
+    let x: number;
+    let d: number;
+    let grow: number;
+    if (rng() < OVERHEAD_SHARE) {
+      // Spread over the night top view, sized to read from up there.
+      [x, d] = overheadPoint(rng);
+      grow = 2.2;
+    } else {
+      // Most flowers in the midground, where the eye lands.
+      const band = rng();
+      d =
+        band < 0.05
+          ? FIELD.near + rng() * 3.5
+          : band < 0.75
+            ? 4.5 + Math.pow(rng(), 1.1) * 22
+            : 24 + Math.pow(rng(), 1.5) * (FIELD.far - 24);
+      x = (rng() * 2 - 1) * (d * 1.1 + 1.5);
+      // Far flowers grow so they stay readable.
+      grow = 1 + Math.max(0, d - 10) * 0.03;
+    }
     const z = -d;
 
     // Species: blue drift along the band, dabs in the far field, else mixed.
@@ -131,7 +146,7 @@ function scatterFlowers(count: number) {
 
     const [h0, h1] = species.height;
     // Far flowers grow so they stay readable as dabs of color.
-    const grow = 1 + Math.max(0, d - 10) * 0.03;
+
     const height = (h0 + rng() * (h1 - h0)) * grow;
 
     data.offset.set([x, terrainHeight(x, z) - 0.04, z], i * 3);
@@ -166,6 +181,8 @@ export function Flowers() {
           uAtlas: { value: getBrushTextures().flowers },
           uGrid: { value: [FLOWER_ATLAS.cols, FLOWER_ATLAS.rows] },
           uSway: { value: 0.07 },
+          uTopView: viewUniforms.uTopView,
+          uTopScale: { value: 1 },
         },
       }),
     [],

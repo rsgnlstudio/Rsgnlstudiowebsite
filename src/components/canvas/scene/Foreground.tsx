@@ -62,9 +62,11 @@ uniform vec2 uGrid;
 uniform float uSway;
 uniform float uTime;
 uniform float uWind;
+uniform float uTopView;
 
 varying vec2 vUv;
 varying float vTint;
+varying float vFade;
 
 void main() {
   float halfH = aDepth * uTanHalfFov;
@@ -78,13 +80,17 @@ void main() {
   vec2 local = vec2(position.x * size.x, t * size.y);
   vec2 rotated = vec2(cos(a) * local.x - sin(a) * local.y, sin(a) * local.x + cos(a) * local.y);
 
-  vec3 view = vec3(aAnchor * vec2(halfW, halfH) + rotated + uParallax, -aDepth);
+  // Rising into the top view, the camera leaves the branches and flowers
+  // behind: they slide out past the frame edges and fade.
+  vec2 anchor = aAnchor * (1.0 + uTopView * 1.5);
+  vec3 view = vec3(anchor * vec2(halfW, halfH) + rotated + uParallax, -aDepth);
   gl_Position = projectionMatrix * vec4(view, 1.0);
 
   float col = mod(aCell, uGrid.x);
   float row = floor(aCell / uGrid.x);
   vUv = vec2((col + uv.x) / uGrid.x, (uGrid.y - 1.0 - row + uv.y) / uGrid.y);
   vTint = aTint;
+  vFade = 1.0 - smoothstep(0.0, 0.5, uTopView);
 }
 `;
 
@@ -102,11 +108,12 @@ const leafFragment = /* glsl */ `
 ${paletteGLSL(LEAF_COLORS)}
 uniform sampler2D uAtlas;
 varying vec2 vUv;
+varying float vFade;
 void main() {
   vec4 tex = texture2D(uAtlas, vUv);
   vec3 col = mix(uLeafDark, uLeafMid, tex.r);
   col = mix(col, uLeafLight, tex.g * 0.6);
-  gl_FragColor = vec4(col, smoothstep(0.05, 0.55, tex.a));
+  gl_FragColor = vec4(col, smoothstep(0.05, 0.55, tex.a) * vFade);
 }
 `;
 
@@ -115,6 +122,7 @@ ${paletteGLSL(FLOWER_COLORS)}
 uniform sampler2D uAtlas;
 varying vec2 vUv;
 varying float vTint;
+varying float vFade;
 ${colorGLSL}
 void main() {
   vec4 tex = texture2D(uAtlas, vUv);
@@ -122,7 +130,7 @@ void main() {
   vec3 col = petal * (0.5 + 0.6 * tex.r);
   col = mix(col, uFlowerCenter * (0.7 + 0.4 * tex.r), smoothstep(0.3, 0.7, tex.g));
   col = mix(col, mix(uGrassDeep, uGrassMid, tex.r), smoothstep(0.3, 0.7, tex.b));
-  gl_FragColor = vec4(col, smoothstep(0.08, 0.6, tex.a));
+  gl_FragColor = vec4(col, smoothstep(0.08, 0.6, tex.a) * vFade);
 }
 `;
 

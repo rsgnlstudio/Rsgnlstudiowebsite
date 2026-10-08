@@ -4,10 +4,11 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { EffectComposer } from "@react-three/postprocessing";
 import { BloomEffect, DepthOfFieldEffect } from "postprocessing";
 import { useEffect, useMemo } from "react";
+import { type Camera, Vector3 } from "three";
 import { qualityPresets } from "@/config/look";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { useLookStore } from "@/store/look";
-import { BrushStrokePass, STROKE_LAYERS } from "../painterly/BrushStrokePass";
+import { rayGroundDistance } from "../painterly/landscape";
 import { PainterlyEffect } from "../painterly/PainterlyEffect";
 import { sharedUniforms } from "../painterly/palette";
 
@@ -37,19 +38,25 @@ function patchCircleOfConfusion(effect: DepthOfFieldEffect) {
 interface EffectSet {
   dof: DepthOfFieldEffect;
   bloom: BloomEffect;
-  strokes: BrushStrokePass | null;
   finish: PainterlyEffect;
 }
 
+const forward = new Vector3();
+
+/** Distance to the ground at the centre of the frame, where focus sits. */
+function centreFocusDistance(camera: Camera) {
+  // From the quaternion: CameraRig set it this frame, matrixWorld lags.
+  return rayGroundDistance(camera.position, forward.set(0, 0, -1).applyQuaternion(camera.quaternion));
+}
+
 /** Copies the live look settings onto the effects. */
-function applyLook({ dof, bloom, strokes, finish }: EffectSet, time: number) {
+function applyLook({ dof, bloom, finish }: EffectSet, camera: Camera, time: number) {
   const look = useLookStore.getState();
-  dof.cocMaterial.focusDistance = look.focusDistance;
+  dof.cocMaterial.focusDistance = centreFocusDistance(camera);
   dof.cocMaterial.focusRange = look.focusRange;
   dof.bokehScale = look.blurStrength;
   // Only HDR highlights bloom (sun, moon, stars, glowing flowers, fireflies).
   bloom.intensity = look.glow * (0.45 + 0.6 * sharedUniforms.uGlow.value);
-  if (strokes) strokes.strokeScale = look.strokeScale;
   finish.time = time;
   finish.grain = look.grain;
   finish.vignette = look.vignette;
@@ -57,23 +64,21 @@ function applyLook({ dof, bloom, strokes, finish }: EffectSet, time: number) {
 
 /**
  * Post-processing, in order:
- * 1. depth of field (sharp midground, soft trees, softer mountains) and bloom
- *    on the HDR highlights,
- * 2. BrushStrokePass, which repaints the whole frame with brushstrokes,
- * 3. the finish: canvas texture, grain and vignette.
+ * 1. depth of field, focused on the ground at the centre of the frame, and
+ *    bloom on the HDR highlights,
+ * 2. the finish: canvas texture, grain and vignette.
  * The near foreground fakes its blur with pre-blurred textures.
  */
 export function Effects() {
   const camera = useThree((s) => s.camera);
   const tier = useLookStore((s) => s.tier);
-  const brushStrokes = useLookStore((s) => s.brushStrokes);
   const preset = qualityPresets[tier];
   const reducedMotion = usePrefersReducedMotion();
 
   const dof = useMemo(() => {
-    const { focusDistance, focusRange, blurStrength } = useLookStore.getState();
+    const { focusRange, blurStrength } = useLookStore.getState();
     const effect = new DepthOfFieldEffect(camera, {
-      focusDistance,
+      focusDistance: centreFocusDistance(camera),
       focusRange,
       bokehScale: blurStrength,
       resolutionScale: preset.dofResolution,
@@ -95,25 +100,18 @@ export function Effects() {
   );
   useEffect(() => () => bloom.dispose(), [bloom]);
 
-  const strokes = useMemo(
-    () => (brushStrokes ? new BrushStrokePass(STROKE_LAYERS.slice(0, preset.strokeLayers)) : null),
-    [brushStrokes, preset.strokeLayers],
-  );
-  useEffect(() => () => strokes?.dispose(), [strokes]);
-
   const finish = useMemo(() => new PainterlyEffect(), []);
   useEffect(() => () => finish.dispose(), [finish]);
 
   useFrame(() => {
     // Reduced motion: freeze the grain pattern.
-    applyLook({ dof, bloom, strokes, finish }, reducedMotion ? 0 : sharedUniforms.uTime.value);
+    applyLook({ dof, bloom, finish }, camera, reducedMotion ? 0 : sharedUniforms.uTime.value);
   });
 
   return (
     <EffectComposer multisampling={preset.multisampling}>
       <primitive object={dof} />
       <primitive object={bloom} />
-      {strokes && <primitive object={strokes} />}
       <primitive object={finish} />
     </EffectComposer>
   );
