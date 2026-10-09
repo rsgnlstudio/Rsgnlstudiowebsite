@@ -1,6 +1,6 @@
 "use client";
 
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree, type RootState } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import { MathUtils, Vector3 } from "three";
 import { FEATURED_FLOWERS, FEATURED_HIT, type FeaturedFlowerId } from "@/config/flowers";
@@ -49,12 +49,52 @@ function paintFeatured() {
 
 const projected = new Vector3();
 
+/** Day only: the flowers fade out with the morph into the night. */
+const dayOf = (night: number) => 1 - MathUtils.smoothstep(night, 0.02, 0.2);
+
+/**
+ * The featured flower whose head is under a point on screen (normalized
+ * device coordinates), or null. The nearest one wins.
+ */
+function flowerAt(
+  { camera, size, viewport }: Pick<RootState, "camera" | "size" | "viewport">,
+  x: number,
+  y: number,
+) {
+  // uPxPerUnit is in device pixels; the hit test works in CSS pixels.
+  const pxPerUnit = viewUniforms.uPxPerUnit.value / viewport.dpr;
+  let best = 1;
+  let hit: FeaturedFlowerId | null = null;
+  for (const flower of flowers) {
+    projected.copy(flower.head).project(camera);
+    if (projected.z > 1) continue;
+    const dx = ((projected.x - x) * size.width) / 2;
+    const dy = ((projected.y - y) * size.height) / 2;
+    const dist = camera.position.distanceTo(flower.head);
+    const radius = Math.max(
+      (flower.height * FEATURED_HIT.radius * pxPerUnit) / dist,
+      FEATURED_HIT.minPx,
+    );
+    const r = Math.hypot(dx, dy) / radius;
+    if (r < best) {
+      best = r;
+      hit = flower.id;
+    }
+  }
+  return hit;
+}
+
+/** Clicks on these stay with the DOM and never open a flower. */
+const INTERACTIVE = "a, button, input, select, textarea, label, dialog, [role='dialog']";
+
 /**
  * The featured flowers: a few slightly bigger flowers in the day meadow (see
  * src/config/flowers.ts) that breathe a soft glow and light up under the
  * cursor. The canvas ignores pointer events, so hovering is found here by
  * projecting each flower's head to the screen; the hovered one goes to the
- * store (`hoveredFlower`) for the DOM. Day only, mouse only.
+ * store (`hoveredFlower`) for the DOM. Day only, mouse only. A click (or a
+ * tap on touch screens) on a flower opens its project overlay (`openFlower`);
+ * while it is open, hovering pauses and the open flower stays lit.
  */
 export function FeaturedFlowers() {
   const geometry = useMemo(() => paintFeatured().createGeometry(), []);
@@ -67,6 +107,25 @@ export function FeaturedFlowers() {
   }, [reducedMotion]);
 
   const pointer = useWindowPointer();
+  const get = useThree((s) => s.get);
+
+  // Clicks land on the DOM (the canvas ignores them), so they are tested
+  // against the flowers here, at the click's own position.
+  useEffect(() => {
+    const onClick = (event: MouseEvent) => {
+      const { night, sceneMode, openFlower, setOpenFlower } = useSceneStore.getState();
+      if (openFlower || sceneMode === "hidden" || dayOf(night) <= 0.5) return;
+      if (event.target instanceof Element && event.target.closest(INTERACTIVE)) return;
+      const hit = flowerAt(
+        get(),
+        (event.clientX / window.innerWidth) * 2 - 1,
+        -(event.clientY / window.innerHeight) * 2 + 1,
+      );
+      if (hit) setOpenFlower(hit);
+    };
+    window.addEventListener("click", onClick);
+    return () => window.removeEventListener("click", onClick);
+  }, [get]);
 
   // The pointer cursor follows the hover; hiding the scene or leaving the
   // page clears it.
@@ -85,39 +144,21 @@ export function FeaturedFlowers() {
     };
   }, []);
 
-  useFrame(({ camera, size, viewport }, delta) => {
+  useFrame((state, delta) => {
     const dt = Math.min(delta, 0.05);
-    const { night, hoveredFlower, setHoveredFlower } = useSceneStore.getState();
-    const day = 1 - MathUtils.smoothstep(night, 0.02, 0.2);
+    const { night, hoveredFlower, openFlower, setHoveredFlower } = useSceneStore.getState();
+    const day = dayOf(night);
 
-    let hovered: FeaturedFlowerId | null = null;
-    if (pointer.current.active && day > 0.5) {
-      // uPxPerUnit is in device pixels; the hit test works in CSS pixels.
-      const pxPerUnit = viewUniforms.uPxPerUnit.value / viewport.dpr;
-      let best = 1;
-      for (const flower of flowers) {
-        projected.copy(flower.head).project(camera);
-        if (projected.z > 1) continue;
-        const dx = ((projected.x - pointer.current.position.x) * size.width) / 2;
-        const dy = ((projected.y - pointer.current.position.y) * size.height) / 2;
-        const dist = camera.position.distanceTo(flower.head);
-        const radius = Math.max(
-          (flower.height * FEATURED_HIT.radius * pxPerUnit) / dist,
-          FEATURED_HIT.minPx,
-        );
-        const r = Math.hypot(dx, dy) / radius;
-        if (r < best) {
-          best = r;
-          hovered = flower.id;
-        }
-      }
-    }
+    const hovered =
+      pointer.current.active && day > 0.5 && !openFlower
+        ? flowerAt(state, pointer.current.position.x, pointer.current.position.y)
+        : null;
     if (hovered !== hoveredFlower) setHoveredFlower(hovered);
 
     // Light up quickly, fade out a little slower.
     const hover = featuredUniforms.uFeatureHover.value;
     flowers.forEach((flower, i) => {
-      const target = flower.id === hovered ? 1 : 0;
+      const target = flower.id === hovered || flower.id === openFlower ? 1 : 0;
       hover[i] = MathUtils.damp(hover[i], target, target > hover[i] ? 9 : 4, dt);
     });
     const look = useLookStore.getState();

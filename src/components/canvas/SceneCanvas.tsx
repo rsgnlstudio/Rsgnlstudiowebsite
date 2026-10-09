@@ -13,13 +13,15 @@ const initialCamera = homeSections[0].camera;
 
 /**
  * The persistent full-viewport canvas. Client-only: loaded via
- * SceneCanvasLoader with ssr: false.
+ * SceneCanvasLoader with ssr: false. While a project overlay is open it slides
+ * aside with the panel (left on desktop, up on mobile).
  */
 export default function SceneCanvas() {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const tier = useLookStore((s) => s.tier);
 
-  // Hide the canvas while sceneMode is "hidden", without re-rendering.
+  // Hide the canvas while sceneMode is "hidden", and push it aside while a
+  // project overlay is open, without re-rendering.
   useEffect(() => {
     const apply = (mode: string) => {
       if (wrapperRef.current) {
@@ -27,9 +29,15 @@ export default function SceneCanvas() {
           mode === "hidden" ? "hidden" : "visible";
       }
     };
-    apply(useSceneStore.getState().sceneMode);
+    const push = (open: boolean) => {
+      if (wrapperRef.current) wrapperRef.current.toggleAttribute("data-pushed", open);
+    };
+    const state = useSceneStore.getState();
+    apply(state.sceneMode);
+    push(state.openFlower !== null);
     return useSceneStore.subscribe((state, prev) => {
       if (state.sceneMode !== prev.sceneMode) apply(state.sceneMode);
+      if (state.openFlower !== prev.openFlower) push(state.openFlower !== null);
     });
   }, []);
 
@@ -37,7 +45,9 @@ export default function SceneCanvas() {
     <div
         ref={wrapperRef}
         aria-hidden
-        className="pointer-events-none fixed inset-0 z-0"
+        // Pushed aside by the project overlay, in step with its slide: by half
+        // the panel, so the stage stays centred in the space left free.
+        className="pointer-events-none fixed inset-0 z-0 transition-transform duration-(--overlay-duration) ease-overlay data-pushed:-translate-y-[46%] md:data-pushed:translate-y-0 md:data-pushed:-translate-x-1/3"
       >
         <Canvas
           dpr={qualityPresets[tier].dpr}

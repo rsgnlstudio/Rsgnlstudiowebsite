@@ -35,6 +35,19 @@
   /* Distance of fixed overlays (the hero headline) from the viewport edges */
   --spacing-edge: clamp(2rem, 5vw, 5rem);
   --spacing-section: 8rem;
+
+  /* The project overlay's slide, shared with the stage it pushes aside */
+  --ease-overlay: cubic-bezier(0.65, 0, 0.15, 1);
+}
+
+:root {
+  --overlay-duration: 900ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --overlay-duration: 0ms;
+  }
 }
 
 /*

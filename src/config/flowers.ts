@@ -1,12 +1,13 @@
 /**
  * The featured flowers: a few slightly bigger flowers in the day meadow that
  * glow softly and light up when hovered (how much: `featured*` in
- * src/config/look.ts). Each one will open an overlay on click, keyed by its `id`.
+ * src/config/look.ts). Each one opens its project overlay
+ * (`ProjectOverlay`) on click or tap, keyed by its `id`.
  *
  * x and d (distance into the field) in metres, as in painterly/landscape.ts.
  * `kind` and `tint` name a flower kind and petal color from painterly/plants.ts.
  * `title` and `teaser` show in the label next to the cursor while hovered
- * (placeholders for now).
+ * and head the project overlay (placeholders for now).
  */
 export const FEATURED_FLOWERS = [
   {

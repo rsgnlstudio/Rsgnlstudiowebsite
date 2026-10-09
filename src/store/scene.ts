@@ -24,6 +24,8 @@ export interface SceneState {
   sceneMode: SceneMode;
   /** Featured flower under the cursor (day only), from src/config/flowers.ts. */
   hoveredFlower: FeaturedFlowerId | null;
+  /** Featured flower whose project overlay is open (click or tap). */
+  openFlower: FeaturedFlowerId | null;
 
   setActiveSection: (id: string | null) => void;
   setSectionProgress: (progress: number) => void;
@@ -32,6 +34,7 @@ export interface SceneState {
   setNight: (night: number) => void;
   setSceneMode: (mode: SceneMode) => void;
   setHoveredFlower: (id: FeaturedFlowerId | null) => void;
+  setOpenFlower: (id: FeaturedFlowerId | null) => void;
   /** Clears scroll-derived state, e.g. when a page unmounts. */
   resetScroll: () => void;
 }
@@ -44,6 +47,7 @@ export const useSceneStore = create<SceneState>()((set) => ({
   night: 0,
   sceneMode: DEFAULT_SCENE_MODE,
   hoveredFlower: null,
+  openFlower: null,
 
   setActiveSection: (activeSection) => set({ activeSection }),
   setSectionProgress: (sectionProgress) => set({ sectionProgress }),
@@ -52,6 +56,7 @@ export const useSceneStore = create<SceneState>()((set) => ({
   setNight: (night) => set({ night }),
   setSceneMode: (sceneMode) => set({ sceneMode }),
   setHoveredFlower: (hoveredFlower) => set({ hoveredFlower }),
+  setOpenFlower: (openFlower) => set({ openFlower }),
   resetScroll: () =>
     set({ activeSection: null, sectionProgress: 0, scrollProgress: 0 }),
 }));
