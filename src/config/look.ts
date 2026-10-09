@@ -35,6 +35,14 @@ export interface LookSettings {
   fringe: number;
   /** How much strokes pick up the wet paint around them (wet in wet), 0..1. */
   wetBlend: number;
+  /** Day: resting glow of the featured flowers (HDR, so bloom picks it up). */
+  featuredRest: number;
+  /** Day: how far the featured flowers' resting glow breathes (0 = steady). */
+  featuredBreathe: number;
+  /** Day: extra glow of a hovered featured flower. */
+  featuredHover: number;
+  /** Day: size gain of a hovered featured flower (0.08 = 8% bigger). */
+  featuredGrow: number;
 }
 
 export const defaultLook: LookSettings = {
@@ -53,6 +61,10 @@ export const defaultLook: LookSettings = {
   dustKick: 1,
   fringe: 0.35,
   wetBlend: 0.85,
+  featuredRest: 0.6,
+  featuredBreathe: 0.4,
+  featuredHover: 1.4,
+  featuredGrow: 0.08,
 };
 
 export type QualityTier = "high" | "low";

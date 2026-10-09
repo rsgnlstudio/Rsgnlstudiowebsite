@@ -85,6 +85,8 @@ export interface PlantContext {
   variation: readonly [number, number, number];
   /** Stroke detail, 0 (a distant dab) .. 1 (seen close up). */
   detail: number;
+  /** Featured flower index, 1-based (see Stroke.feature). */
+  feature?: number;
 }
 
 function brush(rng: Rng, kind: BrushKind) {
@@ -97,6 +99,7 @@ function add(ctx: PlantContext, stroke: Omit<Stroke, "root" | "height" | "phase"
     height: ctx.height,
     phase: ctx.phase,
     variation: ctx.variation,
+    feature: ctx.feature,
     ...stroke,
   });
 }
