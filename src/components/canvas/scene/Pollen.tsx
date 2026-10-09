@@ -26,6 +26,7 @@ uniform float uWind;
 uniform vec3 uSunDir;
 uniform float uSunStrength;
 uniform float uNight;
+uniform float uBuild;
 varying vec2 vUv;
 varying float vBright;
 ${gustGLSL}
@@ -51,6 +52,8 @@ void main() {
   float backlit = pow(max(dot(toSpeck, uSunDir), 0.0), 3.0);
   float twinkle = 0.5 + 0.5 * sin(uTime * (0.7 + aSeed.w * 1.3) + aSeed.y * 30.0);
   vBright = (0.35 + 1.4 * backlit) * (0.4 + 0.6 * twinkle) * uSunStrength * (1.0 - smoothstep(0.1, 0.4, uNight));
+  // Intro: drifts in once the meadow is painted.
+  vBright *= smoothstep(0.65, 1.0, uBuild);
   vUv = uv;
 }
 `;

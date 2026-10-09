@@ -81,6 +81,11 @@ export const sharedUniforms = {
    * and sinks into the void, while the dust condenses under the same light.
    */
   uMorph: { value: 0 },
+  /**
+   * Intro build-up, 0 (nothing painted yet) .. 1 (the finished world). Set
+   * from the store's `intro`; see painterly/build.ts.
+   */
+  uBuild: { value: 0 },
 };
 
 const direction = (target: Vector3, azimuth: number, elevation: number) =>

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { nightFor, type TimeOfDay } from "@/config/scene";
+import { useIntroRevealed } from "@/hooks/useIntroRevealed";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { gsap } from "@/lib/gsap";
 import { useSceneStore } from "@/store/scene";
@@ -16,15 +17,20 @@ const WORDS: Record<TimeOfDay, { text: string; italic: boolean }> = {
 const TYPE_SPEED = 0.07;
 const ERASE_SPEED = 0.04;
 
-/** Tweens the visible length of `text` in `el` one character at a time. */
+/**
+ * Tweens the visible length of `text` in `el` one character at a time. The
+ * rhythm is eased: typing starts slowly, runs and slows down for the last
+ * letters; erasing gathers pace.
+ */
 const typeTo = (tl: gsap.core.Timeline, el: HTMLElement, text: string, from: number, to: number) => {
   const chars = Math.abs(to - from);
   if (chars === 0) return;
   const counter = { length: from };
+  const typing = to > from;
   tl.to(counter, {
     length: to,
-    duration: chars * (to > from ? TYPE_SPEED : ERASE_SPEED),
-    ease: `steps(${chars})`,
+    duration: chars * (typing ? TYPE_SPEED : ERASE_SPEED),
+    ease: typing ? "sine.inOut" : "sine.in",
     onUpdate: () => {
       el.textContent = text.slice(0, Math.round(counter.length));
     },
@@ -37,12 +43,14 @@ const typeTo = (tl: gsap.core.Timeline, el: HTMLElement, text: string, from: num
  * Typed in on mount and retyped with a GSAP typewriter whenever the
  * Day/Night switch changes, starting halfway through the world's morph
  * (when `night` crosses 0.5): the old word is erased, the new one typed. The full text sits in an sr-only copy, the
- * typed copy is aria-hidden. It fades out while a project overlay is open.
+ * typed copy is aria-hidden. It is first typed once the intro build-up has
+ * revealed the UI, and fades out while a project overlay is open.
  */
 export function HeroHeadline() {
   const timeOfDay = useSceneStore((s) => s.timeOfDay);
   const projectOpen = useSceneStore((s) => s.openFlower !== null);
   const reducedMotion = usePrefersReducedMotion();
+  const revealed = useIntroRevealed();
   const prefixRef = useRef<HTMLSpanElement>(null);
   const wordRef = useRef<HTMLSpanElement>(null);
   // One caret per line; the line being typed shows its own.
@@ -55,7 +63,7 @@ export function HeroHeadline() {
     const wordEl = wordRef.current;
     const prefixCaret = prefixCaretRef.current;
     const wordCaret = wordCaretRef.current;
-    if (!prefixEl || !wordEl || !prefixCaret || !wordCaret) return;
+    if (!prefixEl || !wordEl || !prefixCaret || !wordCaret || !revealed) return;
     const target = WORDS[timeOfDay];
     const setItalic = () => {
       wordEl.style.fontStyle = target.italic ? "italic" : "normal";
@@ -77,7 +85,7 @@ export function HeroHeadline() {
         target.text.startsWith(wordShown) &&
         (wordShown === "" || (wordEl.style.fontStyle === "italic") === target.italic);
 
-      tl = gsap.timeline({ delay: prefixShown === "" ? 0.4 : 0 });
+      tl = gsap.timeline({ delay: prefixShown === "" ? 0.5 : 0 });
       const typingPrefix = prefixShown.length < PREFIX.length;
       tl.set(prefixCaret, { opacity: typingPrefix ? 1 : 0 });
       tl.set(wordCaret, { opacity: typingPrefix ? 0 : 1 });
@@ -87,9 +95,9 @@ export function HeroHeadline() {
       tl.set(prefixCaret, { opacity: 0 });
       tl.set(wordCaret, { opacity: 1 });
       typeTo(tl, wordEl, target.text, keepWord ? wordShown.length : 0, target.text.length);
-      // Blink the caret a few times, then let it go.
-      tl.to(wordCaret, { opacity: 0, duration: 0.5, ease: "steps(1)", repeat: 5, yoyo: true });
-      tl.set(wordCaret, { opacity: 0 });
+      // Let the caret breathe a few times, then fade it out.
+      tl.to(wordCaret, { opacity: 0, duration: 0.6, ease: "sine.inOut", repeat: 5, yoyo: true });
+      tl.to(wordCaret, { opacity: 0, duration: 0.6, ease: "sine.inOut" });
     };
 
     // Retype once the world is halfway through its morph toward the target.
@@ -110,15 +118,15 @@ export function HeroHeadline() {
       unsubscribe?.();
       tl?.kill();
     };
-  }, [timeOfDay, reducedMotion]);
+  }, [timeOfDay, reducedMotion, revealed]);
 
   const caret =
     "ml-[0.04em] inline-block h-[0.8em] w-[0.06em] translate-y-[0.08em] bg-current opacity-0";
 
   return (
     <h1
-      className={`pointer-events-none fixed bottom-edge left-edge z-20 max-w-[calc(100vw-2*var(--spacing-edge))] font-display text-headline text-foreground transition-opacity ease-out ${
-        projectOpen ? "opacity-0 duration-300" : "opacity-100 duration-700 delay-300"
+      className={`pointer-events-none fixed bottom-edge left-edge z-20 max-w-[calc(100vw-2*var(--spacing-edge))] font-display text-headline text-foreground transition-opacity ease-smooth ${
+        projectOpen ? "opacity-0 duration-700" : "opacity-100 duration-1000 delay-300"
       }`}
     >
       <span className="sr-only">

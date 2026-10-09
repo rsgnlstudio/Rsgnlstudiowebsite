@@ -36,12 +36,17 @@
   --spacing-edge: clamp(2rem, 5vw, 5rem);
   --spacing-section: 8rem;
 
+  /* Easing. Every animation is eased in and out softly. */
+  /* Default for state changes (colors, opacity, hover) */
+  --ease-smooth: cubic-bezier(0.65, 0, 0.35, 1);
+  /* Things arriving: a quick start, then a very long, soft landing */
+  --ease-reveal: cubic-bezier(0.16, 1, 0.3, 1);
   /* The project overlay's slide, shared with the stage it pushes aside */
-  --ease-overlay: cubic-bezier(0.65, 0, 0.15, 1);
+  --ease-overlay: cubic-bezier(0.77, 0, 0.18, 1);
 }
 
 :root {
-  --overlay-duration: 900ms;
+  --overlay-duration: 1200ms;
 }
 
 @media (prefers-reduced-motion: reduce) {

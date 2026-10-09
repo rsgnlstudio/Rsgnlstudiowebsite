@@ -8,6 +8,12 @@ export const sound = {
   volume: 0.18,
   /** Seconds to fade in and out when sound is toggled or the scene hides. */
   fade: 1.4,
+  /**
+   * Time constant (seconds) of the swell when sound comes in: on load it
+   * follows the intro build-up (squared, so it starts barely audible), and
+   * after a held-back start it rises from silence.
+   */
+  swell: 1.2,
   /** Cursor speed (NDC units per second) that stirs the sound fully, as in CursorWind. */
   fullSpeed: 1.6,
   /** Rate of change of `night` (per second) that blows the flight's whoosh fully. */

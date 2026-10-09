@@ -7,7 +7,7 @@ import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { useSceneStore } from "@/store/scene";
 
 /** Closes the dialog in case the slide out never reports its end. */
-const CLOSE_FALLBACK_MS = 1500;
+const CLOSE_FALLBACK_MS = 1800;
 
 /**
  * The project a featured flower opens (`openFlower`, set by the canvas on a
@@ -95,7 +95,7 @@ export function ProjectOverlay() {
             type="button"
             aria-label="Close"
             onClick={close}
-            className="mt-6 mr-6 grid size-11.5 cursor-pointer place-items-center rounded-full border border-current/10 bg-on-night transition-opacity hover:opacity-80 focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-current"
+            className="mt-6 mr-6 grid size-11.5 cursor-pointer place-items-center rounded-full border border-current/10 bg-on-night transition-opacity duration-700 ease-smooth hover:opacity-80 focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-current"
           >
             <X aria-hidden className="size-[1.125rem]" strokeWidth={1.5} />
           </button>

@@ -42,6 +42,7 @@ uniform float uSunStrength;
 uniform vec3 uMoonDir;
 uniform float uMoonStrength;
 uniform float uMorph;
+uniform float uBuild;
 uniform sampler2D uBrushes;
 varying vec3 vDir;
 ${noiseGLSL}
@@ -146,6 +147,14 @@ void main() {
   // clouded, along with the paint (morphPaint).
   col = mix(col, voidColor(dir), smoothstep(0.08, 0.9, uMorph));
 
+  // Intro: the sky is painted first, from the horizon up, in broad sweeps
+  // along it, before the land (painterly/build.ts).
+  if (uBuild < 1.0) {
+    float order = clamp(el, 0.0, 1.0) * 0.5 + (vnoise(vec2(az * 3.0, el * 9.0)) - 0.5) * 0.12;
+    float start = clamp(order, 0.0, 1.0) * 0.22;
+    col = mix(voidColor(dir), col, smoothstep(start, start + 0.3, uBuild));
+  }
+
   gl_FragColor = vec4(col, 1.0);
 }
 `;
@@ -155,7 +164,8 @@ void main() {
  * the gradient and clouds underneath (from the palette), the sun (sinking
  * behind the mountains as `night` rises, with a sunset glow along the
  * horizon) and the moon. As the day morphs into the night, it fades to the
- * dark void of the night world.
+ * dark void of the night world. In the intro it is painted first, out of
+ * that void.
  */
 export function Sky() {
   const mesh = useRef<Mesh>(null);
@@ -173,6 +183,7 @@ export function Sky() {
           uMoonDir: sharedUniforms.uMoonDir,
           uMoonStrength: sharedUniforms.uMoonStrength,
           uMorph: sharedUniforms.uMorph,
+          uBuild: sharedUniforms.uBuild,
           uBrushes: { value: getBrushAtlas() },
         },
         side: BackSide,

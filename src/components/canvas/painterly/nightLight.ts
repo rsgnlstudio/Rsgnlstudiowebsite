@@ -1,4 +1,5 @@
 import type { PaletteKey } from "@/config/palette";
+import { buildGLSL } from "./build";
 import { dustUniforms } from "./dust";
 import { sharedUniforms } from "./palette";
 
@@ -10,6 +11,7 @@ export const nightLightUniforms = {
   uTime: sharedUniforms.uTime,
   uMoonDir: sharedUniforms.uMoonDir,
   uMorph: sharedUniforms.uMorph,
+  uBuild: sharedUniforms.uBuild,
   uLightPos: dustUniforms.uLightPos,
   uLightStrength: dustUniforms.uLightStrength,
   uLightIntensity: dustUniforms.uLightIntensity,
@@ -36,7 +38,9 @@ vec3 voidColor(vec3 dir) {
  * morphPaint() is the day -> night morph for painted materials: everywhere at
  * once, the paint takes on this light, then sinks into the void the dust
  * floats in. At uMorph = 0 it returns the color unchanged, at 1 it is the
- * void, so the painted world can stop rendering without a cut.
+ * void, so the painted world can stop rendering without a cut. During the
+ * intro it also brings the paint out of the same void as it is laid in
+ * (buildAt, painterly/build.ts).
  *
  * Needs noiseGLSL before it and the NIGHT_LIGHT_KEYS palette uniforms.
  */
@@ -50,6 +54,7 @@ uniform float uLightIntensity;
 uniform float uLightRadius;
 
 ${voidGLSL}
+${buildGLSL}
 
 // Moonlit base, before the per-speck brightness.
 vec3 moonBase(vec3 p, vec3 n) {
@@ -78,6 +83,8 @@ float cursorDiffuse(vec3 p, vec3 n) {
 }
 
 vec3 morphPaint(vec3 col, vec3 world) {
+  // Intro: the paint comes out of the dark as it is laid in.
+  if (uBuild < 1.0) col = mix(voidColor(normalize(world - cameraPosition)), col, buildAt(world));
   if (uMorph <= 0.0) return col;
   // Seen from the night camera everything is ground, so light it as ground.
   vec3 n = vec3(0.0, 1.0, 0.0);

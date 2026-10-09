@@ -20,6 +20,15 @@ export interface SceneState {
   timeOfDay: TimeOfDay;
   /** 0 = day, 1 = night. Animated toward timeOfDay by CameraRig. */
   night: number;
+  /** The scene has rendered its first frame (set by CameraRig). */
+  sceneReady: boolean;
+  /** The visitor has passed the entry screen; the intro starts then. */
+  entered: boolean;
+  /**
+   * Intro build-up after entering the site, 0..1 (linear progress). Advanced
+   * by CameraRig; the UI appears once it passes INTRO_UI_AT.
+   */
+  intro: number;
   /** Set by the current page; "hidden" pauses rendering. */
   sceneMode: SceneMode;
   /** Featured flower under the cursor (day only), from src/config/flowers.ts. */
@@ -32,6 +41,9 @@ export interface SceneState {
   setScrollProgress: (progress: number) => void;
   setTimeOfDay: (timeOfDay: TimeOfDay) => void;
   setNight: (night: number) => void;
+  setSceneReady: (ready: boolean) => void;
+  setEntered: (entered: boolean) => void;
+  setIntro: (intro: number) => void;
   setSceneMode: (mode: SceneMode) => void;
   setHoveredFlower: (id: FeaturedFlowerId | null) => void;
   setOpenFlower: (id: FeaturedFlowerId | null) => void;
@@ -45,6 +57,9 @@ export const useSceneStore = create<SceneState>()((set) => ({
   scrollProgress: 0,
   timeOfDay: "day",
   night: 0,
+  sceneReady: false,
+  entered: false,
+  intro: 0,
   sceneMode: DEFAULT_SCENE_MODE,
   hoveredFlower: null,
   openFlower: null,
@@ -54,6 +69,9 @@ export const useSceneStore = create<SceneState>()((set) => ({
   setScrollProgress: (scrollProgress) => set({ scrollProgress }),
   setTimeOfDay: (timeOfDay) => set({ timeOfDay }),
   setNight: (night) => set({ night }),
+  setSceneReady: (sceneReady) => set({ sceneReady }),
+  setEntered: (entered) => set({ entered }),
+  setIntro: (intro) => set({ intro }),
   setSceneMode: (sceneMode) => set({ sceneMode }),
   setHoveredFlower: (hoveredFlower) => set({ hoveredFlower }),
   setOpenFlower: (openFlower) => set({ openFlower }),
