@@ -47,6 +47,7 @@ export const PALETTE_KEYS = [
   "flowerPeriwinkle",
   "flowerCenter",
   "flowerGlow",
+  "featuredGlow",
   "firefly",
   // Night dust world (and the night light the painting takes on as it turns into it)
   "void",
@@ -98,6 +99,7 @@ export const dayPalette: Palette = {
   flowerPeriwinkle: "#9b9cf2",
   flowerCenter: "#f5a524",
   flowerGlow: "#ffe2b0",
+  featuredGlow: "#ffd9a0",
   firefly: "#e4ff9a",
 
   void: "#0b0a1c",
@@ -145,6 +147,7 @@ export const duskPalette: Palette = {
   flowerPeriwinkle: "#a680d4",
   flowerCenter: "#ff9a20",
   flowerGlow: "#ffb070",
+  featuredGlow: "#ffae6a",
   firefly: "#ffe08a",
 
   void: "#0e0816",
@@ -192,6 +195,7 @@ export const nightPalette: Palette = {
   flowerPeriwinkle: "#7a92f2",
   flowerCenter: "#c4d482",
   flowerGlow: "#5cc0ff",
+  featuredGlow: "#8ad8ff",
   firefly: "#c8ff6a",
 
   void: "#010309",

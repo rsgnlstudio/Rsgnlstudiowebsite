@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import type { FeaturedFlowerId } from "@/config/flowers";
 import { DEFAULT_SCENE_MODE, type SceneMode, type TimeOfDay } from "@/config/scene";
 
 /**
@@ -21,6 +22,8 @@ export interface SceneState {
   night: number;
   /** Set by the current page; "hidden" pauses rendering. */
   sceneMode: SceneMode;
+  /** Featured flower under the cursor (day only), from src/config/flowers.ts. */
+  hoveredFlower: FeaturedFlowerId | null;
 
   setActiveSection: (id: string | null) => void;
   setSectionProgress: (progress: number) => void;
@@ -28,6 +31,7 @@ export interface SceneState {
   setTimeOfDay: (timeOfDay: TimeOfDay) => void;
   setNight: (night: number) => void;
   setSceneMode: (mode: SceneMode) => void;
+  setHoveredFlower: (id: FeaturedFlowerId | null) => void;
   /** Clears scroll-derived state, e.g. when a page unmounts. */
   resetScroll: () => void;
 }
@@ -39,6 +43,7 @@ export const useSceneStore = create<SceneState>()((set) => ({
   timeOfDay: "day",
   night: 0,
   sceneMode: DEFAULT_SCENE_MODE,
+  hoveredFlower: null,
 
   setActiveSection: (activeSection) => set({ activeSection }),
   setSectionProgress: (sectionProgress) => set({ sectionProgress }),
@@ -46,6 +51,7 @@ export const useSceneStore = create<SceneState>()((set) => ({
   setTimeOfDay: (timeOfDay) => set({ timeOfDay }),
   setNight: (night) => set({ night }),
   setSceneMode: (sceneMode) => set({ sceneMode }),
+  setHoveredFlower: (hoveredFlower) => set({ hoveredFlower }),
   resetScroll: () =>
     set({ activeSection: null, sectionProgress: 0, scrollProgress: 0 }),
 }));

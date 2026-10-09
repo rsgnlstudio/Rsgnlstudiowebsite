@@ -9,6 +9,7 @@ import {
 import type { PaletteKey } from "@/config/palette";
 import { homeSections } from "@/config/sections";
 import { brushGLSL, getBrushAtlas } from "./brushes";
+import { FEATURE_COUNT, featuredUniforms } from "./featured";
 import { gustGLSL, gustUniforms } from "./gust";
 import { terrainHeightGLSL } from "./landscape";
 import { NIGHT_LIGHT_KEYS, nightLightGLSL, nightLightUniforms } from "./nightLight";
@@ -71,6 +72,8 @@ export interface Stroke {
   opacity?: number;
   /** S-shaped wave of the stroke, as a fraction of its length. */
   wave?: number;
+  /** Featured flower this stroke belongs to, 1-based (0 = none); see featured.ts. */
+  feature?: number;
 }
 
 /** Where plants are sorted back to front from: the day camera. */
@@ -96,7 +99,7 @@ export class StrokeBuffer {
     this.paint.push(s.color, s.dry ?? s.color, s.shade ?? 1, s.dryness ?? 0.4);
     this.variation.push(...(s.variation ?? [0, 1, 1]));
     this.motion.push(s.phase ?? 0, s.sway ?? 1, s.glow ?? 0);
-    this.look.push(s.opacity ?? 1, s.wave ?? 0);
+    this.look.push(s.opacity ?? 1, s.wave ?? 0, s.feature ?? 0);
     this.count++;
   }
 
@@ -147,7 +150,7 @@ export class StrokeBuffer {
     geometry.setAttribute("aPaint", attr(this.paint, 4));
     geometry.setAttribute("aVar", attr(this.variation, 3));
     geometry.setAttribute("aMotion", attr(this.motion, 3));
-    geometry.setAttribute("aLook", attr(this.look, 2));
+    geometry.setAttribute("aLook", attr(this.look, 3));
     geometry.instanceCount = this.count;
     base.dispose();
     return geometry;
@@ -162,7 +165,7 @@ attribute vec3 aShape;
 attribute vec4 aPaint;
 attribute vec3 aVar;
 attribute vec3 aMotion;
-attribute vec2 aLook;
+attribute vec3 aLook;
 
 uniform float uTime;
 uniform float uWind;
@@ -173,6 +176,14 @@ uniform float uPxPerUnit;
 uniform float uMinPx;
 #ifdef SQUEEZE
 uniform float uSqueeze;
+#endif
+#ifdef FEATURED
+uniform float uFeatureHover[FEATURE_COUNT];
+uniform float uFeatureRest;
+uniform float uFeatureBreathe;
+uniform float uFeatureHoverGlow;
+uniform float uFeatureGrow;
+varying float vFeatureGlow;
 #endif
 
 varying vec2 vUv;
@@ -234,12 +245,22 @@ void main() {
   vec3 eye = cameraPosition;
   vec3 toCam = eye - base;
   vec2 facing = normalize(toCam.xz + vec2(0.0, 1e-4));
+  float hover = 0.0;
+  #ifdef FEATURED
+  // A featured flower breathes a soft glow; hovered, it lights up, grows a
+  // little and stands still in the cursor's wind.
+  int feature = int(aLook.z + 0.5) - 1;
+  if (feature >= 0) hover = uFeatureHover[feature];
+  float breathe = 1.0 + uFeatureBreathe * sin(uTime * 1.3 + aLook.z * 2.1);
+  vFeatureGlow = uFeatureRest * breathe + uFeatureHoverGlow * hover;
+  #endif
   vec3 right = vec3(facing.y, 0.0, -facing.x);
   vec3 up = vec3(0.0, 1.0, 0.0);
   // The cursor's gust, measured on screen at the plant's middle and scaled
   // like the layer's own sway: away from the cursor sideways, and toward
   // the camera below it (away above it).
   vec2 gust = cursorGust(base + vec3(0.0, aRoot.w * 0.6, 0.0), aMotion.x) * aMotion.y * uSway / 0.08;
+  gust *= 1.0 - hover;
   vec2 bend = vec2(windSway(base, aMotion.x) * uSway * aMotion.y + gust.x, -gust.y);
   // Top view: the frame tips over to face the camera.
   vec3 camRight = vec3(viewMatrix[0][0], viewMatrix[1][0], viewMatrix[2][0]);
@@ -248,6 +269,9 @@ void main() {
   up = normalize(mix(up, camUp, uTopView));
   vec3 fwd = normalize(cross(right, up));
   float scale = mix(1.0, uTopScale, uTopView);
+  #ifdef FEATURED
+  scale *= 1.0 + uFeatureGrow * hover;
+  #endif
   // The crowd right at the day camera's feet clumps into specks from above.
   float atFeet = step(0.0, -base.z) * step(-base.z, 5.0) * step(abs(base.x), 8.0);
   scale *= 1.0 - atFeet * smoothstep(0.3, 0.8, uTopView);
@@ -299,6 +323,7 @@ const BASE_KEYS = [
   "sunGlow",
   "groundMid",
   "grassMid",
+  "featuredGlow",
   ...NIGHT_LIGHT_KEYS,
 ] as const satisfies readonly PaletteKey[];
 
@@ -328,6 +353,9 @@ varying float vDist;
 varying vec3 vWorld;
 varying float vOpacity;
 varying float vRise;
+#ifdef FEATURED
+varying float vFeatureGlow;
+#endif
 
 // Opacity at which paint counts as solid: the core pass draws above it,
 // the fringe pass blends below it.
@@ -383,6 +411,10 @@ void main() {
 
   // Night: chosen flowers glow.
   col += uFlowerGlow * uGlow * vGlow * (0.7 + 0.6 * brush.g);
+#ifdef FEATURED
+  // Featured flowers glow by day too, most in their petals.
+  col += uFeaturedGlow * vFeatureGlow * mix(0.25, 1.0, vGlow) * (0.7 + 0.6 * brush.g);
+#endif
   col = applyHaze(col, vDist * uHazeScale);
 
   // Wet in wet: the stroke picks up the wet paint around it, a little in
@@ -424,6 +456,8 @@ export interface StrokeMaterialOptions {
   rootFade?: number;
   /** Re-seat roots on the terrain and squeeze x on narrow screens. */
   squeeze?: boolean;
+  /** Featured flowers: glow and react to hover (featuredUniforms). */
+  featured?: boolean;
 }
 
 /**
@@ -434,6 +468,10 @@ export function createStrokeMaterial(options: StrokeMaterialOptions, pass: "core
   const keys = [...new Set<PaletteKey>([...BASE_KEYS, options.shadow, options.light])];
   const defines: Record<string, string> = {};
   if (options.squeeze) defines.SQUEEZE = "";
+  if (options.featured) {
+    defines.FEATURED = "";
+    defines.FEATURE_COUNT = String(FEATURE_COUNT);
+  }
   if (pass === "fringe") defines.FRINGE = "";
   return new ShaderMaterial({
     transparent: pass === "fringe",
@@ -457,6 +495,7 @@ export function createStrokeMaterial(options: StrokeMaterialOptions, pass: "core
       uRootFade: { value: options.rootFade ?? 0.3 },
       ...wetUniforms,
       ...gustUniforms,
+      ...(options.featured ? featuredUniforms : {}),
       uSqueeze: viewUniforms.uTreeSqueeze,
       uTopView: viewUniforms.uTopView,
       uPxPerUnit: viewUniforms.uPxPerUnit,
