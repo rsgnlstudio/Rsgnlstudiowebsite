@@ -16,6 +16,7 @@ The RSGNL Studio website. A 3D nature landscape sits behind the page as a single
 | gsap + ScrollTrigger | Section scroll triggers and future tweens |
 | lenis | Smooth scrolling, driven by GSAP's ticker |
 | zustand | Small store that bridges DOM and canvas without re-renders |
+| lucide-react | Icons (the sound toggle) |
 
 ## Getting started
 
@@ -49,6 +50,7 @@ npm run typecheck  # generate route types, then tsc --noEmit
 - **Post-processing.** After the wet canvas capture (see above), `VolumetricMist` raymarches soft banks of mist against the scene depth (so they wrap around plants instead of clipping), lit by the low sun and thinning out as the day morphs into the night. Then depth of field focuses on the near meadow, a little below the centre of the frame (a ray march against `terrainHeight` every frame), so the field melts into soft paint behind and the flowers by the lens blur too. The sky only blurs a little, so the sun stays a whole disc. It hands over to the dust's own bokeh as the painting turns into dust. Then bloom on the HDR highlights (the sun, backlit petal edges, pollen), then the finish in its own pass (`PainterlyEffect`: chromatic fringe toward the edges, canvas texture by day, grain, a vignette that closes in at night).
 - **Depth layers (day).** Background: `Sky` (gradient, painted clouds, a low sun and the moon), `Stars`, `Mountains` (layered ridges fading into haze) and `Conifers`. Midground: `Grass` and `Flowers` on the `Terrain`. Foreground: big flowers planted right by the lens (`NEAR_FLOWERS` in `Flowers`), part of the world so they move with it. Over it all, volumetric mist low between the tree lines and around the flowers at the bottom edges of the frame, and `Pollen`, glowing where the low sun shines through it.
 - **Look settings and quality tiers.** `src/config/look.ts` holds the tunable defaults (focus range, blur, grain, vignette, density, wind, cursor wind, glow) and two quality presets. `src/store/look.ts` is the runtime copy, canvas-internal. The tier is detected once (`src/lib/quality.ts`). Phones and weak machines get "low": fewer instances, a lower dpr and a smaller DoF buffer. Use `?quality=low|high` to force a tier.
+- **Ambient sound.** `src/lib/ambient.ts` synthesizes the sound with Web Audio; there are no sound files. By day an airy wind (band-passed pink noise in slow gusts, a breath of high air, a faint whistle), by night a darker room (a low rumble, a breathing drone on an A minor chord, a shimmer of dust). The two cross-fade with `night`, and the flight between them rushes. Cursor speed stirs the world under it: it blows up the day wind and makes it brighter (panned toward the cursor), and at night it raises the dust shimmer and opens the drone. Under both runs a calm piano loop in A minor (eight bars, a broken chord and a sparse melody, synthesized from a few partials per note) whose notes stay the same through the switch; by night it turns slightly electric (a Rhodes-like FM bark and tine, a gentle tremolo) and wetter. Every click (also on the nav and from the keyboard) plays a soft click tuned into the world: a pitched tick in A minor pentatonic (the note picked by cursor x), bright and short by day, low and ringing by night, through the same reverb, and it stirs the ambience for a moment. Sound is off by default, since browsers only allow audio after a gesture: `SoundToggle` (top right, lucide icons) calls `setSoundEnabled`, which creates the engine on first use and keeps the on/off state in `src/store/sound.ts`. It fades out while the scene is `"hidden"` and suspends while the tab is in the background. Levels and frequencies live in `src/config/sound.ts`.
 - **Pages control the scene through `sceneMode`.** A page claims the canvas with `useSceneMode("home")`. On unmount it falls back to `"hidden"`, which stops the frameloop and hides the canvas. A new route that doesn't call `useSceneMode` therefore gets a paused, invisible canvas. To add a mode, extend `SCENE_MODES` and `sectionsByMode` in `src/config/scene.ts`.
 
 ## Folder structure
@@ -65,13 +67,13 @@ src/
                        night light and morph, dust uniforms and trail, the cursor gust, the brush simulation, strokes and
                        stroke fields, plant painters, landscape shape and conifer layout,
                        PainterlyEffect, WetCanvasPass, VolumetricMist, RNG
-    nav/               Navigation (the Day/Night switch)
+    nav/               Navigation (the Day/Night switch, the sound toggle)
     sections/          DOM sections, the hero headline and per-page scroll controllers (e.g. HomeScroll)
   fonts/               Calendas Plus (woff2) loaded with next/font/local
-  config/              Section config (camera keyframes), scene modes and the night camera, palette, look and quality presets
+  config/              Section config (camera keyframes), scene modes and the night camera, palette, look and quality presets, sound levels
   hooks/               useSectionScroll, useSceneMode, usePrefersReducedMotion, useWindowPointer
-  lib/                 GSAP setup (plugin registration), the Lenis + GSAP ticker integration, quality tier detection
-  store/               The zustand store bridging DOM and canvas, plus the canvas-internal look store
+  lib/                 GSAP setup (plugin registration), the Lenis + GSAP ticker integration, quality tier detection, the ambient sound engine
+  store/               The zustand store bridging DOM and canvas, the canvas-internal look store, and the sound on/off store
 ```
 
 ## Status
@@ -92,10 +94,10 @@ Built:
 - Night dust world (ground, trees, flowers, motes) with a cursor light, its wake, and per-speck bokeh; the painting morphs into it by re-shading, everywhere at once
 - Aspect-aware camera (FOV, tilt, tree lines pulled in on portrait), idle drift and mouse parallax, reduced-motion support
 - High/low quality tiers
+- Ambient sound (airy wind by day, a dark drone by night, stirred by the cursor, a calm piano loop, soft clicks), behind a sound toggle at the top right
 
 Still placeholders:
 
 - Camera interpolation between section keyframes on scroll
-- Keyframes for `middle` and `outro`
-- The three home sections have no content
+- More home sections: the page is one viewport (`intro`) and doesn't scroll yet; add sections to `homeSections` together with their content
 - Design token values
