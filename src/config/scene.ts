@@ -24,7 +24,7 @@ export type TimeOfDay = (typeof TIMES_OF_DAY)[number];
 export const nightFor: Record<TimeOfDay, number> = { day: 0, night: 1 };
 
 /** Seconds for a full day <-> night transition (sunset plus camera move). */
-export const DAY_NIGHT_DURATION = 4;
+export const DAY_NIGHT_DURATION = 5.5;
 /** The same with reduced motion. */
 export const DAY_NIGHT_DURATION_REDUCED = 1.2;
 
@@ -49,6 +49,30 @@ export const nightCamera: CameraKeyframe = {
  * view, so the whole flight is one slow change of light.
  */
 export const MORPH_RANGE = [0.12, 0.86] as const;
+
+/**
+ * Seconds the intro takes: on entering the site the world is painted in out
+ * of the dark (sky first, then the land from far to near, plants growing up)
+ * while the camera zooms in the whole time (moving in and narrowing its FOV).
+ */
+export const INTRO_DURATION = 6.5;
+/** The same with reduced motion (no camera move). */
+export const INTRO_DURATION_REDUCED = 1.2;
+/**
+ * How far the world is already built (`uBuild`) behind the entry screen: the
+ * sky, the mountains and the far trees are painted, the meadow is still dark.
+ * The intro carries on from there.
+ */
+export const INTRO_BUILD_FROM = 0.3;
+/** `intro` progress at which the UI starts to appear. */
+export const INTRO_UI_AT = 0.82;
+/**
+ * Where the intro camera starts, relative to the day keyframe, in view space
+ * (metres): pulled back and up, moving in to the keyframe over the build-up.
+ */
+export const INTRO_CAMERA_OFFSET = [0, 1.3, 6] as const;
+/** Degrees the intro camera's FOV starts wider than the keyframe's. */
+export const INTRO_FOV_OFFSET = 9;
 
 /** Height above the ground of the light that follows the cursor at night. */
 export const CURSOR_LIGHT_HEIGHT = 7;

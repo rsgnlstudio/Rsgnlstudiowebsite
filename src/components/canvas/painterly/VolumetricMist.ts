@@ -168,7 +168,10 @@ export class VolumetricMist extends Effect {
     u.get("uFade")!.value = 1 - smoothstep(viewUniforms.uTopView.value, 0.15, 0.5);
     // And it thins out everywhere at once as the day morphs into the night.
     const density = u.get("uDensity")!.value as number[];
-    const clear = 1 - smoothstep(sharedUniforms.uMorph.value, 0.1, 0.6);
+    // In the intro it settles in as the meadow is painted.
+    const clear =
+      (1 - smoothstep(sharedUniforms.uMorph.value, 0.1, 0.6)) *
+      smoothstep(sharedUniforms.uBuild.value, 0.35, 0.95);
     BANKS.forEach((bank, i) => {
       density[i] = bank[4] * clear;
     });

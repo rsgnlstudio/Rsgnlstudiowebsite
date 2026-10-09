@@ -1,5 +1,6 @@
 import { DayNightSwitch } from "@/components/nav/DayNightSwitch";
 import { SoundToggle } from "@/components/nav/SoundToggle";
+import { EntryScreen } from "@/components/sections/EntryScreen";
 import { FlowerHoverLabel } from "@/components/sections/FlowerHoverLabel";
 import { HeroHeadline } from "@/components/sections/HeroHeadline";
 import { HomeScroll } from "@/components/sections/HomeScroll";
@@ -16,6 +17,7 @@ export default function HomePage() {
       <HeroHeadline />
       <FlowerHoverLabel />
       <ProjectOverlay />
+      <EntryScreen />
       {homeSections.map((section) => (
         <Section key={section.id} id={section.id} />
       ))}

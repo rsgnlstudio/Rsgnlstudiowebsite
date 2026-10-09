@@ -36,7 +36,7 @@ export function FlowerHoverLabel() {
       {FEATURED_FLOWERS.map((flower) => (
         <div
           key={flower.id}
-          className={`col-start-1 row-start-1 w-max max-w-64 rounded-2xl border border-current/10 px-4 py-3 backdrop-blur-md transition-[opacity,translate] duration-300 ease-out ${
+          className={`col-start-1 row-start-1 w-max max-w-64 rounded-2xl border border-current/10 px-4 py-3 backdrop-blur-md transition-[opacity,translate] duration-700 ease-reveal ${
             timeOfDay === "night" ? "bg-on-day/75 text-on-night" : "bg-on-night/75 text-on-day"
           } ${flower.id === hovered ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0"}`}
         >

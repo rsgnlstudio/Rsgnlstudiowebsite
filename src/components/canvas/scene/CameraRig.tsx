@@ -14,6 +14,10 @@ import type { CameraKeyframe } from "@/config/sections";
 import {
   DAY_NIGHT_DURATION,
   DAY_NIGHT_DURATION_REDUCED,
+  INTRO_CAMERA_OFFSET,
+  INTRO_DURATION,
+  INTRO_DURATION_REDUCED,
+  INTRO_FOV_OFFSET,
   nightCamera,
   nightFor,
   sectionsByMode,
@@ -37,9 +41,53 @@ function fovForAspect(fov: number, aspect: number) {
   return MathUtils.clamp(MathUtils.lerp(fov, keepWidth, k), 28, 72);
 }
 
-/** Symmetric ease for the day <-> night progress, and its inverse. */
-const ease = (p: number) => 0.5 - 0.5 * Math.cos(Math.PI * p);
-const unease = (n: number) => Math.acos(1 - 2 * MathUtils.clamp(n, 0, 1)) / Math.PI;
+/**
+ * Symmetric ease for the day <-> night progress (cubic in and out: a long,
+ * soft start and landing), and its inverse.
+ */
+const ease = (p: number) => (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(2 - 2 * p, 3) / 2);
+const unease = (n: number) => {
+  const v = MathUtils.clamp(n, 0, 1);
+  return v < 0.5 ? Math.cbrt(v / 4) : 1 - Math.cbrt(2 - 2 * v) / 2;
+};
+
+/**
+ * Seconds over which `night` follows the eased progress. It rounds off the
+ * turn when the switch is clicked mid-way, so the camera never jerks back.
+ */
+const NIGHT_SMOOTHING = 0.35;
+
+/**
+ * Ease of the intro's zoom: sine out, so it moves all through the build-up
+ * and lands softly as the world is finished.
+ */
+const zoom = (p: number) => Math.sin(MathUtils.clamp(p, 0, 1) * Math.PI * 0.5);
+
+/**
+ * Critically damped spring toward `target` (as Unity's SmoothDamp): keeps
+ * its velocity, so a change of target bends the motion instead of breaking
+ * it. Snaps once it has settled.
+ */
+function smoothDamp(
+  current: number,
+  target: number,
+  velocity: { current: number },
+  smoothTime: number,
+  delta: number,
+) {
+  const omega = 2 / smoothTime;
+  const x = omega * delta;
+  const decay = 1 / (1 + x + 0.48 * x * x + 0.235 * x * x * x);
+  const change = current - target;
+  const temp = (velocity.current + omega * change) * delta;
+  velocity.current = (velocity.current - omega * temp) * decay;
+  const next = target + (change + temp) * decay;
+  if (Math.abs(next - target) < 1e-4 && Math.abs(velocity.current) < 1e-3) {
+    velocity.current = 0;
+    return target;
+  }
+  return next;
+}
 
 const UP = new Vector3(0, 1, 0);
 const matrix = new Matrix4();
@@ -64,12 +112,18 @@ const nightQuaternion = new Quaternion();
 const offset = new Vector3();
 const drift = new Vector3();
 const pointer = new Vector2();
+const introOffset = new Vector3(...INTRO_CAMERA_OFFSET);
 
 /**
  * Moves `night` toward the store's timeOfDay over DAY_NIGHT_DURATION, eased,
  * and blends the camera with it: from the mode's first keyframe in the
  * meadow (day) up to `nightCamera`, high above and looking straight down
- * (night). Clicking mid-transition turns it around from where it is.
+ * (night). Clicking mid-transition turns it around from where it is, softly
+ * (NIGHT_SMOOTHING).
+ *
+ * Also reports the first frame (`sceneReady`) and runs the intro: advances
+ * the store's `intro` over INTRO_DURATION once the visitor has entered, while the camera zooms in to the keyframe: moving in
+ * from INTRO_CAMERA_OFFSET and narrowing from INTRO_FOV_OFFSET wider.
  *
  * Also fits the FOV to the aspect ratio and adds a slight idle drift plus
  * mouse parallax (both off when reduced motion is preferred). Reads the store
@@ -96,22 +150,32 @@ export function CameraRig() {
     return () => window.removeEventListener("pointermove", onMove);
   }, []);
 
-  // Linear day -> night progress; `night` is its eased value.
+  // Linear day -> night progress; `night` follows its eased value.
   const progress = useRef(unease(useSceneStore.getState().night));
+  const nightVelocity = useRef(0);
 
-  useFrame((state, delta) => {
+  useFrame((state, frameDelta) => {
     const camera = state.camera as PerspectiveCamera;
     const store = useSceneStore.getState();
     const keyframe = sectionsByMode[store.sceneMode][0]?.camera;
     if (!keyframe) return;
+    // Frames that stall on shader compiles mustn't skip ahead. Capped loosely,
+    // so slow devices still keep real time.
+    const delta = Math.min(frameDelta, 0.1);
+
+    if (!store.sceneReady) store.setSceneReady(true);
+    if (store.entered && store.intro < 1) {
+      const introDuration = reduced.current ? INTRO_DURATION_REDUCED : INTRO_DURATION;
+      store.setIntro(Math.min(store.intro + delta / introDuration, 1));
+    }
 
     const goal = nightFor[store.timeOfDay];
     const duration = reduced.current ? DAY_NIGHT_DURATION_REDUCED : DAY_NIGHT_DURATION;
     const step = MathUtils.clamp(goal - progress.current, -delta / duration, delta / duration);
     progress.current += step;
-    const night = ease(progress.current);
+    const night = smoothDamp(store.night, ease(progress.current), nightVelocity, NIGHT_SMOOTHING, delta);
     if (night !== store.night) store.setNight(night);
-    const t = MathUtils.clamp(store.night, 0, 1);
+    const t = MathUtils.clamp(night, 0, 1);
 
     // Portrait: tilt down so the taller frame holds more meadow, less sky.
     const narrow = MathUtils.clamp(1 - camera.aspect, 0, 1);
@@ -128,7 +192,7 @@ export function CameraRig() {
       pointer.set(0, 0);
       offset.set(0, 0, 0);
     } else {
-      pointer.lerp(pointerTarget.current, 1 - Math.exp(-delta * 1.5));
+      pointer.lerp(pointerTarget.current, 1 - Math.exp(-delta * 1.1));
       const time = state.clock.elapsedTime;
       offset.set(
         Math.sin(time * 0.13) * 0.03 + pointer.x * 0.18,
@@ -136,12 +200,15 @@ export function CameraRig() {
         Math.sin(time * 0.09 + 0.4) * 0.02,
       );
     }
+    // Intro: zoom in from further back and wider (view space).
+    const zoomOut = reduced.current ? 0 : 1 - zoom(store.intro);
+    offset.addScaledVector(introOffset, zoomOut);
     // Drift in view space, scaled up with altitude so it stays visible.
     camera.position.add(
       drift.copy(offset).multiplyScalar(1 + t * 10).applyQuaternion(camera.quaternion),
     );
 
-    const fov = MathUtils.lerp(
+    const fov = INTRO_FOV_OFFSET * zoomOut + MathUtils.lerp(
       fovForAspect(keyframe.fov, camera.aspect),
       fovForAspect(nightCamera.fov, camera.aspect),
       t,

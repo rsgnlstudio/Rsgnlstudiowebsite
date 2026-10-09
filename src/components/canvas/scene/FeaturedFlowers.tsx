@@ -4,6 +4,7 @@ import { useFrame, useThree, type RootState } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import { MathUtils, Vector3 } from "three";
 import { FEATURED_FLOWERS, FEATURED_HIT, type FeaturedFlowerId } from "@/config/flowers";
+import { INTRO_UI_AT } from "@/config/scene";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { useWindowPointer } from "@/hooks/useWindowPointer";
 import { useLookStore } from "@/store/look";
@@ -113,8 +114,8 @@ export function FeaturedFlowers() {
   // against the flowers here, at the click's own position.
   useEffect(() => {
     const onClick = (event: MouseEvent) => {
-      const { night, sceneMode, openFlower, setOpenFlower } = useSceneStore.getState();
-      if (openFlower || sceneMode === "hidden" || dayOf(night) <= 0.5) return;
+      const { night, intro, sceneMode, openFlower, setOpenFlower } = useSceneStore.getState();
+      if (openFlower || sceneMode === "hidden" || dayOf(night) <= 0.5 || intro < INTRO_UI_AT) return;
       if (event.target instanceof Element && event.target.closest(INTERACTIVE)) return;
       const hit = flowerAt(
         get(),
@@ -146,20 +147,21 @@ export function FeaturedFlowers() {
 
   useFrame((state, delta) => {
     const dt = Math.min(delta, 0.05);
-    const { night, hoveredFlower, openFlower, setHoveredFlower } = useSceneStore.getState();
+    const { night, intro, hoveredFlower, openFlower, setHoveredFlower } = useSceneStore.getState();
     const day = dayOf(night);
 
+    // Not before the intro has painted the meadow and revealed the UI.
     const hovered =
-      pointer.current.active && day > 0.5 && !openFlower
+      pointer.current.active && day > 0.5 && !openFlower && intro >= INTRO_UI_AT
         ? flowerAt(state, pointer.current.position.x, pointer.current.position.y)
         : null;
     if (hovered !== hoveredFlower) setHoveredFlower(hovered);
 
-    // Light up quickly, fade out a little slower.
+    // Light up softly, fade out slower still.
     const hover = featuredUniforms.uFeatureHover.value;
     flowers.forEach((flower, i) => {
       const target = flower.id === hovered || flower.id === openFlower ? 1 : 0;
-      hover[i] = MathUtils.damp(hover[i], target, target > hover[i] ? 9 : 4, dt);
+      hover[i] = MathUtils.damp(hover[i], target, target > hover[i] ? 5 : 2.5, dt);
     });
     const look = useLookStore.getState();
     featuredUniforms.uFeatureRest.value = look.featuredRest * day;

@@ -18,8 +18,10 @@ import { useSoundStore } from "@/store/sound";
  * Every animation frame `tick` reads `night` from the scene store and the
  * cursor speed, and moves the parameters: day and night cross-fade with
  * `night`, the cursor stirs the wind (day) and the dust shimmer (night), the
- * flight between them rushes. One engine per page load, created on the first
- * user gesture (the sound toggle).
+ * flight between them rushes. The master level swells in with the intro
+ * build-up. One engine per page load, created on the entry screen's click
+ * (or the sound toggle); should the browser still hold audio back, it starts
+ * on the next gesture.
  */
 
 const clamp01 = (v: number) => Math.min(Math.max(v, 0), 1);
@@ -115,7 +117,8 @@ class AmbientEngine {
   private readonly whooshGain = this.ctx.createGain();
 
   private enabled = false;
-  private audible = false;
+  /** Master level, smoothed in JS so it can follow the intro. */
+  private level = 0;
   private frame = 0;
   private lastTime = 0;
   private suspendTimer = 0;
@@ -225,13 +228,14 @@ class AmbientEngine {
     window.addEventListener("pointermove", this.onPointerMove, { passive: true });
     window.addEventListener("click", this.onClick, { passive: true });
     document.addEventListener("visibilitychange", this.onVisibility);
+    this.ctx.addEventListener("statechange", this.onStateChange);
   }
 
   setEnabled(enabled: boolean) {
     this.enabled = enabled;
     window.clearTimeout(this.suspendTimer);
     if (enabled) {
-      if (!document.hidden) void this.ctx.resume();
+      if (!document.hidden) this.resume();
       if (!this.frame) {
         this.lastTime = performance.now();
         this.frame = requestAnimationFrame(this.tick);
@@ -242,7 +246,8 @@ class AmbientEngine {
         if (this.enabled) return;
         cancelAnimationFrame(this.frame);
         this.frame = 0;
-        this.audible = false;
+        this.level = 0;
+        this.master.gain.value = 0;
         void this.ctx.suspend();
       }, sound.fade * 1500);
     }
@@ -256,8 +261,37 @@ class AmbientEngine {
     window.removeEventListener("pointermove", this.onPointerMove);
     window.removeEventListener("click", this.onClick);
     document.removeEventListener("visibilitychange", this.onVisibility);
+    this.ctx.removeEventListener("statechange", this.onStateChange);
+    this.removeUnlock();
     void this.ctx.close();
   }
+
+  /**
+   * Resumes the context. Before any user gesture the browser may refuse; then
+   * the next click, key or tap anywhere starts it (captured on the window, so
+   * it runs before the page handles that gesture).
+   */
+  private resume() {
+    void this.ctx.resume().catch(() => {});
+    // Without a gesture, resume() stays pending rather than failing.
+    window.setTimeout(() => {
+      if (this.ctx.state === "running" || !this.enabled || document.hidden) return;
+      for (const type of UNLOCK_EVENTS) window.addEventListener(type, this.unlock, { capture: true });
+    }, 100);
+  }
+
+  private unlock = () => {
+    this.removeUnlock();
+    if (this.enabled && !document.hidden) void this.ctx.resume().catch(() => {});
+  };
+
+  private removeUnlock() {
+    for (const type of UNLOCK_EVENTS) window.removeEventListener(type, this.unlock, { capture: true });
+  }
+
+  private onStateChange = () => {
+    if (this.ctx.state === "running") this.removeUnlock();
+  };
 
   /** A looped noise source, started at `offset` seconds so loops don't line up. */
   private loop(buffer: AudioBuffer, offset: number) {
@@ -277,13 +311,17 @@ class AmbientEngine {
     const dt = Math.min(Math.max((time - this.lastTime) / 1000, 1e-3), 0.1);
     this.lastTime = time;
     const t = this.ctx.currentTime;
-    const { night, sceneMode } = useSceneStore.getState();
+    const { night, sceneMode, intro } = useSceneStore.getState();
 
-    // Fade with the toggle, and out while no page shows the scene.
-    const audible = this.enabled && sceneMode !== "hidden";
-    if (audible !== this.audible) {
-      this.audible = audible;
-      this.set(this.master.gain, audible ? sound.volume : 0, sound.fade / 3);
+    // Swell in with the intro and the toggle, fade out while no page shows
+    // the scene. Only while the context runs, so a held-back start still
+    // swells in from silence.
+    if (this.ctx.state === "running") {
+      const audible = this.enabled && sceneMode !== "hidden";
+      const goal = audible ? sound.volume * intro * intro : 0;
+      const rising = goal > this.level;
+      this.level = damp(this.level, goal, rising ? 1 / sound.swell : 3 / sound.fade, dt);
+      this.set(this.master.gain, this.level, 0.05);
     }
 
     // Cursor speed: rises fast with a flick, eases off slowly like a gust.
@@ -459,7 +497,7 @@ class AmbientEngine {
   /** A soft tick tuned into the current world; `x` (0..1) picks the note and the side. */
   private click(x: number) {
     const { ctx } = this;
-    if (!this.audible || ctx.state !== "running") return;
+    if (!this.enabled || this.level < 1e-3 || ctx.state !== "running") return;
     const { click } = sound;
     const night = useSceneStore.getState().night;
     const t = ctx.currentTime;
@@ -520,13 +558,17 @@ class AmbientEngine {
  * The engine lives on globalThis, so a hot reload of this module in
  * development finds the one that is playing instead of starting a second.
  */
+/** Gestures that let the browser start audio. */
+const UNLOCK_EVENTS = ["pointerdown", "click", "keydown", "touchend"] as const;
+
 const holder = globalThis as typeof globalThis & {
   __ambientEngine?: Pick<AmbientEngine, "dispose" | "setEnabled">;
 };
 
 /**
- * Turns the ambient sound on or off. Must first be called from a user
- * gesture (e.g. a click), since browsers only allow audio after one.
+ * Turns the ambient sound on or off. Call it from a user gesture (the entry
+ * screen, the sound toggle): browsers only allow audio after one. Called
+ * without, the engine waits for the next gesture and stays on meanwhile.
  */
 export function setSoundEnabled(enabled: boolean) {
   useSoundStore.getState().setEnabled(enabled);

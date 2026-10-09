@@ -9,6 +9,7 @@ import {
 import type { PaletteKey } from "@/config/palette";
 import { homeSections } from "@/config/sections";
 import { brushGLSL, getBrushAtlas } from "./brushes";
+import { buildGLSL } from "./build";
 import { FEATURE_COUNT, featuredUniforms } from "./featured";
 import { gustGLSL, gustUniforms } from "./gust";
 import { terrainHeightGLSL } from "./landscape";
@@ -197,6 +198,7 @@ varying float vOpacity;
 varying float vRise;
 
 ${noiseGLSL}
+${buildGLSL}
 ${windGLSL}
 ${gustGLSL}
 ${terrainHeightGLSL}
@@ -275,6 +277,9 @@ void main() {
   // The crowd right at the day camera's feet clumps into specks from above.
   float atFeet = step(0.0, -base.z) * step(-base.z, 5.0) * step(abs(base.x), 8.0);
   scale *= 1.0 - atFeet * smoothstep(0.3, 0.8, uTopView);
+  // Intro: the plant grows up from its root as its spot is painted in.
+  float grown = buildAt(base);
+  scale *= grown * grown * (3.0 - 2.0 * grown);
 
   // The point on the curve and, just ahead of it, the local direction.
   vec3 path = strokePath(u);
