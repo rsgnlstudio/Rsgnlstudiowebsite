@@ -21,19 +21,12 @@ export interface SectionConfig {
 
 // "intro" is the composed first viewport: low in the meadow, looking across
 // the field to the mountains. FOVs are authored for a 16:10 screen; CameraRig
-// adapts them to other aspect ratios. The other keyframes are placeholders.
+// adapts them to other aspect ratios. It is the only section for now, so the
+// page is one viewport and doesn't scroll; add sections here with content.
 export const homeSections = [
   {
     id: "intro",
     camera: { position: [0, 1.05, 0], lookAt: [0, 0.6, -40], fov: 50 },
-  },
-  {
-    id: "middle",
-    camera: { position: [4, 3, 8], lookAt: [0, 1, 0], fov: 45 },
-  },
-  {
-    id: "outro",
-    camera: { position: [0, 8, 20], lookAt: [0, 0, 0], fov: 55 },
   },
 ] as const satisfies readonly SectionConfig[];
 
