@@ -75,7 +75,29 @@ export function useSectionScroll(sections: readonly SectionConfig[]) {
     ScrollTrigger.refresh();
     sync();
 
+    // The page stands still while a project overlay is open. Lenis clips the
+    // page then, which drops a classic scrollbar; if the page has one, a
+    // stable gutter keeps the viewport, and with it the canvas, from resizing.
+    // Only then: a gutter on a page without overflow would be an empty strip.
+    const root = document.documentElement;
+    const stop = () => {
+      if (root.scrollHeight > root.clientHeight) root.style.scrollbarGutter = "stable";
+      smoothScroll.lenis.stop();
+    };
+    const start = () => {
+      smoothScroll.lenis.start();
+      root.style.scrollbarGutter = "";
+    };
+    if (useSceneStore.getState().openFlower) stop();
+    const unsubscribe = useSceneStore.subscribe((state, prev) => {
+      if (state.openFlower === prev.openFlower) return;
+      if (state.openFlower) stop();
+      else start();
+    });
+
     return () => {
+      unsubscribe();
+      root.style.scrollbarGutter = "";
       ScrollTrigger.removeEventListener("refresh", sync);
       ctx.revert(); // kills every ScrollTrigger created above
       smoothScroll.destroy();

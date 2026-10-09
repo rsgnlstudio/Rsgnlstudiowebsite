@@ -17,8 +17,8 @@ const last = new Vector2();
 /**
  * The wind of the day world: the cursor is its origin. It blows outward from
  * the cursor, always a little and hard while the cursor moves, so the meadow
- * parts around it. Off on touch screens, with reduced motion, and as the
- * camera leaves for the night top view. Writes gustUniforms every frame;
+ * parts around it. Off on touch screens, with reduced motion, while a project
+ * overlay is open, and as the camera leaves for the night top view. Writes gustUniforms every frame;
  * reads the stores with getState().
  */
 export function CursorWind() {
@@ -35,8 +35,11 @@ export function CursorWind() {
 
   useFrame((state, delta) => {
     const dt = Math.min(delta, 0.05);
-    const day = 1 - MathUtils.smoothstep(useSceneStore.getState().night, 0.02, 0.2);
-    const on = pointer.current.active && !reduced.current && day > 0;
+    const { night, openFlower } = useSceneStore.getState();
+    const day = 1 - MathUtils.smoothstep(night, 0.02, 0.2);
+    // Calm while a project overlay is open: the canvas is pushed aside then,
+    // so the pointer no longer lines up with the meadow.
+    const on = pointer.current.active && !reduced.current && day > 0 && !openFlower;
     // When the cursor leaves, the wind dies down where it was.
     presence.current = MathUtils.damp(presence.current, on ? 1 : 0, on ? 5 : 2, dt);
 

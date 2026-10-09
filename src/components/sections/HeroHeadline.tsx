@@ -37,10 +37,11 @@ const typeTo = (tl: gsap.core.Timeline, el: HTMLElement, text: string, from: num
  * Typed in on mount and retyped with a GSAP typewriter whenever the
  * Day/Night switch changes, starting halfway through the world's morph
  * (when `night` crosses 0.5): the old word is erased, the new one typed. The full text sits in an sr-only copy, the
- * typed copy is aria-hidden.
+ * typed copy is aria-hidden. It fades out while a project overlay is open.
  */
 export function HeroHeadline() {
   const timeOfDay = useSceneStore((s) => s.timeOfDay);
+  const projectOpen = useSceneStore((s) => s.openFlower !== null);
   const reducedMotion = usePrefersReducedMotion();
   const prefixRef = useRef<HTMLSpanElement>(null);
   const wordRef = useRef<HTMLSpanElement>(null);
@@ -115,7 +116,11 @@ export function HeroHeadline() {
     "ml-[0.04em] inline-block h-[0.8em] w-[0.06em] translate-y-[0.08em] bg-current opacity-0";
 
   return (
-    <h1 className="pointer-events-none fixed bottom-edge left-edge z-20 max-w-[calc(100vw-2*var(--spacing-edge))] font-display text-headline text-foreground">
+    <h1
+      className={`pointer-events-none fixed bottom-edge left-edge z-20 max-w-[calc(100vw-2*var(--spacing-edge))] font-display text-headline text-foreground transition-opacity ease-out ${
+        projectOpen ? "opacity-0 duration-300" : "opacity-100 duration-700 delay-300"
+      }`}
+    >
       <span className="sr-only">
         {PREFIX} {word.italic ? <em>{word.text}</em> : word.text}
       </span>
