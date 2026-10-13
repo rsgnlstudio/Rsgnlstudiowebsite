@@ -35,7 +35,7 @@ interface SlidePanelProps {
  * so its content should stay rendered until then. The panel scrolls natively
  * (Lenis is stopped while it is open, see `useSectionScroll`).
  */
-export function SlidePanel({ open, onClose, labelledBy, tone, panelRef, closeLabel = "Close", children }: SlidePanelProps) {
+export function SlidePanel({ open, onClose, labelledBy, tone, panelRef, closeLabel = "Schließen", children }: SlidePanelProps) {
   const reducedMotion = usePrefersReducedMotion();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const ownPanelRef = useRef<HTMLDivElement>(null);

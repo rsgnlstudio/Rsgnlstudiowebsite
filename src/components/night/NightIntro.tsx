@@ -98,7 +98,7 @@ export function NightIntro() {
   const playing = nightIntro === "playing";
 
   return (
-    <div lang="de">
+    <div>
       <div
         ref={linesRef}
         className="pointer-events-none invisible fixed top-1/2 left-edge z-20 max-w-[min(40rem,calc(100vw-2*var(--spacing-edge)))] -translate-y-1/2 text-on-night opacity-0"

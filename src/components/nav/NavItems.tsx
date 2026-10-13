@@ -1,21 +1,15 @@
 "use client";
 
 import { type ReactNode, useLayoutEffect, useRef, useState } from "react";
-import { ContactButton } from "@/components/nav/ContactButton";
-import { ImprintLink } from "@/components/nav/ImprintLink";
 import { NightCta, NightNavLinks } from "@/components/nav/NightNavLinks";
 import { TIMES_OF_DAY, type TimeOfDay } from "@/config/scene";
 import { useSceneStore } from "@/store/scene";
 
 const ITEMS: Record<TimeOfDay, ReactNode> = {
-  day: (
-    <>
-      <ImprintLink />
-      <ContactButton />
-    </>
-  ),
+  day: null,
   night: (
     <>
+      <span aria-hidden className="mx-1 h-4 w-px bg-current opacity-20" />
       <NightNavLinks />
       <NightCta />
     </>
@@ -23,13 +17,14 @@ const ITEMS: Record<TimeOfDay, ReactNode> = {
 };
 
 /**
- * The items after the Day/Night switch in the top navigation, morphing
- * between the studio's (day: imprint, contact) and the consulting site's
- * (night: services, process, about, "Erstgespräch vereinbaren"). Both sets
- * stay rendered on top of each other: on a switch the old set fades out,
- * the slot eases to the new set's width (so the whole pill grows or
- * shrinks around it), and the new set fades in. Widths are measured, so
- * breakpoints that show or hide items are followed too.
+ * The items after the Day/Night switch in the top navigation: none by day
+ * (imprint and contact are in the footer), the consulting site's by night
+ * (a divider, then services, process, about, "Erstgespräch vereinbaren").
+ * Both stay rendered on top of each other: on a switch the old set fades
+ * out, the slot eases to the new set's width (so the whole pill grows or
+ * shrinks around it, down to the switch alone by day), and the new set
+ * fades in. Widths are measured, so breakpoints that show or hide items are
+ * followed too.
  */
 export function NavItems() {
   const timeOfDay = useSceneStore((s) => s.timeOfDay);

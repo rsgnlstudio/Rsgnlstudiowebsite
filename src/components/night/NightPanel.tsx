@@ -75,7 +75,7 @@ export function NightPanel() {
       closeLabel={UI.close}
     >
       {shown && (
-        <article lang="de" className="px-gutter pt-24 pb-section md:px-edge">
+        <article className="px-gutter pt-24 pb-section md:px-edge">
           <PanelContent panel={shown} />
           {shown.kind === "path" && <div aria-hidden className="h-[40vh]" />}
         </article>

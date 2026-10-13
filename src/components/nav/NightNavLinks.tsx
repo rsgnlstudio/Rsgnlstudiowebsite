@@ -21,7 +21,7 @@ const open = (panel: NightPanel) => useSceneStore.getState().setPanel(panel);
  */
 export function NightNavLinks() {
   return (
-    <div lang="de" className="hidden lg:flex">
+    <div className="hidden lg:flex">
       {LINKS.map((link) => (
         <button
           key={link.label}
@@ -45,7 +45,6 @@ export function NightCta() {
   return (
     <button
       type="button"
-      lang="de"
       onClick={() => open({ kind: "contact" })}
       className="flex cursor-pointer items-center gap-1.5 rounded-full bg-city-light py-1.5 pr-3 pl-3 text-body text-on-day shadow-[0_0_28px_-4px_var(--color-city-light)] transition-opacity duration-700 ease-smooth hover:opacity-85 focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-city-light sm:pr-4 sm:pl-4 md:pr-5 md:pl-5"
     >

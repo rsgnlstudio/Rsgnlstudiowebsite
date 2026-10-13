@@ -99,6 +99,11 @@
   animation: none;
 }
 
+/* The wordmark (SiteBrand) stays where it is while the pages slide. */
+::view-transition-group(site-brand) {
+  animation: none;
+}
+
 /*
  * Page slide (view transitions, typed by the links: PAGE_IN and PAGE_OUT in
  * src/config/site.ts). A sub-page slides in from the right over the home
