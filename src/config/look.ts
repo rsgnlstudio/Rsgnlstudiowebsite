@@ -79,6 +79,8 @@ export interface QualityPreset {
   flowers: number;
   grass: number;
   conifers: number;
+  /** Conifers in the woods of the night map, left of the stream (mostly outside the day view). */
+  woods: number;
   /** Share of the flower beds' plants (src/config/flowers.ts) to paint. */
   beds: number;
   /** Depth-of-field buffer resolution relative to the canvas. */
@@ -100,13 +102,14 @@ export const qualityPresets: Record<QualityTier, QualityPreset> = {
     flowers: 8000,
     grass: 15000,
     conifers: 150,
+    woods: 260,
     beds: 1,
     dofResolution: 0.5,
     fireflies: 260,
     pollen: 320,
     stars: 900,
     multisampling: 0,
-    dust: { ground: 240000, trees: 90000, flowers: 36000, motes: 900 },
+    dust: { ground: 240000, trees: 150000, flowers: 36000, motes: 900 },
     trailSize: 256,
   },
   low: {
@@ -114,13 +117,14 @@ export const qualityPresets: Record<QualityTier, QualityPreset> = {
     flowers: 3400,
     grass: 6000,
     conifers: 100,
+    woods: 150,
     beds: 0.65,
     dofResolution: 0.35,
     fireflies: 120,
     pollen: 140,
     stars: 500,
     multisampling: 0,
-    dust: { ground: 100000, trees: 40000, flowers: 15000, motes: 400 },
+    dust: { ground: 100000, trees: 66000, flowers: 15000, motes: 400 },
     trailSize: 128,
   },
 };

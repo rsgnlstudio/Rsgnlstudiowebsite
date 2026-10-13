@@ -9,8 +9,8 @@ import { mulberry32 } from "../painterly/random";
 import { StrokeBuffer } from "../painterly/strokes";
 import { StrokeLayer } from "./StrokeLayer";
 
-function paintConifers(count: number) {
-  const layout = scatterConifers(count);
+function paintConifers(count: number, woods: number) {
+  const layout = scatterConifers(count, woods);
   const out = new StrokeBuffer();
   const rng = mulberry32(777);
   for (let i = 0; i < layout.count; i++) {
@@ -34,14 +34,15 @@ function paintConifers(count: number) {
 }
 
 /**
- * The conifers framing the meadow, each painted as a trunk smear and tiers
+ * The conifers framing the meadow (and the woods of the night map, mostly
+ * out of the day view), each painted as a trunk smear and tiers
  * of near-black branch jabs with a few sunlit tips.
  */
 export function Conifers() {
   const tier = useLookStore((s) => s.tier);
-  const count = qualityPresets[tier].conifers;
+  const { conifers, woods } = qualityPresets[tier];
 
-  const geometry = useMemo(() => paintConifers(count).createGeometry(6), [count]);
+  const geometry = useMemo(() => paintConifers(conifers, woods).createGeometry(6), [conifers, woods]);
   useEffect(() => () => geometry.dispose(), [geometry]);
 
   return (

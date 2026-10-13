@@ -1,8 +1,7 @@
 "use client";
 
-import { ContactButton } from "@/components/nav/ContactButton";
 import { DayNightSwitch } from "@/components/nav/DayNightSwitch";
-import { ImprintLink } from "@/components/nav/ImprintLink";
+import { NavItems } from "@/components/nav/NavItems";
 import { DAY_NIGHT_DURATION, DAY_NIGHT_DURATION_REDUCED } from "@/config/scene";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { useReveal } from "@/hooks/useReveal";
@@ -10,9 +9,11 @@ import { useSceneStore } from "@/store/scene";
 
 /**
  * The top navigation: one frosted pill at the top centre holding the
- * Day/Night switch, the imprint and the contact call to action. The text
- * color and the frosted fill cross over with the scene. It appears after
- * the intro.
+ * Day/Night switch, then by day the imprint and the contact call to action,
+ * by night the consulting site's items (services, process, about) and its
+ * glowing call to action, "Erstgespräch vereinbaren"; the two sets morph
+ * into each other on a switch (`NavItems`). The text color and the frosted
+ * fill cross over with the scene. It appears after the intro.
  */
 export function TopNav() {
   const timeOfDay = useSceneStore((s) => s.timeOfDay);
@@ -31,8 +32,7 @@ export function TopNav() {
       >
         <DayNightSwitch />
         <span aria-hidden className="mx-1 h-4 w-px bg-current opacity-20" />
-        <ImprintLink />
-        <ContactButton />
+        <NavItems />
       </div>
     </nav>
   );

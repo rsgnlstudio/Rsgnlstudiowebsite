@@ -6,9 +6,10 @@ import { MathUtils, Matrix4, type Mesh, type PerspectiveCamera, Vector2, Vector3
 import { CURSOR_LIGHT_HEIGHT, INTRO_UI_AT, NIGHTINGALE, nightCamera } from "@/config/scene";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { useWindowPointer } from "@/hooks/useWindowPointer";
-import { useSceneStore } from "@/store/scene";
+import { overlayOpen, useSceneStore } from "@/store/scene";
 import { dustUniforms } from "../painterly/dust";
 import { rayGroundDistance, terrainHeight } from "../painterly/landscape";
+import { panelFocus } from "../painterly/nightMap";
 import {
   createNightingaleGeometry,
   createNightingaleMaterial,
@@ -77,7 +78,8 @@ export function Nightingale() {
     const dt = Math.min(delta, 0.05);
     const camera = state.camera as PerspectiveCamera;
     const morph = sharedUniforms.uMorph.value;
-    const { intro, openBed } = useSceneStore.getState();
+    const store = useSceneStore.getState();
+    const { intro } = store;
     const calm = reduced.current;
     if (!calm) wander.current += dt;
     const w = wander.current;
@@ -86,8 +88,8 @@ export function Nightingale() {
     camForward.negate();
 
     // The cursor, or a slow wander when there is none (touch screens, the
-    // mouse has left, or a project overlay pushed the stage aside).
-    const follow = pointer.current.active && !openBed;
+    // mouse has left, or an overlay pushed the stage aside).
+    const follow = pointer.current.active && !overlayOpen(store);
     if (follow) ndc.copy(pointer.current.position);
     else ndc.set(0.3 + Math.sin(w * 0.13) * 0.3, 0.1 + Math.sin(w * 0.21 + 0.7) * 0.15);
     const rayTo = (p: Vector2) => ray.set(p.x, p.y, 0.5).unproject(camera).sub(camera.position).normalize();
@@ -122,8 +124,12 @@ export function Nightingale() {
     b.pos.addScaledVector(b.vel, dt);
 
     // Night: the light hovers above the ground under the cursor, or wanders
-    // around the view.
-    if (follow) {
+    // around the view. While the night panel is open, it lights what the
+    // panel tells of: the open place, or the point on the path it has got to.
+    const focus = panelFocus(store.panel, store.pathStation);
+    if (focus) {
+      hit.set(focus.x, terrainHeight(focus.x, -focus.d), -focus.d);
+    } else if (follow) {
       const toGround = rayGroundDistance(camera.position, ray, 400);
       if (toGround < 400) hit.copy(camera.position).addScaledVector(ray, toGround);
     } else {

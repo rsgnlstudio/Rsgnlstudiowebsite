@@ -1,5 +1,7 @@
+import { CLEARING_RADIUS, CLEARINGS } from "@/config/nightMap";
 import { inStream, streamX } from "./landscape";
-import { mulberry32 } from "./random";
+import { distanceToTrail } from "./nightMap";
+import { mulberry32, valueNoise } from "./random";
 
 /**
  * How the conifers are shared out, after the site's layout sketch: a stand
@@ -25,17 +27,57 @@ export interface ConiferLayout {
 }
 
 /**
- * Conifer layout, shared by the painted trees (Conifers) and their dust twins
- * (Dust), so the night world stands where the day world did.
+ * True where the woods of the night map grow (src/config/nightMap.ts): left
+ * of the stream from the bottom edge of the map to the back forest edge,
+ * leaving the clearings and the trails through them open.
  */
-export function scatterConifers(count: number): ConiferLayout {
+function inWoods(x: number, d: number) {
+  if (x < -82 || d < -8 || d > 84) return false;
+  if (x > (d < 16 ? -24 : streamX(d) - 6)) return false;
+  for (const c of CLEARINGS) {
+    if (Math.hypot(x - c.position[0], d - c.position[1]) < CLEARING_RADIUS + 1) return false;
+  }
+  return distanceToTrail(x, d, 3) >= 2.2;
+}
+
+/**
+ * The woods of the night map, appended after the meadow's trees with their
+ * own random sequence, so the day layout doesn't move. Thinner where the day
+ * camera looks (inside its view, |x| < 0.8 d + 6), so the day keeps its loose
+ * tree line beyond the stream; dense outside it.
+ */
+function scatterWoods(data: ConiferLayout, from: number) {
+  const rng = mulberry32(6161);
+  for (let i = from; i < data.count; ) {
+    const x = -82 + rng() * 64;
+    const d = -8 + rng() * 92;
+    if (!inWoods(x, d)) continue;
+    const seen = Math.abs(x) < d * 0.8 + 6;
+    // Thickets and thinner patches.
+    if (rng() > (seen ? 0.12 : 0.55 + 0.45 * valueNoise(x * 0.07, d * 0.07, 61))) continue;
+    const height = 8 + rng() * 8;
+    data.offset.set([x, -0.8, -d], i * 3);
+    data.size.set([height * 0.3 * (rng() < 0.5 ? -1 : 1), height], i * 2);
+    data.variation.set([(rng() - 0.5) * 0.3, 0.8 + rng() * 0.4, 0.75 + rng() * 0.5], i * 3);
+    data.phase[i] = rng() * Math.PI * 2;
+    i++;
+  }
+}
+
+/**
+ * Conifer layout, shared by the painted trees (Conifers) and their dust twins
+ * (Dust), so the night world stands where the day world did: `count` trees
+ * around the meadow, then `woods` trees in the woods of the night map.
+ */
+export function scatterConifers(count: number, woods = 0): ConiferLayout {
+  const total = count + woods;
   const data: ConiferLayout = {
-    count,
-    offset: new Float32Array(count * 3),
-    size: new Float32Array(count * 2),
-    far: new Uint8Array(count),
-    variation: new Float32Array(count * 3),
-    phase: new Float32Array(count),
+    count: total,
+    offset: new Float32Array(total * 3),
+    size: new Float32Array(total * 2),
+    far: new Uint8Array(total),
+    variation: new Float32Array(total * 3),
+    phase: new Float32Array(total),
   };
   const rng = mulberry32(4242);
   const right = Math.round(count * SHARE.right);
@@ -84,5 +126,6 @@ export function scatterConifers(count: number): ConiferLayout {
     data.variation.set([(rng() - 0.5) * 0.3, 0.8 + rng() * 0.4, 0.75 + rng() * 0.5], i * 3);
     data.phase[i] = rng() * Math.PI * 2;
   }
+  scatterWoods(data, count);
   return data;
 }

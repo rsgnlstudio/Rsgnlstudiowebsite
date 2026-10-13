@@ -5,7 +5,7 @@ import { nightFor, type TimeOfDay } from "@/config/scene";
 import { useIntroRevealed } from "@/hooks/useIntroRevealed";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { gsap } from "@/lib/gsap";
-import { useSceneStore } from "@/store/scene";
+import { overlayOpen, useSceneStore } from "@/store/scene";
 
 const PREFIX = "Simone macht";
 const WORDS: Record<TimeOfDay, { text: string; italic: boolean }> = {
@@ -44,11 +44,18 @@ const typeTo = (tl: gsap.core.Timeline, el: HTMLElement, text: string, from: num
  * Day/Night switch changes, starting halfway through the world's morph
  * (when `night` crosses 0.5): the old word is erased, the new one typed. The full text sits in an sr-only copy, the
  * typed copy is aria-hidden. It is first typed once the intro build-up has
- * revealed the UI, and fades out while a project overlay is open.
+ * revealed the UI. It fades out while an overlay is open, and at night once
+ * the night intro takes over (the map needs the room).
  */
 export function HeroHeadline() {
   const timeOfDay = useSceneStore((s) => s.timeOfDay);
-  const projectOpen = useSceneStore((s) => s.openBed !== null);
+  // It makes room: for an open overlay, and at night for the intro and the
+  // map, once the flight has (nearly) landed.
+  const hidden = useSceneStore(
+    (s) =>
+      overlayOpen(s) ||
+      (s.timeOfDay === "night" && (s.nightIntro === "playing" || (s.nightIntro === "done" && s.night > 0.9))),
+  );
   const reducedMotion = usePrefersReducedMotion();
   const revealed = useIntroRevealed();
   const prefixRef = useRef<HTMLSpanElement>(null);
@@ -126,7 +133,7 @@ export function HeroHeadline() {
   return (
     <h1
       className={`pointer-events-none fixed bottom-edge left-edge z-20 max-w-[calc(100vw-2*var(--spacing-edge))] font-display text-headline text-foreground transition-opacity ease-smooth ${
-        projectOpen ? "opacity-0 duration-700" : "opacity-100 duration-1000 delay-300"
+        hidden ? "opacity-0 duration-700" : "opacity-100 duration-1000 delay-300"
       }`}
     >
       <span className="sr-only">

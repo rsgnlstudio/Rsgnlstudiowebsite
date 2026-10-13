@@ -32,14 +32,24 @@ export const DAY_NIGHT_DURATION_REDUCED = 1.2;
  * Night camera: high above the meadow, looking straight down, with the far
  * side of the field (toward the mountains) at the top of the frame. The day
  * camera is the scene mode's first section keyframe; CameraRig blends the
- * two by `night`.
+ * two by `night`. Its place and height are worked out by CameraRig: it fits
+ * the night map (MAP_FRAME in src/config/nightMap.ts) to the screen, or
+ * frames the panel's focus; `position` is the framing for a 16:10 screen.
  */
 export const nightCamera: CameraKeyframe = {
-  position: [0, 110, -42],
-  lookAt: [0, 0, -42],
+  position: [0, 124, -46],
+  lookAt: [0, 0, -46],
   up: [0, 0, -1],
   fov: 50,
 };
+
+/**
+ * On portrait screens (aspect below this) the night map is turned a quarter:
+ * the woods at the top, the city below them, the mountains on the right, so
+ * the wide map fills the tall screen.
+ */
+export const PORTRAIT_ASPECT = 0.85;
+export const nightCameraPortrait: CameraKeyframe = { ...nightCamera, up: [-1, 0, 0] };
 
 /**
  * `night` range over which the painted day world morphs into the night dust
