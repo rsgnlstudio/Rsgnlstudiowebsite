@@ -241,8 +241,8 @@ function scatterGround(b: DustBuffers, rng: Rng, count: number) {
   }
 }
 
-function scatterTrees(b: DustBuffers, rng: Rng, budget: number, conifers: number) {
-  const trees = scatterConifers(conifers);
+function scatterTrees(b: DustBuffers, rng: Rng, budget: number, conifers: number, woods: number) {
+  const trees = scatterConifers(conifers, woods);
   // Particles in proportion to each tree's surface.
   const area = (i: number) => trees.size[i * 2 + 1] * Math.abs(trees.size[i * 2]) * (trees.far[i] ? 0.35 : 1);
   let total = 0;
@@ -315,11 +315,11 @@ function scatterMotes(b: DustBuffers, rng: Rng, count: number) {
   }
 }
 
-function buildDust(preset: (typeof qualityPresets)["high"], conifers: number) {
+function buildDust(preset: (typeof qualityPresets)["high"]) {
   const b: DustBuffers = { position: [], normal: [], seed: [], info: [] };
   const rng = mulberry32(2718);
   scatterGround(b, rng, preset.dust.ground);
-  scatterTrees(b, rng, preset.dust.trees, conifers);
+  scatterTrees(b, rng, preset.dust.trees, preset.conifers, preset.woods);
   scatterFlowers(b, rng, preset.dust.flowers);
   scatterBedFlowers(b, rng, preset.beds);
   scatterMotes(b, rng, preset.dust.motes);
@@ -344,7 +344,7 @@ export function Dust() {
   const tier = useLookStore((s) => s.tier);
   const preset = qualityPresets[tier];
 
-  const geometry = useMemo(() => buildDust(preset, preset.conifers), [preset]);
+  const geometry = useMemo(() => buildDust(preset), [preset]);
   useEffect(() => () => geometry.dispose(), [geometry]);
 
   const material = useMemo(

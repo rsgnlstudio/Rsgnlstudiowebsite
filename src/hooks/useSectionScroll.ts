@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import type { SectionConfig } from "@/config/sections";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { createSmoothScroll } from "@/lib/lenis";
-import { useSceneStore } from "@/store/scene";
+import { overlayOpen, useSceneStore } from "@/store/scene";
 
 /**
  * Sets up Lenis smooth scrolling and one ScrollTrigger per section, writing
@@ -75,7 +75,7 @@ export function useSectionScroll(sections: readonly SectionConfig[]) {
     ScrollTrigger.refresh();
     sync();
 
-    // The page stands still while a project overlay is open. Lenis clips the
+    // The page stands still while the day overlay or the night panel is open. Lenis clips the
     // page then, which drops a classic scrollbar; if the page has one, a
     // stable gutter keeps the viewport, and with it the canvas, from resizing.
     // Only then: a gutter on a page without overflow would be an empty strip.
@@ -88,10 +88,10 @@ export function useSectionScroll(sections: readonly SectionConfig[]) {
       smoothScroll.lenis.start();
       root.style.scrollbarGutter = "";
     };
-    if (useSceneStore.getState().openBed) stop();
+    if (overlayOpen(useSceneStore.getState())) stop();
     const unsubscribe = useSceneStore.subscribe((state, prev) => {
-      if (state.openBed === prev.openBed) return;
-      if (state.openBed) stop();
+      if (overlayOpen(state) === overlayOpen(prev)) return;
+      if (overlayOpen(state)) stop();
       else start();
     });
 

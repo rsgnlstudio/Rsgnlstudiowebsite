@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { ProjectBedId } from "@/config/flowers";
+import { type ChallengeId, type NightPanel, PLACES } from "@/config/nightMap";
 import { DEFAULT_SCENE_MODE, type SceneMode, type TimeOfDay } from "@/config/scene";
 
 /**
@@ -35,6 +36,25 @@ export interface SceneState {
   hoveredBed: ProjectBedId | null;
   /** Project flower bed whose overlay is open (click or tap). */
   openBed: ProjectBedId | null;
+  /**
+   * The night intro (the lines shown while the camera flies up): it plays
+   * the first time the night is chosen. The map takes clicks once it is done.
+   */
+  nightIntro: "pending" | "playing" | "done";
+  /** What the night panel shows (src/config/nightMap.ts), or null when closed. */
+  panel: NightPanel | null;
+  /** The path whose clearing was chosen; it stays lit after the panel closes. */
+  activePath: ChallengeId | null;
+  /** Fractional step along the active path the panel is scrolled to (0 = its clearing). */
+  pathStation: number;
+  /** Index into PLACES of the place under the cursor or focused (night map). */
+  hoveredPlace: number | null;
+  /**
+   * Screen position of every place this frame (x, y in viewport CSS pixels,
+   * then 1 when on screen), written in place by the canvas (NightMap) every frame.
+   * The DOM reads it with getState() in its own frame loop; never subscribe.
+   */
+  placeScreen: Float32Array;
 
   setActiveSection: (id: string | null) => void;
   setSectionProgress: (progress: number) => void;
@@ -47,9 +67,17 @@ export interface SceneState {
   setSceneMode: (mode: SceneMode) => void;
   setHoveredBed: (id: ProjectBedId | null) => void;
   setOpenBed: (id: ProjectBedId | null) => void;
+  setNightIntro: (state: SceneState["nightIntro"]) => void;
+  /** Opens the night panel; a path's panel also lights its path, from its clearing. */
+  setPanel: (panel: NightPanel | null) => void;
+  setPathStation: (station: number) => void;
+  setHoveredPlace: (index: number | null) => void;
   /** Clears scroll-derived state, e.g. when a page unmounts. */
   resetScroll: () => void;
 }
+
+/** True while the day overlay or the night panel is open. */
+export const overlayOpen = (s: Pick<SceneState, "openBed" | "panel">) => s.openBed !== null || s.panel !== null;
 
 export const useSceneStore = create<SceneState>()((set) => ({
   activeSection: null,
@@ -63,6 +91,12 @@ export const useSceneStore = create<SceneState>()((set) => ({
   sceneMode: DEFAULT_SCENE_MODE,
   hoveredBed: null,
   openBed: null,
+  nightIntro: "pending",
+  panel: null,
+  activePath: null,
+  pathStation: 0,
+  hoveredPlace: null,
+  placeScreen: new Float32Array(PLACES.length * 3),
 
   setActiveSection: (activeSection) => set({ activeSection }),
   setSectionProgress: (sectionProgress) => set({ sectionProgress }),
@@ -75,6 +109,11 @@ export const useSceneStore = create<SceneState>()((set) => ({
   setSceneMode: (sceneMode) => set({ sceneMode }),
   setHoveredBed: (hoveredBed) => set({ hoveredBed }),
   setOpenBed: (openBed) => set({ openBed }),
+  setNightIntro: (nightIntro) => set({ nightIntro }),
+  setPanel: (panel) =>
+    set(panel?.kind === "path" ? { panel, activePath: panel.id, pathStation: 0 } : { panel }),
+  setPathStation: (pathStation) => set({ pathStation }),
+  setHoveredPlace: (hoveredPlace) => set({ hoveredPlace }),
   resetScroll: () =>
     set({ activeSection: null, sectionProgress: 0, scrollProgress: 0 }),
 }));

@@ -7,11 +7,13 @@ import { sharedUniforms } from "../painterly/palette";
 import { CursorLight } from "./CursorLight";
 import { Dust } from "./Dust";
 import { Fireflies } from "./Fireflies";
+import { NightMap } from "./NightMap";
 
 /**
- * The night world: the meadow as glowing dust, fireflies, and the light that
- * follows the cursor. It condenses as the painted world morphs into the
- * night and stops rendering by day.
+ * The night world: the meadow as glowing dust, fireflies, the light that
+ * follows the cursor, and the night map drawn over it all (the consulting
+ * site: paths, the city's lights, the mountains). It condenses as the painted
+ * world morphs into the night and stops rendering by day.
  */
 export function DustWorld() {
   const group = useRef<Group>(null);
@@ -23,6 +25,7 @@ export function DustWorld() {
       <Dust />
       <Fireflies />
       <CursorLight />
+      <NightMap />
     </group>
   );
 }

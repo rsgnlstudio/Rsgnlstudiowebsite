@@ -66,6 +66,15 @@ export const PALETTE_KEYS = [
   "dust",
   "dustLit",
   "cursorLight",
+  // The night map (consulting): trails, the active path, the city's lights,
+  // the goal, the lantern, the mountains' contour lines, the clearings
+  "mapLine",
+  "mapPath",
+  "cityLight",
+  "goalLight",
+  "lantern",
+  "contour",
+  "clearingGlow",
 ] as const;
 
 export type PaletteKey = (typeof PALETTE_KEYS)[number];
@@ -129,6 +138,14 @@ export const dayPalette: Palette = {
   dust: "#3a3a7a",
   dustLit: "#ffd8a8",
   cursorLight: "#ffd2a0",
+
+  mapLine: "#c8b89a",
+  mapPath: "#fff0d0",
+  cityLight: "#ffc070",
+  goalLight: "#fff6e0",
+  lantern: "#ffd27a",
+  contour: "#9a8fd0",
+  clearingGlow: "#d8f0ff",
 };
 
 /** Sunset: the sun sinks behind the mountains, everything burns orange and magenta. */
@@ -188,6 +205,14 @@ export const duskPalette: Palette = {
   dust: "#3a2a64",
   dustLit: "#ffc08a",
   cursorLight: "#ffc28c",
+
+  mapLine: "#a88cb4",
+  mapPath: "#ffe0b8",
+  cityLight: "#ffaa58",
+  goalLight: "#fff0d8",
+  lantern: "#ffc468",
+  contour: "#7a6cb4",
+  clearingGlow: "#c0dcff",
 };
 
 /** Cold moonlit night; flowers and fireflies glow. */
@@ -247,6 +272,14 @@ export const nightPalette: Palette = {
   dust: "#123c78",
   dustLit: "#8ee6ff",
   cursorLight: "#a8e4ff",
+
+  mapLine: "#6f8fc8",
+  mapPath: "#ffe6b8",
+  cityLight: "#ffb24e",
+  goalLight: "#fff1d0",
+  lantern: "#ffc966",
+  contour: "#4f6cb4",
+  clearingGlow: "#9fd8ff",
 };
 
 export const palettes: Record<PaletteSet, Palette> = {

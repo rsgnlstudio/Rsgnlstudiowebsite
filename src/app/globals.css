@@ -15,6 +15,10 @@
   /* Text drawn over the scene: dark over the day sky, light over the night */
   --color-on-day: #2a2118;
   --color-on-night: #f4efe6;
+  /* The night panel (consulting), as dark as the night world */
+  --color-panel-night: #080b18;
+  /* Lights of the night map's city; the night's call to action glows in it */
+  --color-city-light: #ffb24e;
 
   /* Type scale */
   --text-headline: clamp(3rem, 9vw, 9rem);

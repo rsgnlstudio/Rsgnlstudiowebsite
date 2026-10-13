@@ -1,5 +1,10 @@
 import { SoundToggle } from "@/components/nav/SoundToggle";
 import { TopNav } from "@/components/nav/TopNav";
+import { MapPlaces } from "@/components/night/MapPlaces";
+import { NightBrand } from "@/components/night/NightBrand";
+import { NightFooter } from "@/components/night/NightFooter";
+import { NightIntro } from "@/components/night/NightIntro";
+import { NightPanel } from "@/components/night/NightPanel";
 import { EntryScreen } from "@/components/sections/EntryScreen";
 import { FlowerHoverLabel } from "@/components/sections/FlowerHoverLabel";
 import { HeroHeadline } from "@/components/sections/HeroHeadline";
@@ -17,6 +22,12 @@ export default function HomePage() {
       <HeroHeadline />
       <FlowerHoverLabel />
       <ProjectOverlay />
+      {/* The night: the consulting site over the night map. */}
+      <NightBrand />
+      <NightIntro />
+      <MapPlaces />
+      <NightFooter />
+      <NightPanel />
       <EntryScreen />
       {homeSections.map((section) => (
         <Section key={section.id} id={section.id} />

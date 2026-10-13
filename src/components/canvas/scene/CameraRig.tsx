@@ -19,11 +19,15 @@ import {
   INTRO_DURATION_REDUCED,
   INTRO_FOV_OFFSET,
   nightCamera,
+  nightCameraPortrait,
   nightFor,
+  PORTRAIT_ASPECT,
   sectionsByMode,
 } from "@/config/scene";
+import { MAP_FRAME } from "@/config/nightMap";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { useSceneStore } from "@/store/scene";
+import { panelFocus } from "../painterly/nightMap";
 import { viewUniforms } from "../painterly/view";
 
 /** Aspect ratio the keyframe FOVs are authored for (a 16:10 laptop). */
@@ -88,6 +92,11 @@ function smoothDamp(
   }
   return next;
 }
+
+/** Seconds the night camera takes to settle on a new framing (as the panel slides). */
+const FRAMING_SMOOTHING = 0.55;
+/** Width from which the night panel leaves the map visible beside it (Tailwind's md). */
+const PANEL_SIDE_WIDTH = 768;
 
 const UP = new Vector3(0, 1, 0);
 const matrix = new Matrix4();
@@ -154,6 +163,10 @@ export function CameraRig() {
   const progress = useRef(unease(useSceneStore.getState().night));
   const nightVelocity = useRef(0);
 
+  // The night camera's framing (ground point under it, height), eased.
+  const framing = useRef<{ x: number; d: number; height: number } | null>(null);
+  const framingVelocity = useRef({ x: { current: 0 }, d: { current: 0 }, height: { current: 0 } });
+
   useFrame((state, frameDelta) => {
     const camera = state.camera as PerspectiveCamera;
     const store = useSceneStore.getState();
@@ -180,9 +193,41 @@ export function CameraRig() {
     // Portrait: tilt down so the taller frame holds more meadow, less sky.
     const narrow = MathUtils.clamp(1 - camera.aspect, 0, 1);
     orientation(dayQuaternion, keyframe, narrow * 9);
-    orientation(nightQuaternion, nightCamera);
+    const portrait = camera.aspect < PORTRAIT_ASPECT;
+    orientation(nightQuaternion, portrait ? nightCameraPortrait : nightCamera);
     dayPosition.set(...keyframe.position);
-    nightPosition.set(...nightCamera.position);
+
+    // Night: fit the map to the screen (turned a quarter on portrait
+    // screens). While the panel is open beside it, frame the focus (the open
+    // place, or the point on the path the panel has got to) in the half of
+    // the screen left free, closer in; for an overview, the middle of the map.
+    const nightFov = fovForAspect(nightCamera.fov, camera.aspect);
+    const tan = Math.tan(MathUtils.degToRad(nightFov / 2));
+    const beside = store.panel !== null && state.size.width >= PANEL_SIDE_WIDTH;
+    const visible = camera.aspect * (beside ? 0.5 : 1);
+    const focus = panelFocus(store.panel, store.pathStation);
+    let goalX = (MAP_FRAME.minX + MAP_FRAME.maxX) / 2;
+    let goalD = (MAP_FRAME.minD + MAP_FRAME.maxD) / 2;
+    const frameWidth = MAP_FRAME.maxX - MAP_FRAME.minX;
+    const frameDepth = MAP_FRAME.maxD - MAP_FRAME.minD;
+    const across = portrait ? frameDepth : frameWidth;
+    const along = portrait ? frameWidth : frameDepth;
+    let halfHeight = Math.max(along / 2, across / 2 / visible);
+    if (focus && focus.span > 0) {
+      goalX = focus.x;
+      goalD = focus.d;
+      halfHeight = focus.span / 2;
+    } else if (beside) {
+      halfHeight = along / 2;
+    }
+    const goalHeight = halfHeight / tan;
+    const f = (framing.current ??= { x: goalX, d: goalD, height: goalHeight });
+    const v = framingVelocity.current;
+    const smoothing = reduced.current ? 0.15 : FRAMING_SMOOTHING;
+    f.x = smoothDamp(f.x, goalX, v.x, smoothing, delta);
+    f.d = smoothDamp(f.d, goalD, v.d, smoothing, delta);
+    f.height = smoothDamp(f.height, goalHeight, v.height, smoothing, delta);
+    nightPosition.set(f.x, f.height, -f.d);
 
     // Flight and rotation share the one eased value, so they move as one.
     camera.quaternion.slerpQuaternions(dayQuaternion, nightQuaternion, t);
