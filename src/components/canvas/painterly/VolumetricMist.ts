@@ -12,11 +12,12 @@ import { viewUniforms } from "./view";
  * lines and give the meadow depth.
  */
 const BANKS: [x: number, d: number, y: number, radius: number, density: number][] = [
-  // By the lens, low at the edges of the frame.
-  [-2.9, 3.2, 0.3, 1.3, 0.35],
-  [3.1, 3.4, 0.4, 1.4, 0.3],
-  // Low in the meadow, along the tree lines and toward the far field.
-  [-13, 28, 0.2, 6, 0.1],
+  // Close by, low at the bottom corners of the frame, outside the beds.
+  [-4.6, 4.2, 0.3, 1.3, 0.3],
+  [4.4, 4.0, 0.4, 1.4, 0.25],
+  // Low in the meadow, along the tree lines and toward the far field
+  // (beside the stream, so it stays in view).
+  [-19, 34, 0.2, 6, 0.1],
   [14, 32, 0.3, 7, 0.1],
   [-20, 55, 0.6, 10, 0.08],
   [22, 62, 0.8, 11, 0.08],

@@ -2,7 +2,7 @@
 
 import { X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { FEATURED_FLOWERS } from "@/config/flowers";
+import { PROJECT_BEDS } from "@/config/flowers";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { useSceneStore } from "@/store/scene";
 
@@ -10,7 +10,7 @@ import { useSceneStore } from "@/store/scene";
 const CLOSE_FALLBACK_MS = 1800;
 
 /**
- * The project a featured flower opens (`openFlower`, set by the canvas on a
+ * The section a flower bed opens (`openBed`, set by the canvas on a
  * click or tap). A modal `<dialog>`: on desktop a panel sliding in from the
  * right over two thirds of the screen, on mobile a sheet sliding up from the
  * bottom over nearly all of it. The canvas slides aside in step with it
@@ -21,22 +21,22 @@ const CLOSE_FALLBACK_MS = 1800;
  * see `useSectionScroll`).
  */
 export function ProjectOverlay() {
-  const openFlower = useSceneStore((s) => s.openFlower);
+  const openBed = useSceneStore((s) => s.openBed);
   const reducedMotion = usePrefersReducedMotion();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
   // Keep the last project while the panel slides out.
-  const [shown, setShown] = useState(openFlower);
-  if (openFlower && openFlower !== shown) setShown(openFlower);
-  const project = FEATURED_FLOWERS.find((flower) => flower.id === shown);
+  const [shown, setShown] = useState(openBed);
+  if (openBed && openBed !== shown) setShown(openBed);
+  const project = PROJECT_BEDS.find((bed) => bed.id === shown);
 
   useEffect(() => {
     const dialog = dialogRef.current;
     const panel = panelRef.current;
     if (!dialog || !panel) return;
 
-    if (openFlower) {
+    if (openBed) {
       if (!dialog.open) {
         dialog.showModal();
         // Without scrolling: focusing the panel while it waits off-screen
@@ -65,9 +65,9 @@ export function ProjectOverlay() {
       panel.removeEventListener("transitionend", onEnd);
       window.clearTimeout(timer);
     };
-  }, [openFlower, reducedMotion]);
+  }, [openBed, reducedMotion]);
 
-  const close = () => useSceneStore.getState().setOpenFlower(null);
+  const close = () => useSceneStore.getState().setOpenBed(null);
 
   return (
     <dialog

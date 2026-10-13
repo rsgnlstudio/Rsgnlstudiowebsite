@@ -3,7 +3,7 @@
 import { useEffect, useMemo } from "react";
 import { qualityPresets } from "@/config/look";
 import { useLookStore } from "@/store/look";
-import { FIELD, overheadPoint, terrainHeight } from "../painterly/landscape";
+import { FIELD, inStream, overheadPoint, terrainHeight } from "../painterly/landscape";
 import { paintTuft, PLANT_COLORS } from "../painterly/plants";
 import { mulberry32, valueNoise } from "../painterly/random";
 import { StrokeBuffer } from "../painterly/strokes";
@@ -26,18 +26,22 @@ function paintGrass(count: number) {
       grow = 2;
       detail = 0.3;
     } else {
+      // Most of it from the beds to the forest edge, where the ground shows
+      // most from the day camera and fine blades knit it to the flowers.
       const band = rng();
       d =
-        band < 0.1
+        band < 0.05
           ? FIELD.near + rng() * 3
-          : band < 0.78
-            ? 4 + Math.pow(rng(), 1.2) * 22
-            : 26 + Math.pow(rng(), 1.4) * (FIELD.far - 26);
+          : band < 0.82
+            ? 4 + Math.pow(rng(), 1.1) * 30
+            : 34 + Math.pow(rng(), 1.4) * (FIELD.far - 34);
       x = (rng() * 2 - 1) * (d * 1.1 + 1.5);
       // Far tufts grow so they stay readable.
       grow = 1 + Math.max(0, d - 10) * 0.035;
       detail = Math.min(1, Math.max(0, 1 - (d - 3) / 25));
     }
+    // No grass in the water.
+    if (inStream(x, d, Math.max(d, 0) * 0.02)) continue;
     const z = -d;
     const height = (0.4 + rng() * 0.55) * grow;
     // Sunlit drifts and deep shadowed hollows.

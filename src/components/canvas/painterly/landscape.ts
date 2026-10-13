@@ -36,15 +36,38 @@ float terrainHeight(float x, float z) {
 }
 `;
 
-/** Half-width of the open meadow between the tree lines at distance d. */
-export function clearingHalfWidth(d: number) {
-  return 5.5 + d * 0.26;
+/**
+ * The stream: it comes out of the forest edge left of the middle, winds
+ * toward the camera along the foot of the left slope and leaves the frame on
+ * the left. x of its middle at distance d. Keep streamGLSL in sync.
+ */
+export function streamX(d: number) {
+  return -11.5 + 8 * smoothstep(20, 60, d) - 0.45 * Math.max(0, 12 - d) + 0.9 * Math.sin(d * 0.19 + 0.7);
 }
 
-/** x of the band of blue flowers that winds through the field. */
-export function blueBandX(d: number) {
-  return -1.6 + Math.sin(d * 0.09 + 0.6) * 2.4 - d * 0.04;
+/** Half-width of the stream's water at distance d. */
+export function streamHalfWidth(d: number) {
+  return 0.85 + 0.02 * Math.max(d, 0);
 }
+
+/**
+ * True where (x, d) is in the stream or on its bank, widened by `margin`
+ * metres: nothing grows there. By default the bank widens with distance, so
+ * the plants on it don't close over the water when seen at a low angle.
+ */
+export function inStream(x: number, d: number, margin = 0.4 + Math.max(d, 0) * 0.03) {
+  return Math.abs(x - streamX(d)) < streamHalfWidth(d) * 1.15 + margin;
+}
+
+/** GLSL twin of streamX() and streamHalfWidth(), for the painted ground. */
+export const streamGLSL = /* glsl */ `
+float streamX(float d) {
+  return -11.5 + 8.0 * smoothstep(20.0, 60.0, d) - 0.45 * max(0.0, 12.0 - d) + 0.9 * sin(d * 0.19 + 0.7);
+}
+float streamHalfWidth(float d) {
+  return 0.85 + 0.02 * max(d, 0.0);
+}
+`;
 
 /** Nearest and farthest scatter distances for the meadow vegetation. */
 export const FIELD = { near: 1.2, far: 85 } as const;

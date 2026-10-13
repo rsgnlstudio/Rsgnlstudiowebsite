@@ -48,7 +48,7 @@ const typeTo = (tl: gsap.core.Timeline, el: HTMLElement, text: string, from: num
  */
 export function HeroHeadline() {
   const timeOfDay = useSceneStore((s) => s.timeOfDay);
-  const projectOpen = useSceneStore((s) => s.openFlower !== null);
+  const projectOpen = useSceneStore((s) => s.openBed !== null);
   const reducedMotion = usePrefersReducedMotion();
   const revealed = useIntroRevealed();
   const prefixRef = useRef<HTMLSpanElement>(null);

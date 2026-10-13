@@ -41,11 +41,11 @@ export default function SceneCanvas() {
     };
     const state = useSceneStore.getState();
     apply(state.sceneMode);
-    push(state.openFlower !== null);
+    push(state.openBed !== null);
     ready(state.sceneReady);
     return useSceneStore.subscribe((state, prev) => {
       if (state.sceneMode !== prev.sceneMode) apply(state.sceneMode);
-      if (state.openFlower !== prev.openFlower) push(state.openFlower !== null);
+      if (state.openBed !== prev.openBed) push(state.openBed !== null);
       if (state.sceneReady !== prev.sceneReady) ready(state.sceneReady);
     });
   }, []);
