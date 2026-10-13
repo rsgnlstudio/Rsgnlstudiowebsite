@@ -61,7 +61,7 @@ npm run typecheck  # generate route types, then tsc --noEmit
 
 ```
 src/
-  app/                 Routes, root layout (mounts the canvas), global CSS and design tokens
+  app/                 Routes (home, imprint), root layout (mounts the canvas), global CSS and design tokens
   components/
     canvas/            Canvas setup: SceneCanvas, the client-only loader, frameloop control
       scene/           Scene parts: CameraRig, Sky, Lights, PaintedWorld (Terrain + Mountains,
@@ -103,10 +103,12 @@ Built:
 - High/low quality tiers
 - Ambient sound (airy wind by day, a dark drone by night, stirred by the cursor, a calm piano loop, soft clicks), on by default and swelling in with the intro, behind a sound toggle at the top right
 - Top navigation (`TopNav`): one frosted pill at the top centre with the Day/Night switch, an imprint link and a solid Contact call to action (a `mailto:`); the sound toggle stays at the top right (below the pill on small screens). The contact email and imprint URL live in `src/config/site.ts` (placeholders for now)
+- Imprint page (`/imprint`, placeholder content) in the project overlay's colors. It slides in from the right over the home page and pushes it aside, like the overlay, and slides back out from its Back link (React `<ViewTransition>` plus the `page-in` / `page-out` transition types on the links, see `src/config/site.ts` and `globals.css`). The canvas is hidden there (the page claims no scene mode)
 
 Still placeholders:
 
 - The real project content in the overlay, and the real flower titles and teasers
+- The imprint details (name, address, contact, VAT ID, legal text)
 - Camera interpolation between section keyframes on scroll
 - More home sections: the page is one viewport (`intro`) and doesn't scroll yet; add sections to `homeSections` together with their content
 - Design token values
