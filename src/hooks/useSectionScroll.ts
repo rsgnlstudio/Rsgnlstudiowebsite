@@ -88,10 +88,10 @@ export function useSectionScroll(sections: readonly SectionConfig[]) {
       smoothScroll.lenis.start();
       root.style.scrollbarGutter = "";
     };
-    if (useSceneStore.getState().openFlower) stop();
+    if (useSceneStore.getState().openBed) stop();
     const unsubscribe = useSceneStore.subscribe((state, prev) => {
-      if (state.openFlower === prev.openFlower) return;
-      if (state.openFlower) stop();
+      if (state.openBed === prev.openBed) return;
+      if (state.openBed) stop();
       else start();
     });
 

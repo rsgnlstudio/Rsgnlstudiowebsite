@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { FeaturedFlowerId } from "@/config/flowers";
+import type { ProjectBedId } from "@/config/flowers";
 import { DEFAULT_SCENE_MODE, type SceneMode, type TimeOfDay } from "@/config/scene";
 
 /**
@@ -31,10 +31,10 @@ export interface SceneState {
   intro: number;
   /** Set by the current page; "hidden" pauses rendering. */
   sceneMode: SceneMode;
-  /** Featured flower under the cursor (day only), from src/config/flowers.ts. */
-  hoveredFlower: FeaturedFlowerId | null;
-  /** Featured flower whose project overlay is open (click or tap). */
-  openFlower: FeaturedFlowerId | null;
+  /** Project flower bed under the cursor (day only), from src/config/flowers.ts. */
+  hoveredBed: ProjectBedId | null;
+  /** Project flower bed whose overlay is open (click or tap). */
+  openBed: ProjectBedId | null;
 
   setActiveSection: (id: string | null) => void;
   setSectionProgress: (progress: number) => void;
@@ -45,8 +45,8 @@ export interface SceneState {
   setEntered: (entered: boolean) => void;
   setIntro: (intro: number) => void;
   setSceneMode: (mode: SceneMode) => void;
-  setHoveredFlower: (id: FeaturedFlowerId | null) => void;
-  setOpenFlower: (id: FeaturedFlowerId | null) => void;
+  setHoveredBed: (id: ProjectBedId | null) => void;
+  setOpenBed: (id: ProjectBedId | null) => void;
   /** Clears scroll-derived state, e.g. when a page unmounts. */
   resetScroll: () => void;
 }
@@ -61,8 +61,8 @@ export const useSceneStore = create<SceneState>()((set) => ({
   entered: false,
   intro: 0,
   sceneMode: DEFAULT_SCENE_MODE,
-  hoveredFlower: null,
-  openFlower: null,
+  hoveredBed: null,
+  openBed: null,
 
   setActiveSection: (activeSection) => set({ activeSection }),
   setSectionProgress: (sectionProgress) => set({ sectionProgress }),
@@ -73,8 +73,8 @@ export const useSceneStore = create<SceneState>()((set) => ({
   setEntered: (entered) => set({ entered }),
   setIntro: (intro) => set({ intro }),
   setSceneMode: (sceneMode) => set({ sceneMode }),
-  setHoveredFlower: (hoveredFlower) => set({ hoveredFlower }),
-  setOpenFlower: (openFlower) => set({ openFlower }),
+  setHoveredBed: (hoveredBed) => set({ hoveredBed }),
+  setOpenBed: (openBed) => set({ openBed }),
   resetScroll: () =>
     set({ activeSection: null, sectionProgress: 0, scrollProgress: 0 }),
 }));

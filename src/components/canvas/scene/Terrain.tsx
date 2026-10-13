@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { PlaneGeometry, ShaderMaterial } from "three";
 import type { PaletteKey } from "@/config/palette";
-import { terrainHeight } from "../painterly/landscape";
+import { streamGLSL, terrainHeight } from "../painterly/landscape";
 import { paletteGLSL, paletteUniformsFor, sharedUniforms } from "../painterly/palette";
 import { NIGHT_LIGHT_KEYS, nightLightGLSL, nightLightUniforms } from "../painterly/nightLight";
 import { colorGLSL, hazeGLSL, noiseGLSL } from "../painterly/shaderChunks";
@@ -23,7 +23,11 @@ const COLORS = [
   "flowerWhite",
   "flowerYellow",
   "flowerBlue",
+  "flowerRed",
+  "flowerViolet",
   "flowerGlow",
+  "water",
+  "waterLight",
   "haze",
   ...NIGHT_LIGHT_KEYS,
 ] as const satisfies readonly PaletteKey[];
@@ -52,6 +56,7 @@ ${hazeGLSL}
 ${nightLightGLSL}
 ${brushGLSL}
 ${wetGLSL}
+${streamGLSL}
 
 // Painted ground: large patches, then streaks inside them. aniso = 1
 // stretches everything sideways for the low day view (the ground is seen
@@ -66,27 +71,49 @@ vec3 ground(vec2 p, float aniso) {
 
 vec3 flowerPaint(vec2 seed) {
   float h = hash12(seed);
-  vec3 c = h < 0.55 ? uFlowerPink : h < 0.75 ? uFlowerWhite : h < 0.9 ? uFlowerYellow : uFlowerBlue;
+  vec3 c = h < 0.3 ? uFlowerWhite : h < 0.5 ? uFlowerYellow : h < 0.65 ? uFlowerRed
+    : h < 0.8 ? uFlowerPink : h < 0.92 ? uFlowerViolet : uFlowerBlue;
   c = vary(c, vec3((hash12(seed + 1.3) - 0.5) * 0.2, 1.0, 0.85 + hash12(seed + 9.1) * 0.25));
   return c + uFlowerGlow * uGlow * step(0.9, hash12(seed + 5.3)) * 0.8;
 }
 
-// Day view: coordinates in the low camera's perspective (angle across,
+// Day view: coordinates in the day camera's perspective (angle across,
 // log distance in depth), so strokes keep a steady size on screen and lie
-// along the horizon. Top view: plain ground coordinates.
-const float KU = 9.0;
-const float KD = 1.7;
+// along the horizon. KD is tuned to the camera's height: seen from higher
+// up, the ground shows more of its depth, so the strokes are squatter in
+// it, small enough to sit with the plants painted over them. Top view:
+// plain ground coordinates.
+const float KU = 12.0;
+const float KD = 3.4;
 const float KT = 0.55;
 vec2 dayToWorld(vec2 c) {
   float d = exp(c.y / KD);
   return vec2(c.x / KU * d, -d);
 }
 
+// How much of the stream is at xz: 1 on the water, 0 on dry ground.
+float waterAt(vec2 xz) {
+  float d = -xz.y;
+  return 1.0 - smoothstep(0.85, 1.05, abs(xz.x - streamX(d)) / streamHalfWidth(d));
+}
+
+// The stream: deep water with the sky mirrored on it in long streaks along
+// its course, between damp, darker banks.
+vec3 streamPaint(vec2 xz, vec3 col) {
+  float d = -xz.y;
+  float off = abs(xz.x - streamX(d)) / streamHalfWidth(d);
+  col = mix(col, mix(uGroundDeep, uGroundMid, 0.45), (1.0 - smoothstep(1.0, 1.7, off)) * 0.7);
+  float mirror = smoothstep(0.45, 0.75, vnoise(vec2(xz.x * 0.9, xz.y * 0.22)));
+  vec3 water = mix(uWater, uWaterLight, mirror * 0.75);
+  return mix(col, water, waterAt(xz));
+}
+
 vec3 groundAt(vec2 xz, float aniso) {
   vec3 col = ground(xz, aniso);
   // Close to the camera the ground sits in the shadow of the grass.
   float near = 1.0 - smoothstep(3.0, 20.0, -xz.y);
-  return mix(col, mix(uGroundMid, uFieldShadow, 0.4), near * 0.35 * aniso);
+  col = mix(col, mix(uGroundMid, uFieldShadow, 0.4), near * 0.35 * aniso);
+  return streamPaint(xz, col);
 }
 
 // Layers: 0 day blocks, 1 day flowers and light, 2 top blocks, 3 top flowers.
@@ -97,10 +124,12 @@ vec3 fieldPaint(vec2 c, float layer) {
   if (mod(layer, 2.0) > 0.5) {
     // Detail strokes: flowers painted into the field, else a lighter
     // stroke of the grass color.
+    // On the stream: light glancing off the water.
+    if (waterAt(xz) > 0.5) return mix(col, uWaterLight, 0.35 + 0.4 * hash12(floor(c * 23.0)));
     float far = top ? 0.6 : smoothstep(12.0, 45.0, -xz.y);
-    if (hash12(floor(c * 31.0) + layer) < far * (top ? 0.25 : 0.55)) return flowerPaint(floor(c * 31.0));
+    if (hash12(floor(c * 31.0) + layer) < far * (top ? 0.25 : 0.2)) return flowerPaint(floor(c * 31.0));
     // Sunlit grass strokes; deep green ones where the meadow is in shadow.
-    return hash12(floor(c * 23.0)) < 0.5 ? mix(col, uGroundLight, 0.3) : mix(col, uGroundDeep, 0.4);
+    return hash12(floor(c * 23.0)) < 0.5 ? mix(col, uGroundLight, 0.18) : mix(col, uGroundDeep, 0.4);
   }
   return col;
 }
@@ -166,7 +195,8 @@ void main() {
 
 /**
  * Rolling meadow ground, painted in strokes (blocks of color, then flowers
- * and light) over a darker toned ground, plus the mountains.
+ * and light) over a darker toned ground, with the stream winding through it
+ * on the left (streamX in painterly/landscape.ts), plus the mountains.
  * The plane reaches past the original camera (+z) so the night top view
  * never sees its edge.
  */

@@ -35,13 +35,15 @@ export interface LookSettings {
   fringe: number;
   /** How much strokes pick up the wet paint around them (wet in wet), 0..1. */
   wetBlend: number;
-  /** Day: resting glow of the featured flowers (HDR, so bloom picks it up). */
+  /** Day: resting glow of the project flower beds (HDR, so bloom picks it up). */
   featuredRest: number;
-  /** Day: how far the featured flowers' resting glow breathes (0 = steady). */
+  /** Day: how far the project beds' resting glow breathes (0 = steady). */
   featuredBreathe: number;
-  /** Day: extra glow of a hovered featured flower. */
+  /** Day: glow at the peak of a project bed's pulse (its hint that it can be clicked). */
+  featuredPulse: number;
+  /** Day: extra glow of a hovered project bed. */
   featuredHover: number;
-  /** Day: size gain of a hovered featured flower (0.08 = 8% bigger). */
+  /** Day: size gain of the flowers of a hovered project bed (0.08 = 8% bigger). */
   featuredGrow: number;
 }
 
@@ -61,10 +63,11 @@ export const defaultLook: LookSettings = {
   dustKick: 1,
   fringe: 0.35,
   wetBlend: 0.85,
-  featuredRest: 0.6,
+  featuredRest: 0.08,
   featuredBreathe: 0.4,
-  featuredHover: 1.4,
-  featuredGrow: 0.08,
+  featuredPulse: 1.3,
+  featuredHover: 2.6,
+  featuredGrow: 0.1,
 };
 
 export type QualityTier = "high" | "low";
@@ -76,6 +79,8 @@ export interface QualityPreset {
   flowers: number;
   grass: number;
   conifers: number;
+  /** Share of the flower beds' plants (src/config/flowers.ts) to paint. */
+  beds: number;
   /** Depth-of-field buffer resolution relative to the canvas. */
   dofResolution: number;
   fireflies: number;
@@ -93,8 +98,9 @@ export const qualityPresets: Record<QualityTier, QualityPreset> = {
   high: {
     dpr: [1, 1.5],
     flowers: 8000,
-    grass: 10000,
+    grass: 15000,
     conifers: 150,
+    beds: 1,
     dofResolution: 0.5,
     fireflies: 260,
     pollen: 320,
@@ -106,8 +112,9 @@ export const qualityPresets: Record<QualityTier, QualityPreset> = {
   low: {
     dpr: [1, 1.25],
     flowers: 3400,
-    grass: 4200,
+    grass: 6000,
     conifers: 100,
+    beds: 0.65,
     dofResolution: 0.35,
     fireflies: 120,
     pollen: 140,

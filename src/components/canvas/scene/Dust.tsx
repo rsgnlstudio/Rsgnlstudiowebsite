@@ -5,9 +5,11 @@ import { AdditiveBlending, BufferGeometry, Float32BufferAttribute, ShaderMateria
 import { qualityPresets } from "@/config/look";
 import type { PaletteKey } from "@/config/palette";
 import { useLookStore } from "@/store/look";
-import { CONIFER_EDGE_SHARE, scatterConifers } from "../painterly/conifers";
+import { scatterConifers } from "../painterly/conifers";
+import { scatterBeds } from "../painterly/beds";
 import { dustUniforms } from "../painterly/dust";
-import { terrainHeight } from "../painterly/landscape";
+import { inStream, terrainHeight } from "../painterly/landscape";
+import type { PetalTint } from "../painterly/plants";
 import { paletteGLSL, paletteUniformsFor, sharedUniforms } from "../painterly/palette";
 import { NIGHT_LIGHT_KEYS, nightLightGLSL, nightLightUniforms } from "../painterly/nightLight";
 import { mulberry32, type Rng, valueNoise } from "../painterly/random";
@@ -19,8 +21,30 @@ const COLORS = [
   "flowerBlue",
   "flowerPeriwinkle",
   "flowerWhite",
+  "flowerRed",
+  "flowerYellow",
+  "flowerOrange",
+  "flowerViolet",
+  "flowerMagenta",
   "flowerGlow",
 ] as const satisfies readonly PaletteKey[];
+
+/** Flower dust tints, by index (aInfo.y); flowerColor() in the shader matches. */
+const DUST_TINTS = [
+  "flowerPink",
+  "flowerBlue",
+  "flowerPeriwinkle",
+  "flowerWhite",
+  "flowerRed",
+  "flowerYellow",
+  "flowerOrange",
+  "flowerViolet",
+  "flowerMagenta",
+] as const satisfies readonly PaletteKey[];
+
+/** Dust tint of a petal color (deep pink counts as magenta). */
+const dustTint = (tint: PetalTint) =>
+  Math.max(0, DUST_TINTS.indexOf(tint === "flowerPinkDeep" ? "flowerMagenta" : tint));
 
 /** Kinds of dust, stored in aInfo.x. */
 const GROUND = 0;
@@ -66,7 +90,12 @@ vec3 flowerColor(float i) {
   if (i < 0.5) return uFlowerPink;
   if (i < 1.5) return uFlowerBlue;
   if (i < 2.5) return uFlowerPeriwinkle;
-  return uFlowerWhite;
+  if (i < 3.5) return uFlowerWhite;
+  if (i < 4.5) return uFlowerRed;
+  if (i < 5.5) return uFlowerYellow;
+  if (i < 6.5) return uFlowerOrange;
+  if (i < 7.5) return uFlowerViolet;
+  return uFlowerMagenta;
 }
 
 void hide() {
@@ -204,6 +233,8 @@ function scatterGround(b: DustBuffers, rng: Rng, count: number) {
     // Drifts: dust gathers in bands and patches.
     const drift = valueNoise(x * 0.05, z * 0.05, 5) * 0.7 + valueNoise(x * 0.17, z * 0.17, 6) * 0.3;
     if (rng() > 0.25 + drift * 0.95) continue;
+    // The stream stays dark: a ribbon of night winding through the dust.
+    if (inStream(x, d, 0)) continue;
     const y = terrainHeight(x, z) + rng() * rng() * 0.6;
     push(b, rng, [x, y, z], groundNormal(x, z), GROUND);
     placed++;
@@ -212,9 +243,8 @@ function scatterGround(b: DustBuffers, rng: Rng, count: number) {
 
 function scatterTrees(b: DustBuffers, rng: Rng, budget: number, conifers: number) {
   const trees = scatterConifers(conifers);
-  const edge = Math.round(conifers * CONIFER_EDGE_SHARE);
   // Particles in proportion to each tree's surface.
-  const area = (i: number) => trees.size[i * 2 + 1] * Math.abs(trees.size[i * 2]) * (i < edge ? 1 : 0.35);
+  const area = (i: number) => trees.size[i * 2 + 1] * Math.abs(trees.size[i * 2]) * (trees.far[i] ? 0.35 : 1);
   let total = 0;
   for (let i = 0; i < trees.count; i++) total += area(i);
   for (let i = 0; i < trees.count; i++) {
@@ -246,7 +276,7 @@ function scatterFlowers(b: DustBuffers, rng: Rng, count: number) {
     const d = -20 + rng() * 135;
     const z = -d;
     // Flowers grow in drifts of one color.
-    if (rng() > valueNoise(x * 0.06, z * 0.06, 21) * 1.2 - 0.15) continue;
+    if (rng() > valueNoise(x * 0.06, z * 0.06, 21) * 1.2 - 0.15 || inStream(x, d)) continue;
     const hue = valueNoise(x * 0.04, z * 0.04, 22);
     const tint = hue < 0.35 ? 0 : hue < 0.55 ? 1 : hue < 0.72 ? 2 : 3;
     const specks = 4 + Math.floor(rng() * 10);
@@ -256,6 +286,21 @@ function scatterFlowers(b: DustBuffers, rng: Rng, count: number) {
       const a = rng() * Math.PI * 2;
       const r = Math.sqrt(rng()) * spread;
       push(b, rng, [x + Math.cos(a) * r, y + rng() * 0.2, z + Math.sin(a) * r], normal.set(0, 1, 0), FLOWER, tint);
+    }
+  }
+}
+
+/** The flower beds as dust: a small cloud of specks in its color at every plant's head. */
+function scatterBedFlowers(b: DustBuffers, rng: Rng, scale: number) {
+  for (const plant of scatterBeds(scale)) {
+    const z = -plant.d;
+    const y = terrainHeight(plant.x, z) + plant.height * 0.8;
+    const tint = dustTint(plant.tint);
+    const specks = 4 + Math.floor(rng() * 4);
+    for (let k = 0; k < specks; k++) {
+      const a = rng() * Math.PI * 2;
+      const r = Math.sqrt(rng()) * 0.18;
+      push(b, rng, [plant.x + Math.cos(a) * r, y + rng() * 0.15, z + Math.sin(a) * r], normal.set(0, 1, 0), FLOWER, tint);
     }
   }
 }
@@ -276,6 +321,7 @@ function buildDust(preset: (typeof qualityPresets)["high"], conifers: number) {
   scatterGround(b, rng, preset.dust.ground);
   scatterTrees(b, rng, preset.dust.trees, conifers);
   scatterFlowers(b, rng, preset.dust.flowers);
+  scatterBedFlowers(b, rng, preset.beds);
   scatterMotes(b, rng, preset.dust.motes);
   const geometry = new BufferGeometry();
   geometry.setAttribute("position", new Float32BufferAttribute(b.position, 3));

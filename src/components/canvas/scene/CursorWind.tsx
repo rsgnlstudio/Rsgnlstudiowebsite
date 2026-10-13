@@ -35,11 +35,11 @@ export function CursorWind() {
 
   useFrame((state, delta) => {
     const dt = Math.min(delta, 0.05);
-    const { night, openFlower } = useSceneStore.getState();
+    const { night, openBed } = useSceneStore.getState();
     const day = 1 - MathUtils.smoothstep(night, 0.02, 0.2);
     // Calm while a project overlay is open: the canvas is pushed aside then,
     // so the pointer no longer lines up with the meadow.
-    const on = pointer.current.active && !reduced.current && day > 0 && !openFlower;
+    const on = pointer.current.active && !reduced.current && day > 0 && !openBed;
     // When the cursor leaves, the wind dies down where it was.
     presence.current = MathUtils.damp(presence.current, on ? 1 : 0, on ? 5 : 2, dt);
 

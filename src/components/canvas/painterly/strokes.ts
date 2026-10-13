@@ -8,9 +8,10 @@ import {
 } from "three";
 import type { PaletteKey } from "@/config/palette";
 import { homeSections } from "@/config/sections";
+import { bedGapGLSL } from "./beds";
 import { brushGLSL, getBrushAtlas } from "./brushes";
 import { buildGLSL } from "./build";
-import { FEATURE_COUNT, featuredUniforms } from "./featured";
+import { FEATURE_COUNT, featuredUniforms, PULSE } from "./featured";
 import { gustGLSL, gustUniforms } from "./gust";
 import { terrainHeightGLSL } from "./landscape";
 import { NIGHT_LIGHT_KEYS, nightLightGLSL, nightLightUniforms } from "./nightLight";
@@ -73,7 +74,7 @@ export interface Stroke {
   opacity?: number;
   /** S-shaped wave of the stroke, as a fraction of its length. */
   wave?: number;
-  /** Featured flower this stroke belongs to, 1-based (0 = none); see featured.ts. */
+  /** Project flower bed this stroke belongs to, 1-based (0 = none); see featured.ts. */
   feature?: number;
 }
 
@@ -175,11 +176,13 @@ uniform float uTopView;
 uniform float uTopScale;
 uniform float uPxPerUnit;
 uniform float uMinPx;
-#ifdef SQUEEZE
+#if defined(SQUEEZE) || defined(BED_GAPS)
 uniform float uSqueeze;
 #endif
 #ifdef FEATURED
 uniform float uFeatureHover[FEATURE_COUNT];
+uniform float uFeaturePulseStart[FEATURE_COUNT];
+uniform float uFeaturePulseGlow;
 uniform float uFeatureRest;
 uniform float uFeatureBreathe;
 uniform float uFeatureHoverGlow;
@@ -202,6 +205,9 @@ ${buildGLSL}
 ${windGLSL}
 ${gustGLSL}
 ${terrainHeightGLSL}
+#ifdef BED_GAPS
+${bedGapGLSL}
+#endif
 
 // The stroke's path in the plant frame: a cubic Bezier from aStart to
 // aStart + aVec. Its two handles sit off the chord by the bend (an arc) and
@@ -249,12 +255,20 @@ void main() {
   vec2 facing = normalize(toCam.xz + vec2(0.0, 1e-4));
   float hover = 0.0;
   #ifdef FEATURED
-  // A featured flower breathes a soft glow; hovered, it lights up, grows a
-  // little and stands still in the cursor's wind.
+  // A project bed breathes a soft glow, and now and then a pulse of light
+  // ripples through it, each plant a little after the other. Hovered, all
+  // its flowers light up, grow a little and stand still in the cursor's
+  // wind. Strokes of no bed (feature 0) stay as they are.
   int feature = int(aLook.z + 0.5) - 1;
-  if (feature >= 0) hover = uFeatureHover[feature];
+  float pulse = 0.0;
+  if (feature >= 0) {
+    hover = uFeatureHover[feature];
+    float delay = hash12(base.xz * 3.1) * PULSE_RIPPLE;
+    float p = clamp((uTime - uFeaturePulseStart[feature] - delay) / PULSE_DURATION, 0.0, 1.0);
+    pulse = sin(p * 3.14159) * sin(p * 3.14159);
+  }
   float breathe = 1.0 + uFeatureBreathe * sin(uTime * 1.3 + aLook.z * 2.1);
-  vFeatureGlow = uFeatureRest * breathe + uFeatureHoverGlow * hover;
+  vFeatureGlow = step(0.5, aLook.z) * (uFeatureRest * breathe + uFeaturePulseGlow * pulse + uFeatureHoverGlow * hover);
   #endif
   vec3 right = vec3(facing.y, 0.0, -facing.x);
   vec3 up = vec3(0.0, 1.0, 0.0);
@@ -272,7 +286,11 @@ void main() {
   vec3 fwd = normalize(cross(right, up));
   float scale = mix(1.0, uTopScale, uTopView);
   #ifdef FEATURED
-  scale *= 1.0 + uFeatureGrow * hover;
+  scale *= 1.0 + uFeatureGrow * max(hover, pulse * 0.4 * sign(uFeaturePulseGlow));
+  #endif
+  #ifdef BED_GAPS
+  // Room for the flower beds, wherever they are drawn (beds.ts).
+  scale *= 1.0 - inBedGap(base.xz, uSqueeze);
   #endif
   // The crowd right at the day camera's feet clumps into specks from above.
   float atFeet = step(0.0, -base.z) * step(-base.z, 5.0) * step(abs(base.x), 8.0);
@@ -417,8 +435,9 @@ void main() {
   // Night: chosen flowers glow.
   col += uFlowerGlow * uGlow * vGlow * (0.7 + 0.6 * brush.g);
 #ifdef FEATURED
-  // Featured flowers glow by day too, most in their petals.
-  col += uFeaturedGlow * vFeatureGlow * mix(0.25, 1.0, vGlow) * (0.7 + 0.6 * brush.g);
+  // Project beds glow by day too, most in their petals: their own color
+  // brightened past white with a warm light, so bloom haloes the group.
+  col += (uFeaturedGlow * 0.4 + col) * vFeatureGlow * mix(0.2, 1.0, vGlow) * (0.7 + 0.6 * brush.g);
 #endif
   col = applyHaze(col, vDist * uHazeScale);
 
@@ -461,8 +480,10 @@ export interface StrokeMaterialOptions {
   rootFade?: number;
   /** Re-seat roots on the terrain and squeeze x on narrow screens. */
   squeeze?: boolean;
-  /** Featured flowers: glow and react to hover (featuredUniforms). */
+  /** Project flower beds: glow and react to hover (featuredUniforms). */
   featured?: boolean;
+  /** Hide plants rooted in a flower bed, which moves in on narrow screens (bedGapGLSL). */
+  bedGaps?: boolean;
 }
 
 /**
@@ -473,9 +494,12 @@ export function createStrokeMaterial(options: StrokeMaterialOptions, pass: "core
   const keys = [...new Set<PaletteKey>([...BASE_KEYS, options.shadow, options.light])];
   const defines: Record<string, string> = {};
   if (options.squeeze) defines.SQUEEZE = "";
+  if (options.bedGaps) defines.BED_GAPS = "";
   if (options.featured) {
     defines.FEATURED = "";
     defines.FEATURE_COUNT = String(FEATURE_COUNT);
+    defines.PULSE_DURATION = PULSE.duration.toFixed(2);
+    defines.PULSE_RIPPLE = PULSE.ripple.toFixed(2);
   }
   if (pass === "fringe") defines.FRINGE = "";
   return new ShaderMaterial({
