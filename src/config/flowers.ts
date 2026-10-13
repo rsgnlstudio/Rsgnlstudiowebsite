@@ -39,7 +39,7 @@ export interface FlowerBed {
 export const PROJECT_BEDS = [
   {
     id: "about",
-    title: "Vita & About",
+    title: "Vita & Über mich",
     teaser: "Platzhalter: eine kurze Zeile über Simone.",
     // Schleierkraut, a white veil to the left.
     areas: [{ x: -3.2, d: 7, rx: 1.15, rd: 1.7 }],

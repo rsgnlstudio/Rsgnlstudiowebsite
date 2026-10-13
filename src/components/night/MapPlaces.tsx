@@ -137,7 +137,6 @@ export function MapPlaces() {
     <nav
       aria-label={UI.map.label}
       inert={!active}
-      lang="de"
       className={`pointer-events-none fixed inset-0 z-10 transition-opacity duration-1000 ease-smooth ${
         active ? "opacity-100" : "opacity-0"
       }`}

@@ -5,13 +5,13 @@ import { TIMES_OF_DAY, type TimeOfDay } from "@/config/scene";
 import { useSceneStore } from "@/store/scene";
 
 const ITEMS: Record<TimeOfDay, { label: string; Icon: LucideIcon }> = {
-  day: { label: "Art", Icon: Sun },
-  night: { label: "Business", Icon: Moon },
+  day: { label: "Kunst", Icon: Sun },
+  night: { label: "Consulting", Icon: Moon },
 };
 
 /**
  * The Day/Night pair at the start of the top navigation (`TopNav`), labelled
- * "Art" (sun) and "Business" (moon), which turns the scene from day to night
+ * "Kunst" (sun) and "Consulting" (moon), which turns the scene from day to night
  * and back. It only writes `timeOfDay` to
  * the store; CameraRig animates the sunset and the camera. The active item
  * label is underlined.
@@ -21,7 +21,7 @@ export function DayNightSwitch() {
   const setTimeOfDay = useSceneStore((s) => s.setTimeOfDay);
 
   return (
-    <div role="group" aria-label="Time of day" className="flex">
+    <div role="group" aria-label="Tageszeit" className="flex">
       {TIMES_OF_DAY.map((time) => {
         const { label, Icon } = ITEMS[time];
         return (

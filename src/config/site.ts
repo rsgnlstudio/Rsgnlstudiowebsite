@@ -1,5 +1,8 @@
+/** The wordmark at the top left of every page (`SiteBrand`). */
+export const SITE_NAME = "rsgnl";
+
 /**
- * Where the top navigation's links lead. Placeholders for now; replace them
+ * Where the footer's links lead. Placeholders for now; replace them
  * with the real address and imprint page.
  */
 export const CONTACT_EMAIL = "hello@rsgnl.studio";

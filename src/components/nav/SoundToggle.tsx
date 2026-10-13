@@ -30,7 +30,7 @@ export function SoundToggle() {
       ref={reveal}
       type="button"
       aria-pressed={enabled}
-      aria-label="Ambient sound"
+      aria-label="Umgebungsklang"
       onClick={() => setSoundEnabled(!enabled)}
       className={`group invisible fixed top-20 right-6 z-20 md:top-6 grid size-11.5 cursor-pointer place-items-center rounded-full border border-current/10 opacity-0 backdrop-blur-md transition-colors ease-smooth focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-current ${
         timeOfDay === "night" ? "bg-on-day/30 text-on-night" : "bg-on-night/30 text-on-day"

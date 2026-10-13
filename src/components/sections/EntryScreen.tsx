@@ -76,10 +76,10 @@ export function EntryScreen() {
       }`}
     >
       <div className="flex max-w-md flex-col items-center text-center">
-        <p className="font-display text-heading italic">Welcome to the meadow</p>
+        <p className="font-display text-heading italic">Willkommen auf der Wiese</p>
         <p className="mt-3 text-body opacity-75">
-          A painted world that answers your cursor, with sound composed live as you move. It is
-          best experienced with sound, ideally with headphones.
+          Eine gemalte Welt, die auf deinen Cursor antwortet, mit Klang, der live entsteht,
+          während du dich bewegst. Am schönsten mit Ton, am besten mit Kopfhörern.
         </p>
 
         <div className="mt-10 grid w-full">
@@ -87,7 +87,7 @@ export function EntryScreen() {
             aria-live="polite"
             className="col-start-1 row-start-1 animate-pulse self-center text-caption tracking-widest uppercase opacity-55 transition-opacity duration-1000 ease-smooth group-data-ready:invisible group-data-ready:opacity-0"
           >
-            Loading
+            Lädt
           </p>
           <div className="invisible col-start-1 row-start-1 mx-auto flex w-full max-w-xs translate-y-3 flex-col items-stretch gap-3 opacity-0 transition-[opacity,translate,visibility] duration-1800 ease-reveal group-data-ready:visible group-data-ready:translate-y-0 group-data-ready:opacity-100">
             <button
@@ -97,10 +97,10 @@ export function EntryScreen() {
               className={`${choice} border-transparent bg-on-night text-on-day hover:opacity-85`}
             >
               <Volume2 aria-hidden className="size-[1.125rem]" strokeWidth={1.5} />
-              Enter with sound
+              Mit Ton eintreten
             </button>
             <span aria-hidden className="text-center text-caption opacity-55">
-              or
+              oder
             </span>
             <button
               type="button"
@@ -108,7 +108,7 @@ export function EntryScreen() {
               className={`${choice} border-current/25 bg-on-day/30 backdrop-blur-md hover:bg-on-day/50`}
             >
               <VolumeX aria-hidden className="size-[1.125rem] opacity-75" strokeWidth={1.5} />
-              Enter without sound
+              Ohne Ton eintreten
             </button>
           </div>
         </div>

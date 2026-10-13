@@ -14,12 +14,6 @@ export interface TwoLines {
   detail: string;
 }
 
-export const BRAND = {
-  name: "rsgnl consulting",
-  /** Stays at the top left under the logo. */
-  claim: "Unternehmensberatung für KMU und Gründer:innen",
-} as const;
-
 /** The intro, shown while the camera flies up into the night. */
 export const INTRO = {
   lines: [

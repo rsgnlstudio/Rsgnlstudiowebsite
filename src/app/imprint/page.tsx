@@ -5,7 +5,7 @@ import { ViewTransition } from "react";
 import { CONTACT_EMAIL, PAGE_IN, PAGE_OUT } from "@/config/site";
 
 export const metadata: Metadata = {
-  title: "Imprint · RSGNL Studio",
+  title: "Impressum · RSGNL Studio",
 };
 
 /*
@@ -33,32 +33,32 @@ export default function ImprintPage() {
               className="size-[1.125rem] transition-transform duration-700 ease-smooth group-hover:-translate-x-0.5"
               strokeWidth={1.5}
             />
-            Back
+            Zurück
           </Link>
 
-          <h1 className="mt-12 font-display text-display">Imprint</h1>
+          <h1 className="mt-12 font-display text-display">Impressum</h1>
 
           <section className="mt-16">
-            <h2 className="text-heading">Information according to § 5 DDG</h2>
+            <h2 className="text-heading">Angaben gemäß § 5 DDG</h2>
             <address className="mt-4 text-body not-italic">
               RSGNL Studio
               <br />
-              Firstname Lastname
+              Vorname Nachname
               <br />
-              Example Street 1
+              Musterstraße 1
               <br />
-              12345 Example City
+              12345 Musterstadt
               <br />
-              Germany
+              Deutschland
             </address>
           </section>
 
           <section className="mt-12">
-            <h2 className="text-heading">Contact</h2>
+            <h2 className="text-heading">Kontakt</h2>
             <p className="mt-4 text-body">
-              Phone: +49 000 0000000
+              Telefon: +49 000 0000000
               <br />
-              Email:{" "}
+              E-Mail:{" "}
               <a
                 href={`mailto:${CONTACT_EMAIL}`}
                 className="underline underline-offset-4"
@@ -69,23 +69,23 @@ export default function ImprintPage() {
           </section>
 
           <section className="mt-12">
-            <h2 className="text-heading">VAT ID</h2>
+            <h2 className="text-heading">Umsatzsteuer-ID</h2>
             <p className="mt-4 text-body">
-              VAT identification number according to § 27a UStG: DE000000000
+              Umsatzsteuer-Identifikationsnummer gemäß § 27a UStG: DE000000000
             </p>
           </section>
 
           <section className="mt-12">
-            <h2 className="text-heading">Responsible for content</h2>
+            <h2 className="text-heading">Verantwortlich für den Inhalt</h2>
             <p className="mt-4 text-body">
-              according to § 18 (2) MStV: Firstname Lastname, address as above
+              nach § 18 Abs. 2 MStV: Vorname Nachname, Anschrift wie oben
             </p>
           </section>
 
           <section className="mt-12">
-            <h2 className="text-heading">Liability for content</h2>
+            <h2 className="text-heading">Haftung für Inhalte</h2>
             <p className="mt-4 text-body opacity-70">
-              Placeholder text. Lorem ipsum dolor sit amet, consectetur
+              Platzhaltertext. Lorem ipsum dolor sit amet, consectetur
               adipiscing elit, sed do eiusmod tempor incididunt ut labore et
               dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
               exercitation ullamco laboris nisi ut aliquip ex ea commodo
@@ -94,9 +94,9 @@ export default function ImprintPage() {
           </section>
 
           <section className="mt-12">
-            <h2 className="text-heading">Liability for links</h2>
+            <h2 className="text-heading">Haftung für Links</h2>
             <p className="mt-4 text-body opacity-70">
-              Placeholder text. Duis aute irure dolor in reprehenderit in
+              Platzhaltertext. Duis aute irure dolor in reprehenderit in
               voluptate velit esse cillum dolore eu fugiat nulla pariatur.
               Excepteur sint occaecat cupidatat non proident, sunt in culpa qui
               officia deserunt mollit anim id est laborum.
@@ -104,9 +104,9 @@ export default function ImprintPage() {
           </section>
 
           <section className="mt-12">
-            <h2 className="text-heading">Copyright</h2>
+            <h2 className="text-heading">Urheberrecht</h2>
             <p className="mt-4 text-body opacity-70">
-              Placeholder text. Sed ut perspiciatis unde omnis iste natus error
+              Platzhaltertext. Sed ut perspiciatis unde omnis iste natus error
               sit voluptatem accusantium doloremque laudantium, totam rem
               aperiam.
             </p>

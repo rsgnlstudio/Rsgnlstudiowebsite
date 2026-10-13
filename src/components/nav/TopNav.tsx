@@ -9,10 +9,11 @@ import { useSceneStore } from "@/store/scene";
 
 /**
  * The top navigation: one frosted pill at the top centre holding the
- * Day/Night switch, then by day the imprint and the contact call to action,
- * by night the consulting site's items (services, process, about) and its
- * glowing call to action, "Erstgespräch vereinbaren"; the two sets morph
- * into each other on a switch (`NavItems`). The text color and the frosted
+ * Day/Night switch ("Kunst" and "Consulting"), alone by day, followed by night
+ * by the consulting site's items (services, process, about) and its glowing
+ * call to action, "Erstgespräch vereinbaren"; the pill grows and shrinks
+ * around them on a switch (`NavItems`). The wordmark (`SiteBrand`) and the
+ * footer (`SiteFooter`, with imprint and contact) live in the root layout. The text color and the frosted
  * fill cross over with the scene. It appears after the intro.
  */
 export function TopNav() {
@@ -22,7 +23,7 @@ export function TopNav() {
   const reveal = useReveal<HTMLDivElement>();
 
   return (
-    <nav aria-label="Main" className="fixed top-6 left-1/2 z-20 -translate-x-1/2">
+    <nav aria-label="Hauptnavigation" className="fixed top-6 left-1/2 z-20 -translate-x-1/2">
       <div
         ref={reveal}
         className={`invisible flex items-center rounded-full border border-current/10 p-1 whitespace-nowrap opacity-0 backdrop-blur-md transition-colors ease-smooth ${
@@ -31,7 +32,6 @@ export function TopNav() {
         style={{ transitionDuration: `${duration}s` }}
       >
         <DayNightSwitch />
-        <span aria-hidden className="mx-1 h-4 w-px bg-current opacity-20" />
         <NavItems />
       </div>
     </nav>
