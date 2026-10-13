@@ -65,3 +65,72 @@
   --font-display: var(--font-calendas);
   --font-mono: ui-monospace, monospace;
 }
+
+/*
+ * Page slide (view transitions, typed by the links: PAGE_IN and PAGE_OUT in
+ * src/config/site.ts). A sub-page slides in from the right over the home
+ * page and pushes it aside, like the project overlay and its stage; going
+ * back reverses it. The sub-page's own <ViewTransition> runs the slide; the
+ * root snapshot carries the home page (canvas included).
+ */
+::view-transition {
+  pointer-events: none;
+}
+
+/*
+ * React drops the root from view transitions (an inline
+ * view-transition-name: none, and an animation hiding its group), so the
+ * live page would show instead of the pushed home page. !important beats both.
+ */
+html:active-view-transition-type(page-in),
+html:active-view-transition-type(page-out) {
+  view-transition-name: root !important;
+}
+html:active-view-transition-type(page-in)::view-transition-group(root),
+html:active-view-transition-type(page-out)::view-transition-group(root) {
+  opacity: 1 !important;
+}
+
+html:active-view-transition-type(page-in)::view-transition-old(root) {
+  animation: var(--overlay-duration) var(--ease-overlay) both page-push;
+}
+html:active-view-transition-type(page-in)::view-transition-new(root),
+html:active-view-transition-type(page-out)::view-transition-old(root) {
+  animation: none;
+  opacity: 0;
+}
+html:active-view-transition-type(page-out)::view-transition-new(root) {
+  animation: var(--overlay-duration) var(--ease-overlay) both page-push-back;
+}
+
+::view-transition-group(.page-slide) {
+  animation: none;
+}
+::view-transition-new(.page-slide) {
+  animation: var(--overlay-duration) var(--ease-overlay) both page-slide-in;
+}
+::view-transition-old(.page-slide) {
+  animation: var(--overlay-duration) var(--ease-overlay) both page-slide-out;
+}
+
+/* By a third, as the overlay pushes its stage aside */
+@keyframes page-push {
+  to {
+    translate: -33.333%;
+  }
+}
+@keyframes page-push-back {
+  from {
+    translate: -33.333%;
+  }
+}
+@keyframes page-slide-in {
+  from {
+    translate: 100%;
+  }
+}
+@keyframes page-slide-out {
+  to {
+    translate: 100%;
+  }
+}

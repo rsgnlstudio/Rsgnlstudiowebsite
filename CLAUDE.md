@@ -25,7 +25,7 @@ Before calling work done, run lint, typecheck, and build.
 - The night view looks straight down, so the dust world must read from above: motion that should show goes sideways (in x/z), and tall shapes are squat. Night lighting comes from the cursor light (`CursorLight` writes `dustUniforms`), not from the palette alone.
 - Scroll logic (`useSectionScroll`) is called by pages, never the layout. It must fully clean up: revert its gsap context, remove ScrollTrigger listeners, and destroy Lenis.
 - With Cache Components, Next hides pages with `<Activity>` instead of unmounting them. Effect cleanups run on hide, so put page-scoped setup in `useEffect` with cleanup and expect it to re-run when the page is shown again.
-- Each page claims the scene with `useSceneMode(mode)`. The default and fallback mode is `"hidden"`, which pauses the frameloop and hides the canvas. To add a mode, extend `SCENE_MODES` and `sectionsByMode` in `src/config/scene.ts`.
+- Each page claims the scene with `useSceneMode(mode)`. The default and fallback mode is `"hidden"`, which pauses the frameloop and hides the canvas. `useSceneMode` uses a layout effect so the canvas is visible in view transition snapshots (passive effects run only after the transition); keep it that way. To add a mode, extend `SCENE_MODES` and `sectionsByMode` in `src/config/scene.ts`.
 - Don't add routes or assume a navigation structure unless asked.
 - Never hardcode a color in a shader or material. Add it to `src/config/palette.ts` (day, dusk and night) and read it through `paletteUniformsFor` / `paletteGLSL` from `src/components/canvas/painterly/palette.ts`. `Lights` calls `updateLight(night)` every frame (palette, sun, moon, glow). Anything that should glow at night must output HDR (> 1) color scaled by `uGlow`, so bloom picks it up. 
 - Materials are unlit `ShaderMaterial`s. Don't add per-object meshes for things that repeat.
@@ -47,4 +47,5 @@ Before calling work done, run lint, typecheck, and build.
 ## Known quirks
 
 - `Effects` patches postprocessing's circle-of-confusion shader by string replacement (`patchCircleOfConfusion`; it also limits the sky's blur via the CoC shader's `depth`). If postprocessing changes that shader, it logs a warning and falls back to the default ramp. Recheck after upgrading.
+- The page slide (`page-in` / `page-out` in `globals.css`) overrides React's view transition handling of the root with `!important`: React drops the root from the transition (inline `view-transition-name: none` and an animation hiding `::view-transition-group(root)`), which would hide the home page being pushed aside. Recheck after upgrading React.
 - `THREE.Clock` deprecation warnings in the console come from @react-three/fiber 9.8 internals, not from our code.
