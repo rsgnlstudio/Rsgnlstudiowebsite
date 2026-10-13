@@ -9,11 +9,12 @@ import { useSceneStore } from "@/store/scene";
 import { useSoundStore } from "@/store/sound";
 
 /**
- * Round button at the top right that turns the ambient sound on and off.
- * Styled like the Day/Night switch, so its colors cross over with the scene.
+ * Round button at the top right that turns the ambient sound on and off
+ * (below `md` it drops under the top navigation, which then fills the row).
+ * Styled like the top navigation, so its colors cross over with the scene.
  * The entry screen decides whether sound starts (its click is the gesture
  * browsers need); it swells in with the intro. It appears after the intro,
- * just after the switch.
+ * just after the navigation.
  */
 export function SoundToggle() {
   const enabled = useSoundStore((s) => s.enabled);
@@ -31,7 +32,7 @@ export function SoundToggle() {
       aria-pressed={enabled}
       aria-label="Ambient sound"
       onClick={() => setSoundEnabled(!enabled)}
-      className={`group invisible fixed top-6 right-6 z-20 grid size-11.5 cursor-pointer place-items-center rounded-full border border-current/10 opacity-0 backdrop-blur-md transition-colors ease-smooth focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-current ${
+      className={`group invisible fixed top-20 right-6 z-20 md:top-6 grid size-11.5 cursor-pointer place-items-center rounded-full border border-current/10 opacity-0 backdrop-blur-md transition-colors ease-smooth focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-current ${
         timeOfDay === "night" ? "bg-on-day/30 text-on-night" : "bg-on-night/30 text-on-day"
       }`}
       style={{ transitionDuration: `${duration}s` }}
