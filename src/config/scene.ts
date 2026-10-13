@@ -76,3 +76,27 @@ export const INTRO_FOV_OFFSET = 9;
 
 /** Height above the ground of the light that follows the cursor at night. */
 export const CURSOR_LIGHT_HEIGHT = 7;
+
+/**
+ * The nightingale. By day it flies circles around the cursor at the depth of
+ * field's focus distance, so it stays sharp; it is the night's light, so as the day turns into
+ * the night it dives down to the cursor light's place and turns into it.
+ */
+export const NIGHTINGALE = {
+  /** Length from beak to tail in metres (storybook size, not a real bird's). */
+  size: 0.55,
+  /** Radius of its circles around the cursor in metres. */
+  orbitRadius: 0.9,
+  /** Radians per second around the cursor. */
+  orbitSpeed: 1.5,
+  /** Wingbeats per second. */
+  flapRate: 7,
+  /**
+   * `uMorph` range over which it flies to the night light's place, and the
+   * one over which its paint turns into the light (glows, then fades out as
+   * the light's own core takes over).
+   */
+  dive: [0.04, 0.8],
+  glow: [0.04, 0.45],
+  fade: [0.55, 0.85],
+} as const;

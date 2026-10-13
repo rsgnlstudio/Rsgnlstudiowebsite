@@ -67,6 +67,35 @@
 }
 
 /*
+ * The mouse cursor is a dot (CursorDot), on every page. The system cursor is
+ * hidden only while the dot is mounted, and only for fine pointers.
+ */
+@media (pointer: fine) {
+  html.cursor-dot,
+  html.cursor-dot * {
+    cursor: none !important;
+  }
+}
+
+/*
+ * In view transitions the dot is its own layer: otherwise the root snapshot
+ * would carry it off with the page slide, frozen, while the pointer moves on.
+ * No animation, so the group follows the live dot, and only its new (live)
+ * image, still inverting what's beneath it.
+ */
+::view-transition-group(cursor-dot) {
+  animation: none;
+  mix-blend-mode: difference;
+}
+::view-transition-old(cursor-dot) {
+  animation: none;
+  opacity: 0;
+}
+::view-transition-new(cursor-dot) {
+  animation: none;
+}
+
+/*
  * Page slide (view transitions, typed by the links: PAGE_IN and PAGE_OUT in
  * src/config/site.ts). A sub-page slides in from the right over the home
  * page and pushes it aside, like the project overlay and its stage; going
