@@ -56,6 +56,11 @@ export const PALETTE_KEYS = [
   "flowerGlow",
   "featuredGlow",
   "firefly",
+  // The nightingale (plain brown back, rufous tail, pale buff breast, dark eye and beak)
+  "nightingale",
+  "nightingaleTail",
+  "nightingaleBreast",
+  "nightingaleDark",
   // Night dust world (and the night light the painting takes on as it turns into it)
   "void",
   "dust",
@@ -115,6 +120,11 @@ export const dayPalette: Palette = {
   featuredGlow: "#ffd9a0",
   firefly: "#e4ff9a",
 
+  nightingale: "#8a6446",
+  nightingaleTail: "#b4582e",
+  nightingaleBreast: "#e6d2b2",
+  nightingaleDark: "#2a1c14",
+
   void: "#0b0a1c",
   dust: "#3a3a7a",
   dustLit: "#ffd8a8",
@@ -169,6 +179,11 @@ export const duskPalette: Palette = {
   featuredGlow: "#ffae6a",
   firefly: "#ffe08a",
 
+  nightingale: "#7e4a3a",
+  nightingaleTail: "#c4502a",
+  nightingaleBreast: "#f4b48a",
+  nightingaleDark: "#2c1420",
+
   void: "#0e0816",
   dust: "#3a2a64",
   dustLit: "#ffc08a",
@@ -222,6 +237,11 @@ export const nightPalette: Palette = {
   flowerGlow: "#5cc0ff",
   featuredGlow: "#8ad8ff",
   firefly: "#c8ff6a",
+
+  nightingale: "#3c3a64",
+  nightingaleTail: "#5a3c62",
+  nightingaleBreast: "#8a8ab4",
+  nightingaleDark: "#0e0e1e",
 
   void: "#010309",
   dust: "#123c78",

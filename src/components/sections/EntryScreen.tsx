@@ -65,8 +65,11 @@ export function EntryScreen() {
     useSceneStore.getState().setEntered(true);
   };
 
+  // Inert once entered: the choices set `visible` themselves, so `invisible`
+  // alone would leave them clickable (and focusable) over the meadow.
   return (
     <div
+      inert={entered}
       data-ready={ready || undefined}
       className={`group fixed inset-0 z-40 grid place-items-center bg-radial from-on-day/55 to-transparent to-75% px-gutter text-on-night transition-[opacity,visibility] duration-1200 ease-smooth ${
         entered ? "invisible opacity-0" : "opacity-100"

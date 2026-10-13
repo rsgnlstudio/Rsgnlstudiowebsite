@@ -145,20 +145,16 @@ export function FlowerBeds() {
     return () => window.removeEventListener("click", onClick);
   }, [get]);
 
-  // The pointer cursor follows the hover; hiding the scene or leaving the
-  // page clears it.
+  // Hiding the scene or leaving the page clears the hover (the cursor dot
+  // grows over a hovered bed, see CursorDot).
   useEffect(() => {
     const { setHoveredBed } = useSceneStore.getState();
-    const unsubscribe = useSceneStore.subscribe((state, prev) => {
-      if (state.hoveredBed !== prev.hoveredBed) {
-        document.body.style.cursor = state.hoveredBed ? "pointer" : "";
-      }
+    const unsubscribe = useSceneStore.subscribe((state) => {
       if (state.sceneMode === "hidden" && state.hoveredBed) setHoveredBed(null);
     });
     return () => {
       unsubscribe();
       setHoveredBed(null);
-      document.body.style.cursor = "";
     };
   }, []);
 

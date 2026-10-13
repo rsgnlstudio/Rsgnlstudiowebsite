@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { SceneCanvasLoader } from "@/components/canvas/SceneCanvasLoader";
+import { CursorDot } from "@/components/cursor/CursorDot";
 import { calendas } from "@/fonts/calendas";
 import "./globals.css";
 
@@ -15,6 +16,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         {/* Persistent 3D background; survives route changes. */}
         <SceneCanvasLoader />
         <main className="relative z-10">{children}</main>
+        {/* The mouse cursor, a dot, on every page. */}
+        <CursorDot />
       </body>
     </html>
   );

@@ -5,19 +5,15 @@ import { useEffect, useMemo, useRef } from "react";
 import {
   AdditiveBlending,
   MathUtils,
-  type PerspectiveCamera,
   PlaneGeometry,
   ShaderMaterial,
   Vector3,
 } from "three";
 import { qualityPresets } from "@/config/look";
 import type { PaletteKey } from "@/config/palette";
-import { CURSOR_LIGHT_HEIGHT, nightCamera } from "@/config/scene";
-import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
-import { useWindowPointer } from "@/hooks/useWindowPointer";
 import { useLookStore } from "@/store/look";
 import { DustTrail, dustUniforms } from "../painterly/dust";
-import { rayGroundDistance, terrainHeight } from "../painterly/landscape";
+import { terrainHeight } from "../painterly/landscape";
 import { paletteGLSL, paletteUniformsFor, sharedUniforms } from "../painterly/palette";
 
 const COLORS = ["cursorLight", "dustLit"] as const satisfies readonly PaletteKey[];
@@ -51,70 +47,45 @@ void main() {
 }
 `;
 
-const ndc = new Vector3();
-const ray = new Vector3();
-const hit = new Vector3();
+const ground = new Vector3();
 const lastGround = new Vector3();
 
 /**
- * The light of the night world. It hovers above the ground under the cursor
- * (or wanders on its own on touch screens and when the mouse has left),
- * lights the dust around it, and records its wake in the dust trail, which
- * kicks the dust up as it passes. Also sets the focus of the dust to the
- * ground under it. Writes dustUniforms every frame; reads the store with
- * getState().
+ * The light of the night world. It is the nightingale (Nightingale), which
+ * writes its position: by night it hovers above the ground under the cursor.
+ * This lights the dust around it, draws its glowing core and records its
+ * wake in the dust trail, which kicks the dust up as it passes. Also sets
+ * the focus of the dust to the ground under it. Writes dustUniforms every
+ * frame; reads the stores with getState().
  */
 export function CursorLight() {
   const gl = useThree((s) => s.gl);
   const tier = useLookStore((s) => s.tier);
   const size = qualityPresets[tier].trailSize;
 
-  const reducedMotion = usePrefersReducedMotion();
-  const reduced = useRef(reducedMotion);
-  useEffect(() => {
-    reduced.current = reducedMotion;
-  }, [reducedMotion]);
-
   const trail = useMemo(() => new DustTrail(size), [size]);
   useEffect(() => () => trail.dispose(), [trail]);
-
-  const pointer = useWindowPointer();
-
-  const ground = useRef(new Vector3(...nightCamera.lookAt));
-  const wander = useRef(0);
+  const lit = useRef(false);
 
   useFrame((state, delta) => {
     const morph = sharedUniforms.uMorph.value;
     if (morph <= 0) {
       dustUniforms.uLightStrength.value = 0;
+      lit.current = false;
       return;
     }
     const dt = Math.min(delta, 0.05);
     const camera = state.camera;
     const look = useLookStore.getState();
 
-    // Target: the ground under the cursor, or a slow wander around the view.
-    if (pointer.current.active) {
-      camera.updateMatrixWorld();
-      ray.copy(ndc.set(pointer.current.position.x, pointer.current.position.y, 0.5).unproject(camera));
-      ray.sub(camera.position).normalize();
-      const distance = rayGroundDistance(camera.position, ray, 400);
-      if (distance < 400) hit.copy(camera.position).addScaledVector(ray, distance);
-    } else {
-      if (!reduced.current) wander.current += dt;
-      const w = wander.current;
-      const [cx, , cz] = nightCamera.lookAt;
-      // Narrower on portrait screens, so it stays in frame.
-      const across = Math.min(1, (camera as PerspectiveCamera).aspect / 1.6);
-      const x = cx + (Math.sin(w * 0.21) * 34 + Math.sin(w * 0.53) * 9) * across;
-      const z = cz + Math.sin(w * 0.17 + 1.2) * (18 + 14 * (1 - across));
-      hit.set(x, terrainHeight(x, z), z);
-    }
-
-    // Floaty follow, so the light trails the cursor a little.
-    lastGround.copy(ground.current);
-    ground.current.lerp(hit, 1 - Math.exp(-dt * 6));
-    const g = ground.current;
+    // The ground under the light, and how fast it moves over it.
+    const light = dustUniforms.uLightPos.value;
+    lastGround.copy(ground);
+    ground.set(light.x, terrainHeight(light.x, light.z), light.z);
+    // Coming on, it hasn't moved yet.
+    if (!lit.current) lastGround.copy(ground);
+    lit.current = true;
+    const g = ground;
     const vx = (g.x - lastGround.x) / Math.max(dt, 1e-4);
     const vz = (g.z - lastGround.z) / Math.max(dt, 1e-4);
     const speed = Math.hypot(vx, vz);
@@ -123,7 +94,6 @@ export function CursorLight() {
     // dust condenses under it.
     const strength = MathUtils.smoothstep(morph, 0.1, 0.75);
     dustUniforms.uLightStrength.value = strength;
-    dustUniforms.uLightPos.value.set(g.x, g.y + CURSOR_LIGHT_HEIGHT, g.z);
     dustUniforms.uLightIntensity.value = look.lightIntensity;
     dustUniforms.uLightRadius.value = look.lightRadius;
     dustUniforms.uDustSize.value = look.dustSize;

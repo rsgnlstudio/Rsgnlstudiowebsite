@@ -4,15 +4,15 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { EffectComposer } from "@react-three/postprocessing";
 import { BloomEffect, DepthOfFieldEffect, EffectPass } from "postprocessing";
 import { useEffect, useMemo } from "react";
-import { MathUtils, type PerspectiveCamera, Vector3 } from "three";
+import { MathUtils, type PerspectiveCamera } from "three";
 import { qualityPresets } from "@/config/look";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { useLookStore } from "@/store/look";
-import { rayGroundDistance } from "../painterly/landscape";
 import { PainterlyEffect } from "../painterly/PainterlyEffect";
 import { VolumetricMist } from "../painterly/VolumetricMist";
 import { WetCanvasPass, wetUniforms } from "../painterly/WetCanvasPass";
 import { sharedUniforms } from "../painterly/palette";
+import { focusDistance } from "../painterly/view";
 
 const COC_SOURCE = "float magnitude=smoothstep(0.0,focusRange,abs(signedDistance));";
 
@@ -46,23 +46,6 @@ interface EffectSet {
   finish: PainterlyEffect;
 }
 
-const forward = new Vector3();
-
-/**
- * Where focus sits: on the ground this far below the centre of the frame
- * (in half-frame heights), i.e. the near meadow a few metres out. Everything
- * beyond melts into soft paint, the flowers by the lens blur the other way.
- */
-const FOCUS_BELOW_CENTRE = 0.4;
-
-/** Distance to the ground at the focus point of the frame. */
-function focusDistance(camera: PerspectiveCamera) {
-  const tan = Math.tan(MathUtils.degToRad(camera.fov / 2));
-  // From the quaternion: CameraRig set it this frame, matrixWorld lags.
-  forward.set(0, -FOCUS_BELOW_CENTRE * tan, -1).normalize().applyQuaternion(camera.quaternion);
-  return rayGroundDistance(camera.position, forward);
-}
-
 /** Copies the live look settings onto the effects. */
 function applyLook({ wetCanvas, dof, bloom, finish }: EffectSet, camera: PerspectiveCamera, time: number) {
   const look = useLookStore.getState();
@@ -92,7 +75,7 @@ function applyLook({ wetCanvas, dof, bloom, finish }: EffectSet, camera: Perspec
  * 0. the wet canvas: a blurred copy of the frame the strokes mix into on the
  *    next frame (WetCanvasPass); the frame passes through unchanged,
  * 0. volumetric mist, raymarched against the depth (VolumetricMist),
- * 1. depth of field, focused on the near meadow (FOCUS_BELOW_CENTRE), and
+ * 1. depth of field, focused on the near meadow (focusDistance in painterly/view.ts), and
  *    bloom on the HDR highlights,
  * 2. the finish, in its own pass as it samples the frame at offsets:
  *    chromatic fringe, canvas texture, grain and vignette.
