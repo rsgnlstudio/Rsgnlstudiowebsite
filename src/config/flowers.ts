@@ -30,17 +30,15 @@ export interface FlowerBed {
 
 /**
  * The beds that lead somewhere: as a group they glow softly, light up when
- * hovered and open their section in the overlay (`ProjectOverlay`) on click
- * or tap, keyed by `id`. `title` and `teaser` show in the label next to the
- * cursor while hovered and head the overlay (the teasers are placeholders).
- * Imprint and contact live in the top navigation, so their flowers
- * (marsh marigold, pot marigold) grow in MEADOW_BEDS without a link.
+ * hovered and open their project in the overlay (`ProjectOverlay`) on click
+ * or tap, keyed by `id`. Their copy (title, teaser, media) is the `project`
+ * document with the same id (src/content). Imprint and contact live in the
+ * top navigation, so their flowers (marsh marigold, pot marigold) grow in
+ * MEADOW_BEDS without a link.
  */
 export const PROJECT_BEDS = [
   {
     id: "about",
-    title: "Vita & Über mich",
-    teaser: "Platzhalter: eine kurze Zeile über Simone.",
     // Schleierkraut, a white veil to the left.
     areas: [{ x: -3.2, d: 7, rx: 1.15, rd: 1.7 }],
     plants: 34,
@@ -48,8 +46,6 @@ export const PROJECT_BEDS = [
   },
   {
     id: "illustration",
-    title: "Illustrationen & Digitalkunst",
-    teaser: "Platzhalter: eine kurze Zeile zu diesem Portfolio.",
     // Mohnblumen, in front and reaching back between the others.
     areas: [
       { x: -1.45, d: 5.5, rx: 1.2, rd: 1.4 },
@@ -60,8 +56,6 @@ export const PROJECT_BEDS = [
   },
   {
     id: "painting",
-    title: "Malerei",
-    teaser: "Platzhalter: eine kurze Zeile zu diesem Portfolio.",
     // Margeriten, in the middle at the front.
     areas: [{ x: 0.25, d: 5.8, rx: 0.75, rd: 1.4 }],
     plants: 26,
@@ -69,8 +63,6 @@ export const PROJECT_BEDS = [
   },
   {
     id: "writing",
-    title: "Texte & Gegenständliches",
-    teaser: "Platzhalter: eine kurze Zeile zu diesem Portfolio.",
     // Rapunzel-Glockenblumen, in the middle further back.
     areas: [{ x: 0.55, d: 10.8, rx: 1.25, rd: 2.4 }],
     plants: 34,
@@ -78,8 +70,6 @@ export const PROJECT_BEDS = [
   },
   {
     id: "shop",
-    title: "Shop",
-    teaser: "Platzhalter: eine kurze Zeile zum Shop.",
     // Cosmea in pink, white and deep rose, a long drift on the right
     // running back to the trees.
     areas: [
@@ -89,7 +79,7 @@ export const PROJECT_BEDS = [
     plants: 50,
     flowers: [{ kind: "cosmos", weight: 1 }],
   },
-] as const satisfies readonly (FlowerBed & { title: string; teaser: string })[];
+] as const satisfies readonly FlowerBed[];
 
 export type ProjectBedId = (typeof PROJECT_BEDS)[number]["id"];
 

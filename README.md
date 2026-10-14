@@ -84,7 +84,8 @@ src/
     nav/               Top navigation (TopNav: one pill with the Day/Night switch and the night's items; below md the burger menu, MobileMenu) and the sound toggle
     ui/                Shared UI primitives: Button (and ButtonLink), the one button of the site, with its variants and sizes
     night/             The night map's DOM: the place buttons (MapPlaces), the side panel and its content (NightPanel, PathStory, PanelContent, PanelParts) and the intro
-    sections/          DOM sections, the entry screen, the flower hover label, the day's hint (DayHint), the project overlay, the shared slide panel (SlidePanel) and per-page scroll controllers (e.g. HomeScroll)
+    day/               The day's DOM: the scroll sections (Section, HomeScroll), the flower hover label, the hint (DayHint) and the project overlay
+    overlay/           The entry screen (EntryScreen) and the shared slide panel (SlidePanel)
   fonts/               DM Sans (next/font/google) and Calendas Plus (woff2, next/font/local)
   config/              Section config (camera keyframes), scene modes and the night camera, palette, look and quality presets, sound levels, the flower beds, the night map's layout, site name and links (contact email, imprint)
   content/             Copy (German): the consulting site's, keyed by the night map's ids (consulting.ts), and the day's (studio.ts)

@@ -1,15 +1,15 @@
+import { DayHint } from "@/components/day/DayHint";
+import { FlowerHoverLabel } from "@/components/day/FlowerHoverLabel";
+import { HomeScroll } from "@/components/day/HomeScroll";
+import { ProjectOverlay } from "@/components/day/ProjectOverlay";
+import { Section } from "@/components/day/Section";
 import { MobileMenu } from "@/components/nav/MobileMenu";
 import { SoundToggle } from "@/components/nav/SoundToggle";
 import { TopNav } from "@/components/nav/TopNav";
 import { MapPlaces } from "@/components/night/MapPlaces";
 import { NightIntro } from "@/components/night/NightIntro";
 import { NightPanel } from "@/components/night/NightPanel";
-import { DayHint } from "@/components/sections/DayHint";
-import { EntryScreen } from "@/components/sections/EntryScreen";
-import { FlowerHoverLabel } from "@/components/sections/FlowerHoverLabel";
-import { HomeScroll } from "@/components/sections/HomeScroll";
-import { ProjectOverlay } from "@/components/sections/ProjectOverlay";
-import { Section } from "@/components/sections/Section";
+import { EntryScreen } from "@/components/overlay/EntryScreen";
 import { homeSections } from "@/config/sections";
 
 export default function HomePage() {

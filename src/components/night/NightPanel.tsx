@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { SlidePanel } from "@/components/overlay/SlidePanel";
 import { UI } from "@/content/consulting";
 import { useSceneStore } from "@/store/scene";
-import { SlidePanel } from "@/components/sections/SlidePanel";
 import { PanelContent } from "./PanelContent";
 
 /** Where the panel reads, as a share of its height from the top: the step crossing it is the current one. */

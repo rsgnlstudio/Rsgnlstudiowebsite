@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DAY_HINT } from "@/content/studio";
+import { BottomHint } from "@/components/ui/BottomHint";
+import { useContent } from "@/content/ContentProvider";
 import { useIntroRevealed } from "@/hooks/useIntroRevealed";
 import { useOverlayFade } from "@/hooks/useOverlayFade";
 import { useSceneStore } from "@/store/scene";
@@ -16,6 +17,7 @@ const DELAY_SECONDS = 1.2;
  * only by night and while an overlay is open.
  */
 export function DayHint() {
+  const { studio } = useContent();
   const revealed = useIntroRevealed();
   const isDay = useSceneStore((s) => s.timeOfDay === "day");
   const overlay = useOverlayFade().hidden;
@@ -30,14 +32,9 @@ export function DayHint() {
   const shown = ready && isDay && !overlay;
 
   return (
-    <p
-      aria-hidden={!shown}
-      className={`pointer-events-none fixed bottom-24 left-1/2 z-20 w-max max-w-[calc(100vw-2*var(--spacing-gutter))] -translate-x-1/2 text-center font-display text-body text-foreground italic transition-[opacity,translate] duration-1500 ease-reveal md:bottom-edge ${
-        shown ? "translate-y-0 opacity-80" : "translate-y-2 opacity-0"
-      }`}
-    >
-      <span className="pointer-coarse:hidden">{DAY_HINT.mouse}</span>
-      <span className="hidden pointer-coarse:inline">{DAY_HINT.touch}</span>
-    </p>
+    <BottomHint shown={shown} className="text-foreground">
+      <span className="pointer-coarse:hidden">{studio.dayHint.mouse}</span>
+      <span className="hidden pointer-coarse:inline">{studio.dayHint.touch}</span>
+    </BottomHint>
   );
 }
