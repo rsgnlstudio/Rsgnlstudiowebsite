@@ -158,12 +158,6 @@ export const PATHS = [
 }[];
 
 /**
- * The BAFA subsidy runs until the end of 2026. Set to false on 1.1.2027:
- * that takes the lantern and every hint at it off the site at once.
- */
-export const BAFA_ENABLED = true;
-
-/**
  * Testimonials fly as fireflies over the map, each around its own home
  * (x, d) on a slow loop of the given radius.
  */

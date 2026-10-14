@@ -4,8 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { openPanel } from "@/components/night/PanelParts";
 import type { NightPanel } from "@/config/nightMap";
-import { CONTACT_EMAIL, IMPRINT_HREF, PAGE_IN } from "@/config/site";
+import { IMPRINT_HREF, PAGE_IN } from "@/config/navigation";
 import { UI } from "@/content/consulting";
+import { useContent } from "@/content/ContentProvider";
 import { useIntroRevealed } from "@/hooks/useIntroRevealed";
 import { useOverlayFade } from "@/hooks/useOverlayFade";
 import { useSceneStore } from "@/store/scene";
@@ -33,6 +34,7 @@ const SECTIONS: { label: string; panel: NightPanel }[] = [
  * out while an overlay is open.
  */
 export function SiteFooter() {
+  const { site } = useContent();
   const revealed = useIntroRevealed();
   const onMap = useSceneStore((s) => s.sceneMode !== "hidden");
   const isDay = useSceneStore((s) => s.timeOfDay === "day");
@@ -60,7 +62,7 @@ export function SiteFooter() {
         >
           {UI.footer.imprint}
         </Link>
-        <a href={`mailto:${CONTACT_EMAIL}`} className={link}>
+        <a href={`mailto:${site.contactEmail}`} className={link}>
           {UI.footer.contact}
         </a>
       </nav>

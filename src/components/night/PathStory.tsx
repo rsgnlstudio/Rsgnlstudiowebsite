@@ -1,7 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { BAFA_ENABLED, type ChallengeId, PATHS, type RoadId, ROADS } from "@/config/nightMap";
+import { type ChallengeId, PATHS, type RoadId, ROADS } from "@/config/nightMap";
+import { useContent } from "@/content/ContentProvider";
 import { BAFA_TEXT, CHALLENGES, CONTACT, ROAD_TEXTS, SERVICES, UI } from "@/content/consulting";
 import { Block, Category, Cta, Heading, Highlight, Intro, PanelLink } from "./PanelParts";
 
@@ -34,7 +35,8 @@ const roadOf = (a: string, b: string) =>
 export function PathStory({ id }: { id: ChallengeId }) {
   const challenge = CHALLENGES[id];
   const path = PATHS.find((p) => p.id === id)!;
-  const bafa = BAFA_ENABLED && path.bafa;
+  const { bafaActive } = useContent();
+  const bafa = bafaActive && path.bafa;
 
   const challengeStep = (
     <Step index={0} label={UI.categories.challenge}>

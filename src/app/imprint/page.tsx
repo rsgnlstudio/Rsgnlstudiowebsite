@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { ViewTransition } from "react";
-import { CONTACT_EMAIL, PAGE_IN, PAGE_OUT } from "@/config/site";
+import { PAGE_IN, PAGE_OUT } from "@/config/navigation";
+import { getSiteContent } from "@/content";
 
 export const metadata: Metadata = {
   title: "Impressum · RSGNL Studio",
@@ -14,7 +15,8 @@ export const metadata: Metadata = {
  * project overlay's colors, and it slides in from the right like the overlay
  * (`page-slide` in globals.css).
  */
-export default function ImprintPage() {
+export default async function ImprintPage() {
+  const { site } = await getSiteContent();
   return (
     <ViewTransition
       enter={{ [PAGE_IN]: "page-slide", default: "none" }}
@@ -60,10 +62,10 @@ export default function ImprintPage() {
               <br />
               E-Mail:{" "}
               <a
-                href={`mailto:${CONTACT_EMAIL}`}
+                href={`mailto:${site.contactEmail}`}
                 className="underline underline-offset-4"
               >
-                {CONTACT_EMAIL}
+                {site.contactEmail}
               </a>
             </p>
           </section>

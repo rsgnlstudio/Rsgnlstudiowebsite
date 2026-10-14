@@ -1,7 +1,8 @@
 "use client";
 
 import { ChevronDown } from "lucide-react";
-import { BAFA_ENABLED, type NightPanel, PATHS, ROADS, type ServiceId, CITY_LIGHTS } from "@/config/nightMap";
+import { type NightPanel, PATHS, ROADS, type ServiceId, CITY_LIGHTS } from "@/config/nightMap";
+import { useContent } from "@/content/ContentProvider";
 import {
   ABOUT,
   BAFA_TEXT,
@@ -104,6 +105,7 @@ function ResultsPanel() {
 }
 
 function ProcessPanel() {
+  const { bafaActive } = useContent();
   return (
     <>
       <Category>{UI.categories.process}</Category>
@@ -134,7 +136,7 @@ function ProcessPanel() {
         </ul>
       </Block>
       <Block title={UI.blocks.costs}>{PROCESS.costs}</Block>
-      {BAFA_ENABLED && (
+      {bafaActive && (
         <Highlight title={BAFA_TEXT.title}>
           <PanelLink to={{ kind: "bafa" }}>{UI.path.bafaLink}</PanelLink>
         </Highlight>
@@ -212,6 +214,7 @@ function BafaPanel() {
 }
 
 function FaqPanel() {
+  const { bafaActive } = useContent();
   return (
     <>
       <Category>{UI.categories.faq}</Category>
@@ -230,7 +233,7 @@ function FaqPanel() {
             </summary>
             <p className="pr-12 pb-2 text-body opacity-80">
               {item.answer}
-              {item.bafa && BAFA_ENABLED && ` ${FAQ_BAFA_NOTE}`}
+              {item.bafa && bafaActive && ` ${FAQ_BAFA_NOTE}`}
             </p>
           </details>
         ))}

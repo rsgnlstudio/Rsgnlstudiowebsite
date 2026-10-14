@@ -1,6 +1,5 @@
 import { Vector3 } from "three";
 import {
-  BAFA_ENABLED,
   CITY_AREA,
   CITY_LIGHTS,
   CLEARINGS,
@@ -294,7 +293,7 @@ const lanternAhead: [number, number] = [0, 0];
  * active path, if that path can be subsidised. Returns whether the lantern
  * shows. Fixed places are set once, here too.
  */
-export function updatePlaceWorld(time: number, activePath: ChallengeId | null) {
+export function updatePlaceWorld(time: number, activePath: ChallengeId | null, bafaActive: boolean) {
   let lantern = false;
   PLACES.forEach((place, i) => {
     const out = placeWorld[i];
@@ -310,7 +309,7 @@ export function updatePlaceWorld(time: number, activePath: ChallengeId | null) {
       );
     } else if (place.kind === "lantern") {
       const path = activePath ? PATH_GEOMETRY[pathIndex(activePath)] : null;
-      lantern = BAFA_ENABLED && !!path?.bafa && path.stations.length > 2;
+      lantern = bafaActive && !!path?.bafa && path.stations.length > 2;
       if (path && lantern) {
         // Beside the path, a few metres before its first service.
         const arc = path.stations[1] - 5;
