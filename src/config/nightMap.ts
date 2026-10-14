@@ -9,7 +9,7 @@
  * Positions are ground points (x, d) in metres, as in painterly/landscape.ts:
  * x to the right, d = -z, the distance into the field, which runs up the
  * screen in the top view. The copy for every place lives in
- * src/content/consulting.ts, keyed by the same ids.
+ * the `consulting` document in src/content, keyed by the same ids.
  */
 
 export type MapPoint = readonly [x: number, d: number];
