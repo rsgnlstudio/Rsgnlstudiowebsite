@@ -90,8 +90,8 @@ export interface QualityPreset {
   pollen: number;
   stars: number;
   multisampling: number;
-  /** Night dust points: ground, trees, flower clusters, floating motes. */
-  dust: { ground: number; trees: number; flowers: number; motes: number };
+  /** Night dust points: ground, trees, the city's buildings, flower clusters, floating motes. */
+  dust: { ground: number; trees: number; city: number; flowers: number; motes: number };
   /** Resolution of the square texture that records the cursor light's wake. */
   trailSize: number;
 }
@@ -109,7 +109,7 @@ export const qualityPresets: Record<QualityTier, QualityPreset> = {
     pollen: 320,
     stars: 900,
     multisampling: 0,
-    dust: { ground: 240000, trees: 150000, flowers: 36000, motes: 900 },
+    dust: { ground: 240000, trees: 150000, city: 50000, flowers: 36000, motes: 900 },
     trailSize: 256,
   },
   low: {
@@ -124,7 +124,7 @@ export const qualityPresets: Record<QualityTier, QualityPreset> = {
     pollen: 140,
     stars: 500,
     multisampling: 0,
-    dust: { ground: 100000, trees: 66000, flowers: 15000, motes: 400 },
+    dust: { ground: 100000, trees: 66000, city: 22000, flowers: 15000, motes: 400 },
     trailSize: 128,
   },
 };

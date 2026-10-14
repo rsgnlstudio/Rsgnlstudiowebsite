@@ -30,7 +30,7 @@ export function DayNightSwitch() {
             type="button"
             aria-pressed={time === timeOfDay}
             onClick={() => setTimeOfDay(time)}
-            className="relative flex cursor-pointer items-center justify-center gap-1.5 rounded-full px-4 py-2.5 text-body opacity-55 transition-opacity duration-700 ease-smooth decoration-1 underline-offset-4 hover:opacity-80 focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-current aria-pressed:underline aria-pressed:opacity-100 md:px-6"
+            className="relative flex cursor-pointer items-center justify-center gap-1.5 rounded-full px-4 py-2.5 text-nav opacity-55 transition-opacity duration-700 ease-smooth decoration-1 underline-offset-4 hover:opacity-80 focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-current aria-pressed:underline aria-pressed:opacity-100 md:px-6"
           >
             <Icon aria-hidden className="hidden size-4 sm:block" strokeWidth={1.5} />
             {label}

@@ -87,11 +87,11 @@ export function NightIntro() {
         className="pointer-events-none invisible fixed top-1/2 left-edge z-20 max-w-[min(40rem,calc(100vw-2*var(--spacing-edge)))] -translate-y-1/2 text-on-night opacity-0"
       >
         {INTRO.lines.map((line) => (
-          <p key={line} data-line className="text-body opacity-0 md:text-heading md:leading-snug">
+          <p key={line} data-line className="text-body opacity-0 md:text-lead">
             {line}
           </p>
         ))}
-        <p data-line className="mt-6 font-display text-heading italic opacity-0 md:text-display">
+        <p data-line className="mt-6 font-display text-lead italic opacity-0 md:text-heading">
           {INTRO.transition}
         </p>
       </div>
@@ -99,7 +99,7 @@ export function NightIntro() {
         <button
           type="button"
           onClick={finish}
-          className="fixed bottom-edge left-1/2 z-20 -translate-x-1/2 cursor-pointer rounded-full border border-current/25 px-5 py-2 text-caption tracking-widest text-on-night uppercase opacity-70 backdrop-blur-md transition-opacity duration-700 ease-smooth hover:opacity-100 focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-current"
+          className="fixed bottom-edge left-1/2 z-20 -translate-x-1/2 cursor-pointer rounded-full border border-current/25 px-5 py-2 text-body text-on-night opacity-70 backdrop-blur-md transition-opacity duration-700 ease-smooth hover:opacity-100 focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-current"
         >
           {INTRO.skip}
         </button>

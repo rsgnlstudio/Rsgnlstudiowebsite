@@ -17,7 +17,9 @@ uniform float uTime;
 uniform float uMorph;
 uniform float uActivePath;
 uniform float uPathReach;
+uniform float uActiveDrawn;
 uniform float uPreviewPath;
+uniform float uPreviewDrawn;
 uniform float uPxPerUnit;
 uniform float uPixelRatio;
 ${paletteGLSL(COLORS)}
@@ -61,19 +63,23 @@ void main() {
     size = 0.4;
   }
 
+  // Highlighted paths draw themselves in from their clearing and retract
+  // the same way (trim path): lit up to the drawn length, with a soft tip.
   bool onPath = path > -0.5;
   if (onPath && abs(path - uPreviewPath) < 0.5) {
-    col = mix(col, uMapPath, 0.6);
-    bright += 0.5;
+    float drawn = 1.0 - smoothstep(uPreviewDrawn - 4.0, uPreviewDrawn, arc);
+    col = mix(col, uMapPath, 0.6 * drawn);
+    bright += 0.5 * drawn;
   }
   if (onPath && abs(path - uActivePath) < 0.5) {
     // The active path glows (HDR, so it blooms), brightest where the panel
     // has got to, with a slow shimmer running along it.
+    float drawn = 1.0 - smoothstep(uActiveDrawn - 4.0, uActiveDrawn, arc);
     float walked = 1.0 - smoothstep(uPathReach, uPathReach + 6.0, arc);
     float flow = pow(0.5 + 0.5 * sin((arc - uTime * 5.0) * 0.3), 8.0);
-    col = uMapPath;
-    bright = 0.7 + 1.5 * walked + 0.9 * flow;
-    size = 0.3;
+    col = mix(col, uMapPath, drawn);
+    bright = mix(bright, 0.7 + 1.5 * walked + 0.9 * flow, drawn);
+    size = mix(size, 0.3, drawn);
   }
 
   vec4 view = viewMatrix * vec4(position, 1.0);
@@ -126,7 +132,9 @@ export function MapLines() {
           uPxPerUnit: viewUniforms.uPxPerUnit,
           uActivePath: mapUniforms.uActivePath,
           uPathReach: mapUniforms.uPathReach,
+          uActiveDrawn: mapUniforms.uActiveDrawn,
           uPreviewPath: mapUniforms.uPreviewPath,
+          uPreviewDrawn: mapUniforms.uPreviewDrawn,
           uPixelRatio: mapUniforms.uPixelRatio,
         },
         transparent: true,

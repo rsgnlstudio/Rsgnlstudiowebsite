@@ -102,10 +102,13 @@ void main() {
     col = uCityLight * (core * 3.2 + halo * 0.45) * b;
   } else if (vKind < ${K.summit}.5) {
     // The summit: a small mark on the ridge, lit when a path reaches it.
+    // Its ring is a crisp line (anti-aliased over one pixel), kept below the
+    // bloom threshold so it stays sharp while the core glows.
     float core = exp(-r * r * 60.0);
-    float ring = exp(-pow((r - 0.55) / 0.06, 2.0));
+    float aa = fwidth(r);
+    float ring = 1.0 - smoothstep(0.012, 0.012 + aa, abs(r - 0.55));
     float b = 0.5 + 1.0 * hover + 1.2 * lit + 0.8 * pulse;
-    col = uGoalLight * (core * 2.0 + ring * 0.4) * b;
+    col = uGoalLight * core * 2.0 * b + min(uGoalLight * ring * (0.35 + 0.25 * b), vec3(0.95));
   } else if (vKind < ${K.goal}.5) {
     // The goal: brighter than everything else, with rings pulsing out of it.
     float core = exp(-r * r * 70.0);

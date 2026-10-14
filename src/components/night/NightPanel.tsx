@@ -39,8 +39,13 @@ export function NightPanel() {
       frame = 0;
       const steps = Array.from(el.querySelectorAll<HTMLElement>("[data-step]"));
       if (steps.length === 0) return;
-      const line = el.scrollTop + el.clientHeight * READING_LINE;
       const tops = steps.map((s) => s.offsetTop);
+      // The last steps may never reach the reading line, even scrolled to
+      // the end: the line moves down the panel as it scrolls, so it reaches
+      // the last step's top just at the end.
+      const maxScroll = Math.max(el.scrollHeight - el.clientHeight, 1);
+      const short = Math.max(0, tops[tops.length - 1] - (maxScroll + el.clientHeight * READING_LINE));
+      const line = el.scrollTop + el.clientHeight * READING_LINE + short * Math.min(el.scrollTop / maxScroll, 1);
       // Past the last step's top, or scrolled to the very end: the goal.
       const atEnd = el.scrollTop + el.clientHeight >= el.scrollHeight - 2;
       let station = steps.length - 1;
@@ -77,7 +82,6 @@ export function NightPanel() {
       {shown && (
         <article className="px-gutter pt-24 pb-section md:px-edge">
           <PanelContent panel={shown} />
-          {shown.kind === "path" && <div aria-hidden className="h-[40vh]" />}
         </article>
       )}
     </SlidePanel>
