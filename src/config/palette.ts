@@ -67,13 +67,12 @@ export const PALETTE_KEYS = [
   "dustLit",
   "cursorLight",
   // The night map (consulting): trails, the active path, the city's lights,
-  // the goal, the lantern, the mountains' contour lines, the clearings
+  // the goal, the lantern, the groves around the clearings
   "mapLine",
   "mapPath",
   "cityLight",
   "goalLight",
   "lantern",
-  "contour",
   "clearingGlow",
 ] as const;
 
@@ -144,7 +143,6 @@ export const dayPalette: Palette = {
   cityLight: "#ffc070",
   goalLight: "#fff6e0",
   lantern: "#ffd27a",
-  contour: "#9a8fd0",
   clearingGlow: "#d8f0ff",
 };
 
@@ -211,7 +209,6 @@ export const duskPalette: Palette = {
   cityLight: "#ffaa58",
   goalLight: "#fff0d8",
   lantern: "#ffc468",
-  contour: "#7a6cb4",
   clearingGlow: "#c0dcff",
 };
 
@@ -278,7 +275,6 @@ export const nightPalette: Palette = {
   cityLight: "#ffb24e",
   goalLight: "#fff1d0",
   lantern: "#ffc966",
-  contour: "#4f6cb4",
   clearingGlow: "#9fd8ff",
 };
 

@@ -3,11 +3,13 @@
 import { useEffect, useMemo } from "react";
 import { AdditiveBlending, BufferGeometry, Float32BufferAttribute, ShaderMaterial, Sphere, Vector3 } from "three";
 import { qualityPresets } from "@/config/look";
+import { CLEARING_RADIUS, CLEARINGS, PLACES, placeIndex } from "@/config/nightMap";
 import type { PaletteKey } from "@/config/palette";
 import { useLookStore } from "@/store/look";
 import { scatterConifers } from "../painterly/conifers";
 import { scatterBeds } from "../painterly/beds";
 import { dustUniforms } from "../painterly/dust";
+import { mapUniforms } from "../painterly/mapUniforms";
 import { inStream, terrainHeight } from "../painterly/landscape";
 import type { PetalTint } from "../painterly/plants";
 import { paletteGLSL, paletteUniformsFor, sharedUniforms } from "../painterly/palette";
@@ -27,7 +29,15 @@ const COLORS = [
   "flowerViolet",
   "flowerMagenta",
   "flowerGlow",
+  "clearingGlow",
+  "mapPath",
 ] as const satisfies readonly PaletteKey[];
+
+/** Slot in PLACES of each clearing, by index in CLEARINGS (a grove's tree carries it). */
+const CLEARING_PLACE = CLEARINGS.map((c) => placeIndex(`clearing:${c.id}`));
+
+/** Seconds between the ripples of light that run out through a grove. */
+const GROVE_RIPPLE = 6;
 
 /** Flower dust tints, by index (aInfo.y); flowerColor() in the shader matches. */
 const DUST_TINTS = [
@@ -67,7 +77,7 @@ const DEPTH_PULL = 0.06;
 const vertexShader = /* glsl */ `
 #define DEPTH_PULL ${DEPTH_PULL.toFixed(3)}
 attribute vec4 aSeed; // size, phase, brightness, lift
-attribute vec2 aInfo; // kind, flower tint
+attribute vec2 aInfo; // kind, flower tint (trees: grove's place + 1, 0 = none)
 
 uniform float uWind;
 uniform float uGlow;
@@ -78,6 +88,8 @@ uniform float uPixelRatio;
 uniform float uDustSize;
 uniform float uBokeh;
 uniform float uKick;
+uniform vec3 uPlacePos[${PLACES.length}];
+uniform vec4 uPlaceState[${PLACES.length}];
 ${paletteGLSL(COLORS)}
 
 varying vec3 vColor;
@@ -159,6 +171,23 @@ void main() {
     col += uFlowerGlow * uGlow * 0.35 * step(0.75, aSeed.z) * aSeed.z;
   }
   if (mote) col = mix(uDust, uDustLit, 0.5) * (0.05 + falloff * 0.5) * aSeed.z;
+
+  if (tree && aInfo.y > 0.5) {
+    // The grove around a clearing glows as one, like a day flower bed: it
+    // breathes, now and then a ripple of light runs out through it from the
+    // clearing, and it lights up on hover, on the active path (in the
+    // path's color) and while the panel is at it (pulsing). HDR, so it blooms.
+    int i = int(aInfo.y - 0.5);
+    vec4 place = uPlaceState[i];
+    float from = length(position.xz - uPlacePos[i].xz);
+    float breathe = 0.5 + 0.5 * sin(uTime * 0.8 + aInfo.y * 2.3);
+    float wave = fract(uTime / ${GROVE_RIPPLE.toFixed(1)} + aInfo.y * 0.29);
+    float ripple = exp(-pow((from - wave * ${(CLEARING_RADIUS + 2).toFixed(1)}) / 1.5, 2.0)) * (1.0 - wave);
+    float pulse = place.w * (0.5 + 0.5 * sin(uTime * 3.0));
+    float glow = 0.35 + 0.3 * breathe + 1.4 * ripple + 1.6 * place.y + 1.1 * place.z + 0.9 * pulse;
+    col += mix(uClearingGlow, uMapPath, place.z) * glow * aSeed.z * uGlow * place.x
+      * smoothstep(0.6, 1.0, uMorph);
+  }
 
   vColor = col * appear;
 
@@ -255,6 +284,7 @@ function scatterTrees(b: DustBuffers, rng: Rng, budget: number, conifers: number
     const radius = Math.abs(trees.size[i * 2]) * 0.5;
     const tiers = 5 + Math.floor(height / 5);
     const n = Math.round((budget * area(i)) / total);
+    const grove = trees.grove[i] >= 0 ? CLEARING_PLACE[trees.grove[i]] + 1 : 0;
     for (let k = 0; k < n; k++) {
       // Up the cone (denser low down, where it is wider), in flared tiers of
       // branches, mostly on the surface with some inside.
@@ -264,7 +294,7 @@ function scatterTrees(b: DustBuffers, rng: Rng, budget: number, conifers: number
       const a = rng() * Math.PI * 2;
       const droop = (1 - tier) * 0.12 * height / tiers;
       normal.set(Math.cos(a), 0.55 + tier * 0.4, Math.sin(a)).normalize();
-      push(b, rng, [x + Math.cos(a) * r, base + f * height - droop, z + Math.sin(a) * r], normal, TREE);
+      push(b, rng, [x + Math.cos(a) * r, base + f * height - droop, z + Math.sin(a) * r], normal, TREE, grove);
     }
   }
 }
@@ -357,6 +387,8 @@ export function Dust() {
           ...sharedUniforms,
           ...dustUniforms,
           ...nightLightUniforms,
+          uPlacePos: mapUniforms.uPlacePos,
+          uPlaceState: mapUniforms.uPlaceState,
         },
         transparent: true,
         blending: AdditiveBlending,

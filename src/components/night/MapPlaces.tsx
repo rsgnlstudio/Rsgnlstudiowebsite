@@ -2,7 +2,7 @@
 
 import { ArrowUpRight } from "lucide-react";
 import { type CSSProperties, useEffect, useRef, useState } from "react";
-import { AREAS, CLEARINGS, type Place, PLACES } from "@/config/nightMap";
+import { AREAS, CLEARING_RADIUS, CLEARINGS, type Place, PLACES } from "@/config/nightMap";
 import {
   ABOUT,
   AREA_TITLES,
@@ -47,8 +47,20 @@ function previewOf(place: Place, activePath: string | null): TwoLines {
 /** Whether a place takes part at all (the lantern only on subsidised paths, decided per frame). */
 const exists = (place: Place) => place.panel.kind !== "testimonial" || place.panel.index < TESTIMONIALS.length;
 
-/** Gap between a place and its preview card, in pixels. */
+/** Gap between a place and its preview card, in pixels (clearings: past their grove). */
 const CARD_GAP = 26;
+const GROVE_CARD_GAP = 12;
+
+/** Radius of a clearing's grove with its crowns, in metres (its button covers it). */
+const GROVE_RADIUS = CLEARING_RADIUS + 2;
+/** Smallest grove button, in pixels (the size of the other places' buttons). */
+const GROVE_MIN = 48;
+
+/** Metres between the first two clearings, to measure the map's scale on screen. */
+const SCALE_METRES = Math.hypot(
+  CLEARINGS[0].position[0] - CLEARINGS[1].position[0],
+  CLEARINGS[0].position[1] - CLEARINGS[1].position[1],
+);
 
 /** Places grouped for the keyboard and screen readers, in this order. */
 const GROUPS = [
@@ -93,11 +105,18 @@ export function MapPlaces() {
       frame = requestAnimationFrame(loop);
       const screen = useSceneStore.getState().placeScreen;
       const width = window.innerWidth;
+      // The groves' buttons cover their groves on screen (the map is seen
+      // from straight above, so two clearings give its scale), so
+      // neighbouring clearings don't overlap when the map is small.
+      const [a, b] = clearingIndex;
+      const scale = Math.hypot(screen[a * 3] - screen[b * 3], screen[a * 3 + 1] - screen[b * 3 + 1]) / SCALE_METRES;
+      const grove = `${Math.max(GROVE_MIN, 2 * GROVE_RADIUS * scale)}px`;
       buttons.current.forEach((el, i) => {
         if (!el) return;
         const x = screen[i * 3];
         const y = screen[i * 3 + 1];
         const on = screen[i * 3 + 2] > 0;
+        if (PLACES[i].kind === "clearing") el.style.setProperty("--grove", grove);
         el.style.translate = `${x}px ${y}px`;
         el.dataset.on = String(on);
         el.dataset.flip = String(x > width - 320);
@@ -111,7 +130,7 @@ export function MapPlaces() {
         const pair = CLEARINGS.map((c, i) => (c.area === area.id ? clearingIndex[i] : -1)).filter((i) => i >= 0);
         const x = pair.reduce((sum, i) => sum + screen[i * 3], 0) / pair.length;
         const y = Math.min(...pair.map((i) => screen[i * 3 + 1]));
-        el.style.translate = `${x}px ${y - 64}px`;
+        el.style.translate = `${x}px ${y - 88}px`;
         el.dataset.on = String(!portrait && pair.every((i) => screen[i * 3 + 2] > 0));
       });
     };
@@ -182,6 +201,7 @@ export function MapPlaces() {
               if (!(group.kinds as readonly string[]).includes(place.kind) || !exists(place)) return null;
               const preview = previewOf(place, activePath);
               const area = place.panel.kind === "path" ? CLEARINGS.find((c) => c.id === place.id.split(":")[1])?.area : null;
+              const grove = place.kind === "clearing";
               return (
                 <li
                   key={place.id}
@@ -209,7 +229,7 @@ export function MapPlaces() {
                       lastPointer.current = "keyboard";
                     }}
                     onClick={() => open(i)}
-                    className="pointer-events-auto absolute size-12 -translate-1/2 cursor-pointer rounded-full focus-visible:outline-1 focus-visible:outline-offset-4 focus-visible:outline-on-night"
+                    className={`pointer-events-auto absolute -translate-1/2 cursor-pointer rounded-full ${grove ? "size-(--grove)" : "size-12"} focus-visible:outline-1 focus-visible:outline-offset-4 focus-visible:outline-on-night`}
                   >
                     <span className="sr-only">
                       {area ? `${AREA_TITLES[area]}: ` : ""}
@@ -222,7 +242,9 @@ export function MapPlaces() {
                     className={`pointer-events-none absolute top-0 w-max max-w-72 -translate-y-1/2 rounded-2xl border border-current/10 bg-panel-night/75 px-4 py-3 text-on-night backdrop-blur-md transition-[opacity,translate] duration-700 ease-reveal group-data-[flip=true]/place:right-[var(--gap)] group-data-[flip=false]/place:left-[var(--gap)] ${
                       shown === i ? "opacity-100" : "translate-x-1 opacity-0"
                     }`}
-                    style={{ "--gap": `${CARD_GAP}px` } as CSSProperties}
+                    style={
+                      { "--gap": grove ? `calc(var(--grove) / 2 + ${GROVE_CARD_GAP}px)` : `${CARD_GAP}px` } as CSSProperties
+                    }
                   >
                     <p className="text-body">{preview.line}</p>
                     {preview.detail && <p className="text-caption italic opacity-65">{preview.detail}</p>}

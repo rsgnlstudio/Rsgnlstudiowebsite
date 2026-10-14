@@ -10,10 +10,8 @@ import {
   MAP_FRAME,
   type MapPoint,
   MOUNTAIN_FOOT,
-  MOUNTAINS_FROM,
   type NightPanel,
   PATHS,
-  PEAKS,
   PLACES,
   pathIndex,
   ROADS,
@@ -174,7 +172,7 @@ export function distanceToTrail(x: number, d: number, cap = 10) {
 }
 
 /** Kinds of dots on the map, stored in MapLines' aInfo.x. */
-export const LINE = { TRAIL: 0, ROAD: 1, STREET: 2, NODE: 3, CONTOUR: 4 } as const;
+export const LINE = { TRAIL: 0, ROAD: 1, STREET: 2, NODE: 3 } as const;
 
 export interface MapLineData {
   position: number[];
@@ -260,54 +258,6 @@ function streetDots(out: MapLineData, rng: () => number) {
   }
 }
 
-/** Height of the mapped mountains, for their contour lines. */
-function mountainHeight(x: number, d: number) {
-  let h = 0;
-  for (const p of PEAKS) h += p.height * Math.exp(-(((x - p.x) / p.sx) ** 2 + ((d - p.d) / p.sd) ** 2));
-  return h + 0.07 * valueNoise(x * 0.12, d * 0.12, 41);
-}
-
-/** Contour lines of the mountains along the top edge (marching squares). */
-function contourDots(out: MapLineData, rng: () => number) {
-  const step = 0.8;
-  const x0 = MAP_FRAME.minX - 8;
-  const x1 = MAP_FRAME.maxX + 8;
-  const d0 = MOUNTAINS_FROM - 2;
-  const d1 = MAP_FRAME.maxD + 12;
-  const nx = Math.ceil((x1 - x0) / step);
-  const nd = Math.ceil((d1 - d0) / step);
-  const h = new Float32Array((nx + 1) * (nd + 1));
-  for (let j = 0; j <= nd; j++) for (let i = 0; i <= nx; i++) h[j * (nx + 1) + i] = mountainHeight(x0 + i * step, d0 + j * step);
-  for (let level = 0.16; level < 1.2; level += 0.11) {
-    for (let j = 0; j < nd; j++) {
-      for (let i = 0; i < nx; i++) {
-        const a = h[j * (nx + 1) + i];
-        const b = h[j * (nx + 1) + i + 1];
-        const c = h[(j + 1) * (nx + 1) + i + 1];
-        const e = h[(j + 1) * (nx + 1) + i];
-        // Crossings of the level on the cell's four edges; the dot sits between them.
-        const hits: MapPoint[] = [];
-        const edge = (p: number, q: number, px: number, pd: number, qx: number, qd: number) => {
-          if ((p < level) === (q < level)) return;
-          const t = (level - p) / (q - p);
-          hits.push([px + (qx - px) * t, pd + (qd - pd) * t]);
-        };
-        const x = x0 + i * step;
-        const d = d0 + j * step;
-        edge(a, b, x, d, x + step, d);
-        edge(b, c, x + step, d, x + step, d + step);
-        edge(c, e, x + step, d + step, x, d + step);
-        edge(e, a, x, d + step, x, d);
-        for (let k = 0; k + 1 < hits.length; k += 2) {
-          const mx = (hits[k][0] + hits[k + 1][0]) / 2;
-          const md = (hits[k][1] + hits[k + 1][1]) / 2;
-          dot(out, mx, md, LINE.CONTOUR, -1, level, rng());
-        }
-      }
-    }
-  }
-}
-
 /** Every dot drawn on the map, in one list (MapLines draws it in one call). */
 export function buildMapLines(): MapLineData {
   const out: MapLineData = { position: [], info: [] };
@@ -315,7 +265,6 @@ export function buildMapLines(): MapLineData {
   pathDots(out, rng, 0.55);
   roadDots(out, rng, 0.45);
   streetDots(out, rng);
-  contourDots(out, rng);
   return out;
 }
 
