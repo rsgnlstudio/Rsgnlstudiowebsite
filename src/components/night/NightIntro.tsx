@@ -1,18 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { INTRO } from "@/content/consulting";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { gsap } from "@/lib/gsap";
-import { useSceneStore } from "@/store/scene";
+import { overlayOpen, useSceneStore } from "@/store/scene";
 
 /** `night` at which the intro lines start, as the flight comes in to land. */
 const START_AT = 0.85;
 /** Seconds between two lines, and how long all of them stay before they go. */
 const STAGGER = 0.95;
 const HOLD = 2.4;
-/** Seconds the hint stays at most once the map is open (it also goes on the first hover). */
-const HINT_SECONDS = 14;
 
 /**
  * The night's intro, the first time the night is chosen: as the camera
@@ -20,7 +18,7 @@ const HINT_SECONDS = 14;
  * ("Aus deiner Idee wurde ein Unternehmen. ..."), then the turn to the bird
  * with the view from above. It can be skipped; with reduced motion all lines
  * show at once. When it is done (`nightIntro`), the map takes clicks and a
- * hint asks the visitor to pick a clearing.
+ * hint at the bottom asks the visitor to pick a clearing; it stays.
  */
 export function NightIntro() {
   const timeOfDay = useSceneStore((s) => s.timeOfDay);
@@ -28,7 +26,11 @@ export function NightIntro() {
   const reducedMotion = usePrefersReducedMotion();
   const linesRef = useRef<HTMLDivElement>(null);
   const timeline = useRef<gsap.core.Timeline | null>(null);
-  const [hint, setHint] = useState(false);
+  // The hint stays while the map is open, stepping aside for a place's
+  // preview (on touch screens its card stands where the hint is) and a panel.
+  const hint = useSceneStore(
+    (s) => s.nightIntro === "done" && s.timeOfDay === "night" && s.night > 0.98 && s.hoveredPlace === null && !overlayOpen(s),
+  );
 
   const finish = useCallback(() => {
     timeline.current?.kill();
@@ -75,25 +77,6 @@ export function NightIntro() {
   useEffect(() => {
     if (timeOfDay === "day" && nightIntro === "playing") finish();
   }, [timeOfDay, nightIntro, finish]);
-
-  // The hint, once the map is open: until a place is hovered or opened, or a while has passed.
-  useEffect(() => {
-    if (nightIntro !== "done" || timeOfDay !== "night") return;
-    const show = window.setTimeout(() => {
-      const { hoveredPlace, panel } = useSceneStore.getState();
-      if (hoveredPlace === null && panel === null) setHint(true);
-    }, 600);
-    const hide = window.setTimeout(() => setHint(false), (HINT_SECONDS + 0.6) * 1000);
-    const unsubscribe = useSceneStore.subscribe((s) => {
-      if (s.hoveredPlace !== null || s.panel !== null) setHint(false);
-    });
-    return () => {
-      window.clearTimeout(show);
-      window.clearTimeout(hide);
-      unsubscribe();
-      setHint(false);
-    };
-  }, [nightIntro, timeOfDay]);
 
   const playing = nightIntro === "playing";
 

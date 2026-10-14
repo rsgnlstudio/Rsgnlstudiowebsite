@@ -3,18 +3,20 @@
 import { Volume2, VolumeX } from "lucide-react";
 import { DAY_NIGHT_DURATION, DAY_NIGHT_DURATION_REDUCED } from "@/config/scene";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
+import { useOverlayFade } from "@/hooks/useOverlayFade";
 import { useReveal } from "@/hooks/useReveal";
+import { UI } from "@/content/consulting";
 import { setSoundEnabled } from "@/lib/ambient";
 import { useSceneStore } from "@/store/scene";
 import { useSoundStore } from "@/store/sound";
 
 /**
  * Round button at the top right that turns the ambient sound on and off
- * (below `md` it drops under the top navigation, which then fills the row).
+ * (from `md` up; below, it is in the mobile menu, `MobileMenu`).
  * Styled like the top navigation, so its colors cross over with the scene.
  * The entry screen decides whether sound starts (its click is the gesture
  * browsers need); it swells in with the intro. It appears after the intro,
- * just after the navigation.
+ * just after the navigation, and fades out while an overlay is open.
  */
 export function SoundToggle() {
   const enabled = useSoundStore((s) => s.enabled);
@@ -23,16 +25,16 @@ export function SoundToggle() {
   const reducedMotion = usePrefersReducedMotion();
   const duration = reducedMotion ? DAY_NIGHT_DURATION_REDUCED : DAY_NIGHT_DURATION;
   const Icon = enabled ? Volume2 : VolumeX;
-  const reveal = useReveal<HTMLButtonElement>(0.15);
+  const reveal = useReveal<HTMLButtonElement>(0.15, useOverlayFade().hidden);
 
   return (
     <button
       ref={reveal}
       type="button"
       aria-pressed={enabled}
-      aria-label="Umgebungsklang"
+      aria-label={UI.nav.sound}
       onClick={() => setSoundEnabled(!enabled)}
-      className={`group invisible fixed top-20 right-6 z-20 md:top-6 grid size-11.5 cursor-pointer place-items-center rounded-full border border-current/10 opacity-0 backdrop-blur-md transition-colors ease-smooth focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-current ${
+      className={`group invisible fixed top-8 right-8 z-20 hidden md:grid size-14.5 cursor-pointer place-items-center rounded-full border border-current/10 opacity-0 backdrop-blur-md transition-colors ease-smooth focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-current ${
         timeOfDay === "night" ? "bg-on-day/30 text-on-night" : "bg-on-night/30 text-on-day"
       }`}
       style={{ transitionDuration: `${duration}s` }}

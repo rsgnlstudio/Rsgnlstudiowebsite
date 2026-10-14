@@ -97,6 +97,12 @@ function smoothDamp(
 const FRAMING_SMOOTHING = 0.55;
 /** Width from which the night panel leaves the map visible beside it (Tailwind's md). */
 const PANEL_SIDE_WIDTH = 768;
+/**
+ * Below that, the share of the screen's height left free above the night
+ * panel's sheet: the middle third of the canvas, which `SceneCanvas` slides
+ * up by a third (keep in step with the sheet's `h-[67dvh]` in `SlidePanel`).
+ */
+const PANEL_SHEET_FREE = 1 / 3;
 
 const UP = new Vector3(0, 1, 0);
 const matrix = new Matrix4();
@@ -201,10 +207,13 @@ export function CameraRig() {
     // screens). While the panel is open beside it, frame the focus (the open
     // place, or the point on the path the panel has got to) in the half of
     // the screen left free, closer in; for an overview, the middle of the map.
+    // Below md the panel is a sheet: the focus, or for an overview the whole
+    // map, is framed in the strip left free above it.
     const nightFov = fovForAspect(nightCamera.fov, camera.aspect);
     const tan = Math.tan(MathUtils.degToRad(nightFov / 2));
     const beside = store.panel !== null && state.size.width >= PANEL_SIDE_WIDTH;
-    const visible = camera.aspect * (beside ? 0.5 : 1);
+    const freeHeight = store.panel !== null && !beside ? PANEL_SHEET_FREE : 1;
+    const visible = (camera.aspect * (beside ? 0.5 : 1)) / freeHeight;
     const focus = panelFocus(store.panel, store.pathStation);
     let goalX = (MAP_FRAME.minX + MAP_FRAME.maxX) / 2;
     let goalD = (MAP_FRAME.minD + MAP_FRAME.maxD) / 2;
@@ -212,11 +221,11 @@ export function CameraRig() {
     const frameDepth = MAP_FRAME.maxD - MAP_FRAME.minD;
     const across = portrait ? frameDepth : frameWidth;
     const along = portrait ? frameWidth : frameDepth;
-    let halfHeight = Math.max(along / 2, across / 2 / visible);
+    let halfHeight = Math.max(along / 2, across / 2 / visible) / freeHeight;
     if (focus && focus.span > 0) {
       goalX = focus.x;
       goalD = focus.d;
-      halfHeight = focus.span / 2;
+      halfHeight = focus.span / 2 / freeHeight;
     } else if (beside) {
       halfHeight = along / 2;
     }

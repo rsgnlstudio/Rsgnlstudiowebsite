@@ -561,9 +561,12 @@ export const UI = {
     about: "Über mich",
     contact: "Erstgespräch vereinbaren",
     contactShort: "Erstgespräch",
+    menu: "Menü",
+    closeMenu: "Menü schließen",
+    sound: "Umgebungsklang",
   },
   footer: { label: "Service", faq: "Häufige Fragen", contact: "Kontakt", imprint: "Impressum" },
-  map: { label: "Karte", challenges: "Herausforderungen", more: "Weitere Orte" },
+  map: { label: "Karte", challenges: "Herausforderungen", more: "Weitere Orte", tapToOpen: "Antippen zum Öffnen" },
   path: {
     station: "Station",
     more: "Mehr zu",

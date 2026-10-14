@@ -58,9 +58,10 @@ export default function SceneCanvas() {
       ref={wrapperRef}
       aria-hidden
       // Pushed aside by the day overlay or the night panel, in step with its
-      // slide: by half the panel (two thirds by day, half by night), so the
-      // stage stays centred in the space left free.
-      className="pointer-events-none fixed inset-0 z-0 transition-transform duration-(--overlay-duration) ease-overlay data-pushed:-translate-y-[46%] md:data-pushed:translate-y-0 md:data-[pushed=day]:-translate-x-1/3 md:data-[pushed=night]:-translate-x-1/4"
+      // slide: by half the panel (on desktop two thirds of the width by day,
+      // half by night; on mobile 92% of the height by day, two thirds by
+      // night), so the stage stays centred in the space left free.
+      className="pointer-events-none fixed inset-0 z-0 transition-transform duration-(--overlay-duration) ease-overlay data-[pushed=day]:-translate-y-[46%] data-[pushed=night]:-translate-y-1/3 md:data-pushed:translate-y-0 md:data-[pushed=day]:-translate-x-1/3 md:data-[pushed=night]:-translate-x-1/4"
     >
       <div
         ref={fadeRef}
