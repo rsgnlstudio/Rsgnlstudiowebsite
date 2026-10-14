@@ -38,6 +38,13 @@ describe("validateContent", () => {
     const docs = { ...siteDocuments, consulting: { ...siteDocuments.consulting, bafa } };
     expect(validateContent(docs)).toContain("consulting.bafa.enabledUntil: expected YYYY-MM-DD");
   });
+  it("rejects a BAFA end date that doesn't exist", () => {
+    for (const enabledUntil of ["2026-02-30", "2026-06-31", "2026-13-01"]) {
+      const bafa = { ...siteDocuments.consulting.bafa, enabledUntil };
+      const docs = { ...siteDocuments, consulting: { ...siteDocuments.consulting, bafa } };
+      expect(validateContent(docs)).toContain("consulting.bafa.enabledUntil: expected YYYY-MM-DD");
+    }
+  });
   it("needs the imprint", () => {
     expect(validateContent({ ...siteDocuments, legal: [] })).toContain('legal: missing "imprint"');
   });

@@ -5,6 +5,13 @@ import type { SiteDocuments } from "@/content/schema";
 const missing = (where: string, have: readonly { id: string }[], want: readonly { id: string }[]) =>
   want.filter((w) => !have.some((h) => h.id === w.id)).map((w) => `${where}: missing "${w.id}"`);
 
+/** A real YYYY-MM-DD date: `Date.parse` rolls "2026-02-30" over to March, so it must format back to itself. */
+const isCalendarDate = (date: string) => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;
+  const time = Date.parse(`${date}T00:00:00Z`);
+  return !Number.isNaN(time) && new Date(time).toISOString().startsWith(date);
+};
+
 /**
  * What the content lacks for the layout, as readable problems (empty when
  * complete). Every place in the layout needs its copy; the CMS can't know
@@ -29,7 +36,7 @@ export function validateContent(docs: SiteDocuments): string[] {
     problems.push(`consulting.testimonials: at most ${TESTIMONIAL_HOMES.length}`);
   }
   const { enabledUntil } = consulting.bafa;
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(enabledUntil) || Number.isNaN(Date.parse(enabledUntil))) {
+  if (!isCalendarDate(enabledUntil)) {
     problems.push("consulting.bafa.enabledUntil: expected YYYY-MM-DD");
   }
   if (!docs.legal.some((page) => page.slug === "imprint")) problems.push('legal: missing "imprint"');
