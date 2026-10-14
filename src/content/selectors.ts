@@ -47,7 +47,7 @@ export function placePreview(place: Place, content: SiteContent, activePath: Cha
       return { line: consulting.bafa.title, detail: "" };
     case "testimonial":
       return {
-        line: `„${firstSentence(consulting.testimonials[p.index]?.quote ?? "")}"`,
+        line: `„${firstSentence(consulting.testimonials[p.index]?.quote ?? "")}“`,
         detail: ui.categories.testimonial,
       };
     default:
