@@ -239,7 +239,7 @@ export function MapPlaces() {
                   </button>
                   <div
                     aria-hidden
-                    className={`pointer-events-none absolute top-0 w-max max-w-72 -translate-y-1/2 rounded-2xl border border-current/10 bg-panel-night/75 px-4 py-3 text-on-night backdrop-blur-md transition-[opacity,translate] duration-700 ease-reveal group-data-[flip=true]/place:right-[var(--gap)] group-data-[flip=false]/place:left-[var(--gap)] ${
+                    className={`pointer-events-none absolute top-0 w-max max-w-80 -translate-y-1/2 rounded-2xl border border-current/10 bg-panel-night/75 px-5 py-4 text-on-night backdrop-blur-md transition-[opacity,translate] duration-700 ease-reveal group-data-[flip=true]/place:right-[var(--gap)] group-data-[flip=false]/place:left-[var(--gap)] ${
                       shown === i ? "opacity-100" : "translate-x-1 opacity-0"
                     }`}
                     style={
@@ -247,7 +247,7 @@ export function MapPlaces() {
                     }
                   >
                     <p className="text-body">{preview.line}</p>
-                    {preview.detail && <p className="text-caption italic opacity-65">{preview.detail}</p>}
+                    {preview.detail && <p className="mt-1 text-caption italic opacity-65">{preview.detail}</p>}
                   </div>
                 </li>
               );
@@ -261,13 +261,13 @@ export function MapPlaces() {
         data-touch-card
         inert={touchPreview === null}
         onClick={() => card !== null && open(card)}
-        className={`fixed inset-x-6 bottom-24 mx-auto flex max-w-sm cursor-pointer items-center gap-4 rounded-2xl border border-current/10 bg-panel-night/90 px-4 py-3 text-left text-on-night backdrop-blur-md transition-[opacity,translate] duration-700 ease-reveal ${
+        className={`fixed inset-x-6 bottom-24 mx-auto flex max-w-sm cursor-pointer items-center gap-4 rounded-2xl border border-current/10 bg-panel-night/90 px-5 py-4 text-left text-on-night backdrop-blur-md transition-[opacity,translate] duration-700 ease-reveal ${
           touchPreview !== null ? "pointer-events-auto opacity-100" : "translate-y-2 opacity-0"
         }`}
       >
         <span className="min-w-0 flex-1">
           <span className="block text-body">{cardPreview?.line}</span>
-          {cardPreview?.detail && <span className="block text-caption italic opacity-65">{cardPreview.detail}</span>}
+          {cardPreview?.detail && <span className="mt-1 block text-caption italic opacity-65">{cardPreview.detail}</span>}
           <span className="mt-2 block text-caption tracking-wide opacity-55">{UI.map.tapToOpen}</span>
         </span>
         <span aria-hidden className="grid size-9 shrink-0 place-items-center rounded-full border border-current/20">

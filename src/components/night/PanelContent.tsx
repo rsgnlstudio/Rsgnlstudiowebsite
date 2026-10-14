@@ -35,7 +35,7 @@ function ServicePanel({ id }: { id: ServiceId }) {
       {s.extra?.map((block) =>
         block.collapsible ? (
           <details key={block.title} className="group/details mt-10 max-w-prose">
-            <summary className="cursor-pointer text-caption tracking-widest uppercase opacity-60 transition-opacity duration-700 ease-smooth hover:opacity-90">
+            <summary className="cursor-pointer text-body opacity-60 transition-opacity duration-700 ease-smooth hover:opacity-90">
               {block.title}
             </summary>
             <ul className="mt-3 grid gap-3 text-body">

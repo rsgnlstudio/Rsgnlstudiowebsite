@@ -13,7 +13,7 @@ import { useSceneStore } from "@/store/scene";
 const link =
   "pointer-events-auto cursor-pointer opacity-60 transition-opacity duration-700 ease-smooth hover:opacity-100 focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-current";
 
-const set = "flex flex-wrap gap-x-5 gap-y-2 text-caption tracking-wide transition-opacity ease-smooth";
+const set = "flex flex-wrap gap-x-5 gap-y-2 text-nav-caption tracking-wide transition-opacity ease-smooth";
 const overScene = "pointer-events-none fixed inset-x-6 bottom-6 z-20";
 
 /** From md to lg the top navigation has no room for these; they live here instead (below md in the burger menu). */

@@ -1,9 +1,11 @@
 "use client";
 
 import { useFrame } from "@react-three/fiber";
+import { useRef } from "react";
 import { MathUtils, Vector3 } from "three";
 import { type ChallengeId, PLACES, pathIndex, samePanel } from "@/config/nightMap";
 import { TESTIMONIALS } from "@/content/consulting";
+import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { useSceneStore } from "@/store/scene";
 import { mapUniforms } from "../painterly/mapUniforms";
 import { PATH_GEOMETRY, placeWorld, stationArc, updatePlaceWorld } from "../painterly/nightMap";
@@ -32,6 +34,38 @@ const STEP_PLACES = Object.fromEntries(PATH_GEOMETRY.map((p) => [p.id, stepPlace
   number[]
 >;
 
+/** Seconds a highlighted path takes to draw itself in, and to retract. */
+const DRAW_TIME = 1.4;
+const RETRACT_TIME = 0.45;
+
+/** A path drawing itself in or retracting (trim path): which one, and how far (0..1). */
+interface Trim {
+  path: number;
+  progress: number;
+}
+
+/**
+ * Moves a trim toward showing path `target` (-1 = none): the path shown
+ * retracts first, then the target draws itself in from its clearing.
+ */
+function advanceTrim(trim: Trim, target: number, dt: number) {
+  if (trim.path !== target) {
+    trim.progress -= dt / RETRACT_TIME;
+    if (trim.progress > 0 && trim.path >= 0) return;
+    trim.path = target;
+    trim.progress = 0;
+  }
+  if (target >= 0) trim.progress = Math.min(1, trim.progress + dt / DRAW_TIME);
+}
+
+/** Metres of a trim's path drawn (past the end when done, so the soft tip is gone). */
+function trimDrawn(trim: Trim) {
+  if (trim.path < 0) return 0;
+  const t = trim.progress;
+  const eased = t * t * (3 - 2 * t);
+  return eased * (PATH_GEOMETRY[trim.path].length + 4);
+}
+
 /**
  * The night map over the dust world (src/config/nightMap.ts): its lines and
  * its lights. Every frame it moves the places that move (testimonials, the
@@ -42,18 +76,39 @@ const STEP_PLACES = Object.fromEntries(PATH_GEOMETRY.map((p) => [p.id, stepPlace
  * each one.
  */
 export function NightMap() {
+  const reducedMotion = usePrefersReducedMotion();
+  const active = useRef<Trim>({ path: -1, progress: 0 });
+  const preview = useRef<Trim>({ path: -1, progress: 0 });
+
   useFrame((state, delta) => {
     const dt = Math.min(delta, 0.05);
     const store = useSceneStore.getState();
     const { activePath, pathStation, panel, hoveredPlace, placeScreen, night } = store;
     const lantern = updatePlaceWorld(sharedUniforms.uTime.value, activePath);
 
-    const path = activePath ? PATH_GEOMETRY[pathIndex(activePath)] : null;
-    mapUniforms.uActivePath.value = activePath ? pathIndex(activePath) : -1;
-    mapUniforms.uPathReach.value = path ? stationArc(path, pathStation) : 0;
+    // Highlighted paths draw themselves in (trim path); a path clicked while
+    // its preview is drawing carries on from there.
+    const activeIndex = activePath ? pathIndex(activePath) : -1;
     const hovered = hoveredPlace !== null ? PLACES[hoveredPlace] : null;
-    mapUniforms.uPreviewPath.value =
+    const previewIndex =
       hovered?.panel.kind === "path" && hovered.panel.id !== activePath ? pathIndex(hovered.panel.id) : -1;
+    const trimDt = reducedMotion ? 1 : dt;
+    const a = active.current;
+    const p = preview.current;
+    // The preview keeps the clicked path drawing while the path open before
+    // retracts, and hands it over as the active trim takes it.
+    const handingOver = activeIndex >= 0 && a.path !== activeIndex && p.path === activeIndex;
+    advanceTrim(a, activeIndex, trimDt);
+    if (handingOver && a.path === activeIndex) a.progress = Math.max(a.progress, p.progress);
+    advanceTrim(p, handingOver && a.path !== activeIndex ? activeIndex : previewIndex, trimDt);
+    mapUniforms.uActivePath.value = a.path;
+    mapUniforms.uActiveDrawn.value = trimDrawn(a);
+    mapUniforms.uPreviewPath.value = p.path;
+    mapUniforms.uPreviewDrawn.value = trimDrawn(p);
+    // A path still retracting keeps the reach it had.
+    if (a.path >= 0 && a.path === activeIndex) {
+      mapUniforms.uPathReach.value = stationArc(PATH_GEOMETRY[a.path], pathStation);
+    }
     mapUniforms.uPixelRatio.value = state.gl.getPixelRatio();
 
     const steps = activePath ? STEP_PLACES[activePath] : [];
@@ -68,8 +123,8 @@ export function NightMap() {
     const top = rect?.top ?? 0;
 
     PLACES.forEach((place, i) => {
-      const p = placeWorld[i];
-      mapUniforms.uPlacePos.value[i].copy(p);
+      const at = placeWorld[i];
+      mapUniforms.uPlacePos.value[i].copy(at);
       const shown =
         place.kind === "lantern"
           ? lantern
@@ -81,7 +136,7 @@ export function NightMap() {
       s.z = MathUtils.damp(s.z, steps.includes(i) || open ? 1 : 0, 2.5, dt);
       s.w = MathUtils.damp(s.w, current === i ? 1 : 0, 4, dt);
 
-      projected.copy(p).project(camera);
+      projected.copy(at).project(camera);
       const x = left + (projected.x * 0.5 + 0.5) * width;
       const y = top + (-projected.y * 0.5 + 0.5) * height;
       const onScreen =

@@ -216,20 +216,34 @@ function roadDots(out: MapLineData, rng: () => number, spacing: number) {
   }
 }
 
+/**
+ * The city's street grid, turned by CITY_AREA.turn: (u, w) are metres along
+ * its two axes from the middle of the city, streets run every CITY_SPACING
+ * metres (give or take half a metre) and the grid reaches CITY_EXTENT out.
+ */
+export const CITY_SPACING = 4.6;
+export const CITY_EXTENT = Math.max(CITY_AREA.rx, CITY_AREA.rd) * 1.2;
+const cityCos = Math.cos(CITY_AREA.turn);
+const citySin = Math.sin(CITY_AREA.turn);
+
+/** Map point (x, d) of a point (u, w) of the city grid. */
+export const cityToMap = (u: number, w: number): MapPoint => [
+  CITY_AREA.x + u * cityCos - w * citySin,
+  CITY_AREA.d + u * citySin + w * cityCos,
+];
+
+/** True if a point (u, w) of the city grid is built up: inside the city's ragged edge. */
+export function inCity(u: number, w: number) {
+  const [x, d] = cityToMap(u, w);
+  const reach = Math.hypot((x - CITY_AREA.x) / CITY_AREA.rx, (d - CITY_AREA.d) / CITY_AREA.rd);
+  return reach < 0.82 + 0.25 * valueNoise(x * 0.08, d * 0.08, 31);
+}
+
 /** The city's street grid: a turned grid with gaps and ragged ends, nodes at the crossings. */
 function streetDots(out: MapLineData, rng: () => number) {
-  const { x: cx, d: cd, rx, rd, turn } = CITY_AREA;
-  const cos = Math.cos(turn);
-  const sin = Math.sin(turn);
-  const toMap = (u: number, w: number): MapPoint => [cx + u * cos - w * sin, cd + u * sin + w * cos];
-  const inside = (u: number, w: number, seed: number) => {
-    const [x, d] = toMap(u, w);
-    const reach = Math.hypot((x - cx) / rx, (d - cd) / rd);
-    return reach < 0.82 + 0.25 * valueNoise(x * 0.08, d * 0.08, seed);
-  };
-  const spacing = 4.6;
+  const spacing = CITY_SPACING;
   const along = 0.7;
-  const extent = Math.max(rx, rd) * 1.2;
+  const extent = CITY_EXTENT;
   for (const axis of [0, 1]) {
     for (let k = -Math.ceil(extent / spacing); k * spacing <= extent; k++) {
       const offset = k * spacing + (rng() - 0.5) * 0.8;
@@ -237,11 +251,11 @@ function streetDots(out: MapLineData, rng: () => number) {
       for (let s = -extent; s <= extent; s += along) {
         const u = axis ? offset : s;
         const w = axis ? s : offset;
-        if (!inside(u, w, 31)) continue;
+        if (!inCity(u, w)) continue;
         // Gaps: not every block is built up.
         if (valueNoise(s * 0.09 + wobble, offset * 0.3, 32 + axis) < 0.3) continue;
         const bend = Math.sin(s * 0.05 + wobble) * 0.6;
-        const [x, d] = toMap(u + (axis ? bend : 0), w + (axis ? 0 : bend));
+        const [x, d] = cityToMap(u + (axis ? bend : 0), w + (axis ? 0 : bend));
         dot(out, x, d, LINE.STREET, -1, 0, rng());
       }
     }
@@ -251,8 +265,8 @@ function streetDots(out: MapLineData, rng: () => number) {
     for (let j = -Math.ceil(extent / spacing); j * spacing <= extent; j++) {
       const u = i * spacing;
       const w = j * spacing;
-      if (!inside(u, w, 31) || rng() < 0.45) continue;
-      const [x, d] = toMap(u, w);
+      if (!inCity(u, w) || rng() < 0.45) continue;
+      const [x, d] = cityToMap(u, w);
       dot(out, x, d, LINE.NODE, -1, 0, rng());
     }
   }

@@ -10,8 +10,12 @@ export const mapUniforms = {
   uActivePath: { value: -1 },
   /** Metres along the active path the panel has reached (lit up to there). */
   uPathReach: { value: 0 },
+  /** Metres of the active path drawn so far (it draws itself in from its clearing). */
+  uActiveDrawn: { value: 0 },
   /** Path of the clearing under the cursor, glimmering as a preview; -1 for none. */
   uPreviewPath: { value: -1 },
+  /** Metres of the preview path drawn so far. */
+  uPreviewDrawn: { value: 0 },
   uPixelRatio: { value: 1 },
   /** Where every place is (world space). */
   uPlacePos: { value: PLACES.map(() => new Vector3()) },

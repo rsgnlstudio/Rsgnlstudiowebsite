@@ -36,12 +36,12 @@ export function FlowerHoverLabel() {
       {PROJECT_BEDS.map((bed) => (
         <div
           key={bed.id}
-          className={`col-start-1 row-start-1 w-max max-w-64 rounded-2xl border border-current/10 px-4 py-3 backdrop-blur-md transition-[opacity,translate] duration-700 ease-reveal ${
+          className={`col-start-1 row-start-1 w-max max-w-72 self-start rounded-2xl border border-current/10 px-5 py-4 backdrop-blur-md transition-[opacity,translate] duration-700 ease-reveal ${
             timeOfDay === "night" ? "bg-on-day/75 text-on-night" : "bg-on-night/75 text-on-day"
           } ${bed.id === hovered ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0"}`}
         >
           <p className="text-body italic">{bed.title}</p>
-          <p className="text-caption opacity-70">{bed.teaser}</p>
+          <p className="mt-1 text-caption opacity-70">{bed.teaser}</p>
         </div>
       ))}
     </div>

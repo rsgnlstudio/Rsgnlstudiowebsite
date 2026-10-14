@@ -3,11 +3,12 @@
 import { useEffect, useMemo } from "react";
 import { AdditiveBlending, BufferGeometry, Float32BufferAttribute, ShaderMaterial, Sphere, Vector3 } from "three";
 import { qualityPresets } from "@/config/look";
-import { CLEARING_RADIUS, CLEARINGS, PLACES, placeIndex } from "@/config/nightMap";
+import { CITY_AREA, CLEARING_RADIUS, CLEARINGS, PLACES, placeIndex } from "@/config/nightMap";
 import type { PaletteKey } from "@/config/palette";
 import { useLookStore } from "@/store/look";
 import { scatterConifers } from "../painterly/conifers";
 import { scatterBeds } from "../painterly/beds";
+import { layoutCity } from "../painterly/city";
 import { dustUniforms } from "../painterly/dust";
 import { mapUniforms } from "../painterly/mapUniforms";
 import { inStream, terrainHeight } from "../painterly/landscape";
@@ -174,17 +175,20 @@ void main() {
 
   if (tree && aInfo.y > 0.5) {
     // The grove around a clearing glows as one, like a day flower bed: it
-    // breathes, now and then a ripple of light runs out through it from the
-    // clearing, and it lights up on hover, on the active path (in the
+    // pulses slowly, now and then a ripple of light runs out through it from
+    // the clearing, and it lights up on hover, on the active path (in the
     // path's color) and while the panel is at it (pulsing). HDR, so it blooms.
+    // Every term is smooth in time: the ripple swells in from the clearing
+    // and fades out at the edge, so it never cuts in.
     int i = int(aInfo.y - 0.5);
     vec4 place = uPlaceState[i];
     float from = length(position.xz - uPlacePos[i].xz);
-    float breathe = 0.5 + 0.5 * sin(uTime * 0.8 + aInfo.y * 2.3);
+    float breathe = 0.5 - 0.5 * cos(uTime * 1.1 + aInfo.y * 2.3);
+    breathe *= breathe * (3.0 - 2.0 * breathe);
     float wave = fract(uTime / ${GROVE_RIPPLE.toFixed(1)} + aInfo.y * 0.29);
-    float ripple = exp(-pow((from - wave * ${(CLEARING_RADIUS + 2).toFixed(1)}) / 1.5, 2.0)) * (1.0 - wave);
-    float pulse = place.w * (0.5 + 0.5 * sin(uTime * 3.0));
-    float glow = 0.35 + 0.3 * breathe + 1.4 * ripple + 1.6 * place.y + 1.1 * place.z + 0.9 * pulse;
+    float ripple = exp(-pow((from - wave * ${(CLEARING_RADIUS + 2).toFixed(1)}) / 1.5, 2.0)) * sin(wave * 3.14159);
+    float pulse = place.w * (0.5 - 0.5 * cos(uTime * 3.0));
+    float glow = 0.15 + 0.75 * breathe + 1.2 * ripple + 1.6 * place.y + 1.1 * place.z + 0.9 * pulse;
     col += mix(uClearingGlow, uMapPath, place.z) * glow * aSeed.z * uGlow * place.x
       * smoothstep(0.6, 1.0, uMorph);
   }
@@ -299,6 +303,68 @@ function scatterTrees(b: DustBuffers, rng: Rng, budget: number, conifers: number
   }
 }
 
+/** Height of a storey of the dust city, in metres (squat, like the trees). */
+const STOREY = 0.9;
+
+/**
+ * The city of the night map as dust, in the trees' style: specks on the walls
+ * and roofs of its buildings (painterly/city.ts), in proportion to their
+ * surface, gathering along the edges and in bands at every storey, so the
+ * boxes read from above when the light passes.
+ */
+function scatterCity(b: DustBuffers, rng: Rng, budget: number) {
+  const buildings = layoutCity();
+  const cos = Math.cos(CITY_AREA.turn);
+  const sin = Math.sin(CITY_AREA.turn);
+  const roof = (h: (typeof buildings)[number]) => 4 * h.hu * h.hw;
+  const walls = (h: (typeof buildings)[number]) => 4 * (h.hu + h.hw) * h.height;
+  let total = 0;
+  for (const h of buildings) total += roof(h) + walls(h);
+  for (const h of buildings) {
+    const z = -h.d;
+    const base = terrainHeight(h.x, z) - 0.3;
+    const n = Math.round((budget * (roof(h) + walls(h))) / total);
+    const onRoof = roof(h) / (roof(h) + walls(h));
+    for (let k = 0; k < n; k++) {
+      // A point on the box in grid axes (u, w), y up from its base.
+      let u: number;
+      let w: number;
+      let y: number;
+      let nu = 0;
+      let nw = 0;
+      let ny = 0;
+      const edge = rng() < 0.3;
+      if (rng() < onRoof) {
+        u = (rng() * 2 - 1) * h.hu;
+        w = (rng() * 2 - 1) * h.hw;
+        // Along the roof's outline.
+        if (edge) {
+          if (rng() < h.hu / (h.hu + h.hw)) w = Math.sign(w) * h.hw;
+          else u = Math.sign(u) * h.hu;
+        }
+        y = h.height;
+        ny = 1;
+      } else {
+        // A wall, chosen by its width; storeys gather the specks in bands,
+        // and some run up the corners.
+        const across = rng() < h.hu / (h.hu + h.hw);
+        const side = rng() < 0.5 ? -1 : 1;
+        const t = edge ? Math.sign(rng() - 0.5) : rng() * 2 - 1;
+        u = across ? t * h.hu : side * h.hu;
+        w = across ? side * h.hw : t * h.hw;
+        if (across) nw = side;
+        else nu = side;
+        y = rng() * h.height;
+        if (!edge && rng() < 0.55) y = Math.min(Math.round(y / STOREY) * STOREY, h.height);
+      }
+      const x = h.x + u * cos - w * sin;
+      const d = h.d + u * sin + w * cos;
+      normal.set(nu * cos - nw * sin, ny + 0.35, -(nu * sin + nw * cos)).normalize();
+      push(b, rng, [x, base + y, -d], normal, TREE);
+    }
+  }
+}
+
 function scatterFlowers(b: DustBuffers, rng: Rng, count: number) {
   let placed = 0;
   while (placed < count) {
@@ -350,6 +416,7 @@ function buildDust(preset: (typeof qualityPresets)["high"]) {
   const rng = mulberry32(2718);
   scatterGround(b, rng, preset.dust.ground);
   scatterTrees(b, rng, preset.dust.trees, preset.conifers, preset.woods);
+  scatterCity(b, rng, preset.dust.city);
   scatterFlowers(b, rng, preset.dust.flowers);
   scatterBedFlowers(b, rng, preset.beds);
   scatterMotes(b, rng, preset.dust.motes);

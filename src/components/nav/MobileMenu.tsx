@@ -15,7 +15,7 @@ import { useSceneStore } from "@/store/scene";
 import { useSoundStore } from "@/store/sound";
 
 const item =
-  "flex w-full cursor-pointer items-center gap-3 rounded-full px-4 py-3 text-left text-body opacity-70 transition-opacity duration-700 ease-smooth hover:opacity-100 focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-current";
+  "flex w-full cursor-pointer items-center gap-3 rounded-full px-4 py-3 text-left text-nav opacity-70 transition-opacity duration-700 ease-smooth hover:opacity-100 focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-current";
 
 const divider = <span aria-hidden className="mx-4 my-2 block h-px bg-current opacity-15" />;
 
