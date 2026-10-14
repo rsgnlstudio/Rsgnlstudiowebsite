@@ -82,8 +82,9 @@ src/
                        PainterlyEffect, WetCanvasPass, VolumetricMist, RNG
     layout/            The chrome mounted in the root layout: the wordmark (SiteBrand), the footer (SiteFooter) and the dot cursor (CursorDot)
     nav/               Top navigation (TopNav: one pill with the Day/Night switch and the night's items; below md the burger menu, MobileMenu) and the sound toggle
-    ui/                Shared UI primitives: Button (and ButtonLink), the one button of the site, with its variants and sizes
-    night/             The night map's DOM: the place buttons (MapPlaces), the side panel and its content (NightPanel, PathStory, PanelContent, PanelParts) and the intro
+    ui/                Shared UI primitives: Button (and ButtonLink), TextLink, Icon, Typography, Disclosure, PreviewCard, BottomHint, RichText
+    night/             The night map's DOM: the place buttons (MapPlaces), the side panel (NightPanel) and the intro
+    night/panels/      The night panel's content, one file per kind (PanelContent picks it; PathStory, ServicePanel, FaqPanel, ...) and their shared end, links and title id (PanelEnd)
     day/               The day's DOM: the scroll sections (Section, HomeScroll), the flower hover label, the hint (DayHint) and the project overlay
     overlay/           The entry screen (EntryScreen) and the shared slide panel (SlidePanel)
   fonts/               DM Sans (next/font/google) and Calendas Plus (woff2, next/font/local)

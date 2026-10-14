@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/Button";
-import { INTRO } from "@/content/consulting";
+import { BottomHint } from "@/components/ui/BottomHint";
+import { useContent } from "@/content/ContentProvider";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { gsap } from "@/lib/gsap";
 import { overlayOpen, useSceneStore } from "@/store/scene";
@@ -22,6 +23,7 @@ const HOLD = 2.4;
  * hint at the bottom asks the visitor to pick a clearing; it stays.
  */
 export function NightIntro() {
+  const { intro } = useContent().consulting;
   const timeOfDay = useSceneStore((s) => s.timeOfDay);
   const nightIntro = useSceneStore((s) => s.nightIntro);
   const reducedMotion = usePrefersReducedMotion();
@@ -87,28 +89,23 @@ export function NightIntro() {
         ref={linesRef}
         className="pointer-events-none invisible fixed top-1/2 left-edge z-20 max-w-[min(40rem,calc(100vw-2*var(--spacing-edge)))] -translate-y-1/2 text-on-night opacity-0"
       >
-        {INTRO.lines.map((line) => (
+        {intro.lines.map((line) => (
           <p key={line} data-line className="text-body opacity-0 md:text-lead">
             {line}
           </p>
         ))}
         <p data-line className="mt-6 font-display text-lead italic opacity-0 md:text-heading">
-          {INTRO.transition}
+          {intro.transition}
         </p>
       </div>
       {playing && (
         <Button variant="outline" onClick={finish} className="fixed bottom-edge left-1/2 z-20 -translate-x-1/2 text-on-night">
-          {INTRO.skip}
+          {intro.skip}
         </Button>
       )}
-      <p
-        aria-hidden={!hint}
-        className={`pointer-events-none fixed bottom-24 left-1/2 z-20 w-max md:bottom-edge max-w-[calc(100vw-2*var(--spacing-gutter))] -translate-x-1/2 text-center font-display text-body text-on-night italic transition-[opacity,translate] duration-1500 ease-reveal ${
-          hint ? "translate-y-0 opacity-80" : "translate-y-2 opacity-0"
-        }`}
-      >
-        {INTRO.hint}
-      </p>
+      <BottomHint shown={hint} className="text-on-night">
+        {intro.hint}
+      </BottomHint>
     </div>
   );
 }
