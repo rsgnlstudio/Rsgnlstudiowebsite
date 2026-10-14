@@ -36,7 +36,7 @@ describe("bookingHref", () => {
   });
   it("adds the challenge as the body", () => {
     expect(bookingHref(contact, '„Ohne mich" & mehr')).toBe(
-      `mailto:a@b.de?subject=Kennenlerngespr%C3%A4ch&body=${encodeURIComponent('Meine Herausforderung: „Ohne mich" & mehr\n\n"')}`,
+      `mailto:a@b.de?subject=Kennenlerngespr%C3%A4ch&body=${encodeURIComponent('Meine Herausforderung: „Ohne mich" & mehr\n\n')}`,
     );
   });
 });

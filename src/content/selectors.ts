@@ -20,7 +20,7 @@ export function bafaActive(bafa: Pick<Bafa, "enabledUntil">, now: Date) {
 /** The mail that stands in for the calendar until a booking tool is chosen. */
 export function bookingHref(contact: Pick<Contact, "email" | "mailSubject" | "mailChallenge">, challenge?: string) {
   const subject = encodeURIComponent(contact.mailSubject);
-  const body = challenge ? `&body=${encodeURIComponent(`${contact.mailChallenge} ${challenge}\n\n"`)}` : "";
+  const body = challenge ? `&body=${encodeURIComponent(`${contact.mailChallenge} ${challenge}\n\n`)}` : "";
   return `mailto:${contact.email}?subject=${subject}${body}`;
 }
 
