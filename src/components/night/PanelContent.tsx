@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronDown } from "lucide-react";
 import { BAFA_ENABLED, type NightPanel, PATHS, ROADS, type ServiceId, CITY_LIGHTS } from "@/config/nightMap";
 import {
   ABOUT,
@@ -94,10 +95,7 @@ function ResultsPanel() {
       )}
       <ul className="mt-10 grid max-w-prose gap-3 text-body">
         {RESULTS.points.map((p) => (
-          <li key={p} className="flex gap-3">
-            <span aria-hidden className="mt-2.5 size-1.5 shrink-0 rounded-full bg-city-light" />
-            {p}
-          </li>
+          <li key={p}>{p}</li>
         ))}
       </ul>
       <PanelEnd related={[{ to: { kind: "process" }, label: PROCESS.title }]} />
@@ -115,7 +113,7 @@ function ProcessPanel() {
         <ol className="grid gap-5">
           {PROCESS.steps.map((step, i) => (
             <li key={step.detail} className="flex gap-4">
-              <span className="font-display text-heading leading-none text-city-light">{i + 1}</span>
+              <span className="w-4 shrink-0 font-display tabular-nums opacity-55">{i + 1}</span>
               <span>
                 {step.line}
                 <span className="block italic opacity-55">{step.detail}</span>
@@ -127,10 +125,7 @@ function ProcessPanel() {
       <Block title={UI.blocks.formats}>
         <ul className="grid gap-5">
           {PROCESS.formats.map((f) => (
-            <li
-              key={f.title}
-              className={"highlight" in f ? "rounded-2xl border border-city-light/35 bg-city-light/5 px-5 py-4" : undefined}
-            >
+            <li key={f.title}>
               <span className={`font-display italic ${"highlight" in f ? "text-city-light" : ""}`}>{f.title}</span>
               <span className="block opacity-85">{f.text}</span>
               {"note" in f && <span className="block italic opacity-60">{f.note}</span>}
@@ -165,7 +160,7 @@ function AboutPanel() {
         <ol className="grid gap-4 border-l border-current/15 pl-5">
           {ABOUT.stations.map((s) => (
             <li key={s.years}>
-              <span className="text-caption tracking-widest uppercase opacity-60">{s.years}</span>
+              <span className="text-caption tabular-nums opacity-60">{s.years}</span>
               <span className="block">{s.text}</span>
             </li>
           ))}
@@ -223,11 +218,17 @@ function FaqPanel() {
       <Heading>{UI.categories.faq}</Heading>
       <div className="mt-10 grid max-w-prose gap-2">
         {FAQ.map((item) => (
-          <details key={item.question} className="border-b border-current/10 pb-3">
-            <summary className="cursor-pointer py-2 text-body transition-opacity duration-700 ease-smooth hover:opacity-80">
+          <details key={item.question} className="group/faq faq-item border-b border-current/10 pb-3">
+            <summary className="flex cursor-pointer list-none items-start justify-between gap-6 py-2 text-body transition-opacity duration-700 ease-smooth hover:opacity-80 focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-current [&::-webkit-details-marker]:hidden">
               {item.question}
+              {/* A chevron that turns up while the answer is open (a named group: the dialog around the panel is a `group` and open too). */}
+              <ChevronDown
+                aria-hidden
+                className="mt-[0.2em] size-[1.125rem] shrink-0 opacity-70 transition-transform duration-700 ease-reveal group-open/faq:rotate-180"
+                strokeWidth={1.5}
+              />
             </summary>
-            <p className="pb-2 text-body opacity-80">
+            <p className="pr-12 pb-2 text-body opacity-80">
               {item.answer}
               {item.bafa && BAFA_ENABLED && ` ${FAQ_BAFA_NOTE}`}
             </p>

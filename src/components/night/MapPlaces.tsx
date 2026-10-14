@@ -188,7 +188,7 @@ export function MapPlaces() {
               areas.current[k] = el;
             }}
             data-on="false"
-            className="absolute top-0 left-0 -translate-x-1/2 text-caption tracking-widest whitespace-nowrap text-on-night uppercase opacity-0 transition-opacity duration-700 ease-smooth data-[on=true]:opacity-55"
+            className="absolute top-0 left-0 -translate-x-1/2 font-display text-body whitespace-nowrap text-on-night italic opacity-0 transition-opacity duration-700 ease-smooth data-[on=true]:opacity-55"
           >
             {AREA_TITLES[area.id]}
           </li>
@@ -246,7 +246,7 @@ export function MapPlaces() {
                       { "--gap": grove ? `calc(var(--grove) / 2 + ${GROVE_CARD_GAP}px)` : `${CARD_GAP}px` } as CSSProperties
                     }
                   >
-                    <p className="text-body">{preview.line}</p>
+                    <p className="font-display text-body">{preview.line}</p>
                     {preview.detail && <p className="mt-1 text-caption italic opacity-65">{preview.detail}</p>}
                   </div>
                 </li>
@@ -266,7 +266,7 @@ export function MapPlaces() {
         }`}
       >
         <span className="min-w-0 flex-1">
-          <span className="block text-body">{cardPreview?.line}</span>
+          <span className="block font-display text-body">{cardPreview?.line}</span>
           {cardPreview?.detail && <span className="mt-1 block text-caption italic opacity-65">{cardPreview.detail}</span>}
           <span className="mt-2 block text-caption tracking-wide opacity-55">{UI.map.tapToOpen}</span>
         </span>

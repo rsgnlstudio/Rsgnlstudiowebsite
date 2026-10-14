@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
+import { Button } from "@/components/ui/Button";
 import { INTRO } from "@/content/consulting";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { gsap } from "@/lib/gsap";
@@ -96,17 +97,13 @@ export function NightIntro() {
         </p>
       </div>
       {playing && (
-        <button
-          type="button"
-          onClick={finish}
-          className="fixed bottom-edge left-1/2 z-20 -translate-x-1/2 cursor-pointer rounded-full border border-current/25 px-5 py-2 text-body text-on-night opacity-70 backdrop-blur-md transition-opacity duration-700 ease-smooth hover:opacity-100 focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-current"
-        >
+        <Button variant="outline" onClick={finish} className="fixed bottom-edge left-1/2 z-20 -translate-x-1/2 text-on-night">
           {INTRO.skip}
-        </button>
+        </Button>
       )}
       <p
         aria-hidden={!hint}
-        className={`pointer-events-none fixed bottom-24 left-1/2 z-20 w-max md:bottom-edge max-w-[calc(100vw-2*var(--spacing-gutter))] -translate-x-1/2 text-center text-body text-on-night italic transition-[opacity,translate] duration-1500 ease-reveal ${
+        className={`pointer-events-none fixed bottom-24 left-1/2 z-20 w-max md:bottom-edge max-w-[calc(100vw-2*var(--spacing-gutter))] -translate-x-1/2 text-center font-display text-body text-on-night italic transition-[opacity,translate] duration-1500 ease-reveal ${
           hint ? "translate-y-0 opacity-80" : "translate-y-2 opacity-0"
         }`}
       >

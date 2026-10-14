@@ -82,9 +82,10 @@ src/
                        PainterlyEffect, WetCanvasPass, VolumetricMist, RNG
     cursor/            The dot cursor (CursorDot), mounted in the root layout
     nav/               Top navigation (TopNav: one pill with the Day/Night switch and the night's items; below md the burger menu, MobileMenu), the wordmark (SiteBrand) and the footer (SiteFooter) mounted in the root layout, and the sound toggle
+    ui/                Shared UI primitives: Button (and ButtonLink), the one button of the site, with its variants and sizes
     night/             The night map's DOM: the place buttons (MapPlaces), the side panel and its content (NightPanel, PathStory, PanelContent, PanelParts) and the intro
     sections/          DOM sections, the entry screen, the flower hover label, the day's hint (DayHint), the project overlay, the shared slide panel (SlidePanel) and per-page scroll controllers (e.g. HomeScroll)
-  fonts/               Calendas Plus (woff2) loaded with next/font/local
+  fonts/               DM Sans (next/font/google) and Calendas Plus (woff2, next/font/local)
   config/              Section config (camera keyframes), scene modes and the night camera, palette, look and quality presets, sound levels, the flower beds, the night map's layout, site name and links (contact email, imprint)
   content/             Copy (German): the consulting site's, keyed by the night map's ids (consulting.ts), and the day's (studio.ts)
   hooks/               useSectionScroll, useSceneMode, usePrefersReducedMotion, useWindowPointer,
@@ -101,7 +102,7 @@ Built:
 - Zustand store, section config, and scene modes
 - Lenis + GSAP ScrollTrigger scroll hook with full cleanup on unmount
 - `sceneMode` that pauses the frameloop and hides the canvas when `"hidden"`
-- Calendas Plus as the default typeface (`font-sans` and `font-display`), self-hosted via `next/font/local`
+- DM Sans as the text face (`font-sans`: body, navigation, footer, buttons) via `next/font/google`, and Calendas Plus as the display face for headings and the wordmark (`font-display`), self-hosted via `next/font/local`
 - First viewport (`intro`), laid out after the site's flower plan: sky, clouds, sun, moon, stars, layered mountains, the forest edge with a stream winding out of it, tall firs on the right, grass, flower beds and wild flowers, volumetric mist, pollen and fireflies
 - The day painted from simulated brushstrokes: plants as instanced strokes, sky, ground and mountains as stroke fields, translucent thin paint
 - Depth of field focused on the near meadow, bloom, then canvas texture, grain and vignette

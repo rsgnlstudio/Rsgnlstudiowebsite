@@ -45,6 +45,7 @@ Before calling work done, run lint, typecheck, and build.
 - Pages stay Server Components. Put client-only page wiring in a small component that renders `null` (e.g. `HomeScroll`).
 - Styling uses Tailwind utilities. Design tokens live in `@theme` in `src/app/globals.css`. Don't hardcode colors or font sizes in components.
 - Use the `@/*` path alias for imports from `src/`.
+- Every button is `Button` (or `ButtonLink` for an `<a>`) from `src/components/ui/Button.tsx`: pick a `variant` and `size`, and pass only placement and state in `className`, never size, color or font. Add a variant there instead of styling a button locally.
 - The mouse cursor is `CursorDot` (root layout, every page). Don't set `cursor` styles to signal interactivity; the dot grows over interactive elements and hovered beds instead.
 - `usePrefersReducedMotion` exists for disabling Lenis smoothing and shortening camera moves. Use it when adding motion.
 

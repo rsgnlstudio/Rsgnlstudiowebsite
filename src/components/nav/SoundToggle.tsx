@@ -1,6 +1,7 @@
 "use client";
 
 import { Volume2, VolumeX } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 import { DAY_NIGHT_DURATION, DAY_NIGHT_DURATION_REDUCED } from "@/config/scene";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { useOverlayFade } from "@/hooks/useOverlayFade";
@@ -28,13 +29,14 @@ export function SoundToggle() {
   const reveal = useReveal<HTMLButtonElement>(0.15, useOverlayFade().hidden);
 
   return (
-    <button
+    <Button
       ref={reveal}
-      type="button"
+      variant="glass"
+      size="icon-lg"
       aria-pressed={enabled}
       aria-label={UI.nav.sound}
       onClick={() => setSoundEnabled(!enabled)}
-      className={`group invisible fixed top-8 right-8 z-20 hidden md:grid size-14.5 cursor-pointer place-items-center rounded-full border border-current/10 opacity-0 backdrop-blur-md transition-colors ease-smooth focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-current ${
+      className={`group invisible fixed top-8 right-8 z-20 opacity-0 max-md:hidden ${
         timeOfDay === "night" ? "bg-on-day/30 text-on-night" : "bg-on-night/30 text-on-day"
       }`}
       style={{ transitionDuration: `${duration}s` }}
@@ -44,6 +46,6 @@ export function SoundToggle() {
         className="size-[1.125rem] opacity-55 transition-opacity duration-700 ease-smooth group-hover:opacity-80 group-aria-pressed:opacity-100"
         strokeWidth={1.5}
       />
-    </button>
+    </Button>
   );
 }

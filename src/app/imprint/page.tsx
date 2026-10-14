@@ -39,7 +39,7 @@ export default function ImprintPage() {
           <h1 className="mt-12 font-display text-display">Impressum</h1>
 
           <section className="mt-16">
-            <h2 className="text-heading">Angaben gemäß § 5 DDG</h2>
+            <h2 className="font-display text-heading">Angaben gemäß § 5 DDG</h2>
             <address className="mt-4 text-body not-italic">
               RSGNL Studio
               <br />
@@ -54,7 +54,7 @@ export default function ImprintPage() {
           </section>
 
           <section className="mt-12">
-            <h2 className="text-heading">Kontakt</h2>
+            <h2 className="font-display text-heading">Kontakt</h2>
             <p className="mt-4 text-body">
               Telefon: +49 000 0000000
               <br />
@@ -69,21 +69,21 @@ export default function ImprintPage() {
           </section>
 
           <section className="mt-12">
-            <h2 className="text-heading">Umsatzsteuer-ID</h2>
+            <h2 className="font-display text-heading">Umsatzsteuer-ID</h2>
             <p className="mt-4 text-body">
               Umsatzsteuer-Identifikationsnummer gemäß § 27a UStG: DE000000000
             </p>
           </section>
 
           <section className="mt-12">
-            <h2 className="text-heading">Verantwortlich für den Inhalt</h2>
+            <h2 className="font-display text-heading">Verantwortlich für den Inhalt</h2>
             <p className="mt-4 text-body">
               nach § 18 Abs. 2 MStV: Vorname Nachname, Anschrift wie oben
             </p>
           </section>
 
           <section className="mt-12">
-            <h2 className="text-heading">Haftung für Inhalte</h2>
+            <h2 className="font-display text-heading">Haftung für Inhalte</h2>
             <p className="mt-4 text-body opacity-70">
               Platzhaltertext. Lorem ipsum dolor sit amet, consectetur
               adipiscing elit, sed do eiusmod tempor incididunt ut labore et
@@ -94,7 +94,7 @@ export default function ImprintPage() {
           </section>
 
           <section className="mt-12">
-            <h2 className="text-heading">Haftung für Links</h2>
+            <h2 className="font-display text-heading">Haftung für Links</h2>
             <p className="mt-4 text-body opacity-70">
               Platzhaltertext. Duis aute irure dolor in reprehenderit in
               voluptate velit esse cillum dolore eu fugiat nulla pariatur.
@@ -104,7 +104,7 @@ export default function ImprintPage() {
           </section>
 
           <section className="mt-12">
-            <h2 className="text-heading">Urheberrecht</h2>
+            <h2 className="font-display text-heading">Urheberrecht</h2>
             <p className="mt-4 text-body opacity-70">
               Platzhaltertext. Sed ut perspiciatis unde omnis iste natus error
               sit voluptatem accusantium doloremque laudantium, totam rem

@@ -2,6 +2,7 @@
 
 import { Volume2, VolumeX } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/Button";
 import { setSoundEnabled } from "@/lib/ambient";
 import { useSceneStore } from "@/store/scene";
 
@@ -13,9 +14,6 @@ const FALLBACK_MS = 6000;
  * the sound (which swells with `intro`) don't wait for it forever.
  */
 const STALL_MS = 4000;
-
-const choice =
-  "flex cursor-pointer items-center justify-center gap-2.5 rounded-full border px-6 py-3 text-body transition-[background-color,opacity] duration-700 ease-smooth focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-current";
 
 /**
  * The first thing on screen. The world waits behind it, at the opening
@@ -85,31 +83,22 @@ export function EntryScreen() {
         <div className="mt-10 grid w-full">
           <p
             aria-live="polite"
-            className="col-start-1 row-start-1 animate-pulse self-center text-caption tracking-widest uppercase opacity-55 transition-opacity duration-1000 ease-smooth group-data-ready:invisible group-data-ready:opacity-0"
+            className="col-start-1 row-start-1 animate-pulse self-center font-display text-body italic opacity-55 transition-opacity duration-1000 ease-smooth group-data-ready:invisible group-data-ready:opacity-0"
           >
             Lädt
           </p>
           <div className="invisible col-start-1 row-start-1 mx-auto flex w-full max-w-xs translate-y-3 flex-col items-stretch gap-3 opacity-0 transition-[opacity,translate,visibility] duration-1800 ease-reveal group-data-ready:visible group-data-ready:translate-y-0 group-data-ready:opacity-100">
-            <button
-              ref={enterRef}
-              type="button"
-              onClick={() => enter(true)}
-              className={`${choice} border-transparent bg-on-night text-on-day hover:opacity-85`}
-            >
+            <Button ref={enterRef} variant="solid" block onClick={() => enter(true)}>
               <Volume2 aria-hidden className="size-[1.125rem]" strokeWidth={1.5} />
               Mit Ton eintreten
-            </button>
+            </Button>
             <span aria-hidden className="text-center text-caption opacity-55">
               oder
             </span>
-            <button
-              type="button"
-              onClick={() => enter(false)}
-              className={`${choice} border-current/25 bg-on-day/30 backdrop-blur-md hover:bg-on-day/50`}
-            >
+            <Button variant="outline" block onClick={() => enter(false)}>
               <VolumeX aria-hidden className="size-[1.125rem] opacity-75" strokeWidth={1.5} />
               Ohne Ton eintreten
-            </button>
+            </Button>
           </div>
         </div>
       </div>

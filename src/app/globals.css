@@ -21,7 +21,7 @@
   --color-city-light: #ffb24e;
 
   /* Type scale (fluid between small and wide screens) */
-  --text-display: clamp(3.5rem, 2.75rem + 2vw, 4.5rem);
+  --text-display: clamp(2.75rem, 2.25rem + 1.25vw, 3.5rem);
   --text-display--line-height: 1;
   --text-heading: clamp(2.25rem, 1.9rem + 0.9vw, 2.75rem);
   --text-heading--line-height: 1.2;
@@ -64,12 +64,44 @@
 }
 
 /*
- * Font families. Calendas Plus (src/fonts/calendas.ts) is the default for all
- * text, so font-sans and font-display both resolve to it. `inline` makes the
- * utilities reference --font-calendas (set by next/font on <html>) directly.
+ * The FAQ's answers (`faq-item`, a <details>) open and close softly: the
+ * answer grows to its height and fades in. Where `interpolate-size` isn't
+ * supported the height jumps and only the fade plays.
+ */
+.faq-item {
+  interpolate-size: allow-keywords;
+}
+
+.faq-item::details-content {
+  block-size: 0;
+  overflow: clip;
+  opacity: 0;
+  transition:
+    block-size 700ms var(--ease-reveal),
+    opacity 500ms var(--ease-smooth),
+    content-visibility 700ms allow-discrete;
+}
+
+.faq-item[open]::details-content {
+  block-size: auto;
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .faq-item::details-content {
+    transition: none;
+  }
+}
+
+/*
+ * Font families. DM Sans (src/fonts/dmSans.ts) is the default for all text
+ * (font-sans: body, navigation, footer, buttons); Calendas Plus
+ * (src/fonts/calendas.ts) is the display face for headings and the wordmark
+ * (font-display). `inline` makes the utilities reference the variables set by
+ * next/font on <html> directly.
  */
 @theme inline {
-  --font-sans: var(--font-calendas);
+  --font-sans: var(--font-dm-sans);
   --font-display: var(--font-calendas);
   --font-mono: ui-monospace, monospace;
 }
