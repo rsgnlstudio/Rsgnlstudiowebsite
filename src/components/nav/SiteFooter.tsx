@@ -7,6 +7,7 @@ import type { NightPanel } from "@/config/nightMap";
 import { CONTACT_EMAIL, IMPRINT_HREF, PAGE_IN } from "@/config/site";
 import { UI } from "@/content/consulting";
 import { useIntroRevealed } from "@/hooks/useIntroRevealed";
+import { useOverlayFade } from "@/hooks/useOverlayFade";
 import { useSceneStore } from "@/store/scene";
 
 const link =
@@ -15,7 +16,7 @@ const link =
 const set = "flex flex-wrap gap-x-5 gap-y-2 text-caption tracking-wide transition-opacity ease-smooth";
 const overScene = "pointer-events-none fixed inset-x-6 bottom-6 z-20";
 
-/** Below lg the top navigation has no room for these; they live here instead. */
+/** From md to lg the top navigation has no room for these; they live here instead (below md in the burger menu). */
 const SECTIONS: { label: string; panel: NightPanel }[] = [
   { label: UI.nav.services, panel: { kind: "services" } },
   { label: UI.nav.process, panel: { kind: "process" } },
@@ -27,8 +28,9 @@ const SECTIONS: { label: string; panel: NightPanel }[] = [
  * fixed over the scene, at the end of the page on pages without it.
  * By day (and on pages without the scene) the studio's imprint and contact
  * (a `mailto:`); on the night map the consulting site's questions, contact
- * and imprint (and, on smaller screens, the sections the top navigation
- * shows from lg up). The two sets cross over with the scene.
+ * and imprint (and, from md to lg, the sections the top navigation shows
+ * from lg up). The two sets cross over with the scene, and both fade
+ * out while an overlay is open.
  */
 export function SiteFooter() {
   const revealed = useIntroRevealed();
@@ -36,9 +38,10 @@ export function SiteFooter() {
   const isDay = useSceneStore((s) => s.timeOfDay === "day");
   const nightReady = useSceneStore((s) => s.timeOfDay === "night" && s.nightIntro === "done" && s.night > 0.9);
   const onImprint = usePathname() === IMPRINT_HREF;
+  const overlay = useOverlayFade().hidden;
   // Without the scene (a sub-page) it is always day here.
-  const day = onMap ? isDay && revealed : true;
-  const night = onMap && nightReady;
+  const day = (onMap ? isDay && revealed : true) && !overlay;
+  const night = onMap && nightReady && !overlay;
 
   return (
     <>
@@ -69,7 +72,7 @@ export function SiteFooter() {
         }`}
       >
         {SECTIONS.map((s) => (
-          <button key={s.label} type="button" className={`${link} lg:hidden`} onClick={() => openPanel(s.panel)}>
+          <button key={s.label} type="button" className={`${link} hidden md:block lg:hidden`} onClick={() => openPanel(s.panel)}>
             {s.label}
           </button>
         ))}

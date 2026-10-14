@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowUpRight } from "lucide-react";
 import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { AREAS, CLEARINGS, type Place, PLACES } from "@/config/nightMap";
 import {
@@ -59,8 +60,10 @@ const GROUPS = [
 /**
  * The places of the night map as real buttons, over their lights in the
  * canvas: tab and enter reach every one, and hover or focus shows its
- * preview (one or two lines) beside it. A click opens the panel; on touch
- * screens the first tap shows the preview and the second opens it. The
+ * preview (one or two lines) beside it. A click opens the panel. On touch
+ * screens the first tap lights the place and shows its preview in a card at
+ * the bottom centre, which says it can be opened; a second tap (on the place
+ * or the card) opens it, a tap anywhere else lets it go. The
  * canvas projects every place to the screen each frame (`placeScreen`);
  * a frame loop here moves the buttons there without re-renders. The map
  * takes clicks once the night intro is done and the camera has landed, and
@@ -77,6 +80,9 @@ export function MapPlaces() {
   const areas = useRef<(HTMLLIElement | null)[]>([]);
   const lastPointer = useRef<string>("mouse");
   const [touchPreview, setTouchPreview] = useState<number | null>(null);
+  // The touch card keeps its last place while it fades out.
+  const [card, setCard] = useState<number | null>(null);
+  if (touchPreview !== null && touchPreview !== card) setCard(touchPreview);
 
   // Follow the canvas: move every place to its light, hide those off screen.
   useEffect(() => {
@@ -119,6 +125,18 @@ export function MapPlaces() {
     if (!active) useSceneStore.getState().setHoveredPlace(null);
   }, [active]);
 
+  // A tap beside the places and the card lets the touch preview go.
+  useEffect(() => {
+    if (touchPreview === null) return;
+    const onDown = (event: PointerEvent) => {
+      if (event.target instanceof Element && event.target.closest("[data-place], [data-touch-card]")) return;
+      setTouchPreview(null);
+      useSceneStore.getState().setHoveredPlace(null);
+    };
+    window.addEventListener("pointerdown", onDown);
+    return () => window.removeEventListener("pointerdown", onDown);
+  }, [touchPreview]);
+
   const hover = (index: number | null) => useSceneStore.getState().setHoveredPlace(index);
   const open = (index: number) => {
     const place = PLACES[index];
@@ -131,7 +149,9 @@ export function MapPlaces() {
     useSceneStore.getState().setPanel(place.panel);
   };
 
-  const shown = hoveredPlace ?? touchPreview;
+  // Beside the place for mouse and keyboard; touch has its card instead.
+  const shown = active && touchPreview === null ? hoveredPlace : null;
+  const cardPreview = card !== null ? previewOf(PLACES[card], activePath) : null;
 
   return (
     <nav
@@ -173,6 +193,7 @@ export function MapPlaces() {
                 >
                   <button
                     type="button"
+                    data-place
                     onPointerDown={(event) => {
                       lastPointer.current = event.pointerType;
                     }}
@@ -212,6 +233,25 @@ export function MapPlaces() {
           </ul>
         </section>
       ))}
+      {/* Touch: the tapped place's preview, fixed at the bottom centre. */}
+      <button
+        type="button"
+        data-touch-card
+        inert={touchPreview === null}
+        onClick={() => card !== null && open(card)}
+        className={`fixed inset-x-6 bottom-24 mx-auto flex max-w-sm cursor-pointer items-center gap-4 rounded-2xl border border-current/10 bg-panel-night/90 px-4 py-3 text-left text-on-night backdrop-blur-md transition-[opacity,translate] duration-700 ease-reveal ${
+          touchPreview !== null ? "pointer-events-auto opacity-100" : "translate-y-2 opacity-0"
+        }`}
+      >
+        <span className="min-w-0 flex-1">
+          <span className="block text-body">{cardPreview?.line}</span>
+          {cardPreview?.detail && <span className="block text-caption italic opacity-65">{cardPreview.detail}</span>}
+          <span className="mt-2 block text-caption tracking-wide opacity-55">{UI.map.tapToOpen}</span>
+        </span>
+        <span aria-hidden className="grid size-9 shrink-0 place-items-center rounded-full border border-current/20">
+          <ArrowUpRight className="size-[1.125rem]" strokeWidth={1.5} />
+        </span>
+      </button>
     </nav>
   );
 }

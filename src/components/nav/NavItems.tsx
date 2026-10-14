@@ -9,7 +9,7 @@ const ITEMS: Record<TimeOfDay, ReactNode> = {
   day: null,
   night: (
     <>
-      <span aria-hidden className="mx-1 h-4 w-px bg-current opacity-20" />
+      <span aria-hidden className="mx-2 h-4 w-px bg-current opacity-20" />
       <NightNavLinks />
       <NightCta />
     </>

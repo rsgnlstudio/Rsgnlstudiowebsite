@@ -7,10 +7,13 @@ import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 /** Closes the dialog in case the slide out never reports its end. */
 const CLOSE_FALLBACK_MS = 1800;
 
-/** Width and colors per tone: the day overlay, or the night panel beside the map. */
+/**
+ * Size and colors per tone: the day overlay, or the night panel beside the
+ * map (on mobile a shorter sheet, so the map stays in view above it).
+ */
 const TONES = {
-  day: { panel: "bg-on-night text-on-day md:w-2/3", button: "bg-on-night" },
-  night: { panel: "bg-panel-night text-on-night md:w-1/2", button: "bg-panel-night" },
+  day: { panel: "h-[92dvh] bg-on-night text-on-day md:w-2/3", button: "bg-on-night" },
+  night: { panel: "h-[67dvh] bg-panel-night text-on-night md:w-1/2", button: "bg-panel-night" },
 } as const;
 
 interface SlidePanelProps {
@@ -28,7 +31,8 @@ interface SlidePanelProps {
 /**
  * A modal `<dialog>` with a panel that slides in: on desktop from the right
  * (over two thirds of the screen by day, half by night, so the map stays
- * beside it), on mobile a sheet sliding up over nearly all of it. The canvas
+ * beside it), on mobile a sheet sliding up (over nearly all of the screen by
+ * day, two thirds by night). The canvas
  * slides aside in step with it (`SceneCanvas`), both timed by
  * `--overlay-duration` and `ease-overlay`. Closes with the button, Escape,
  * or a click beside the panel; the panel slides out before the dialog closes,
@@ -98,7 +102,7 @@ export function SlidePanel({ open, onClose, labelledBy, tone, panelRef, closeLab
         ref={ref}
         tabIndex={-1}
         data-lenis-prevent
-        className={`absolute inset-x-0 bottom-0 h-[92dvh] translate-y-full overflow-y-auto overscroll-contain outline-none transition-[translate] duration-(--overlay-duration) ease-overlay group-data-open:translate-y-0 md:inset-y-0 md:right-0 md:left-auto md:h-full md:translate-x-full md:translate-y-0 md:group-data-open:translate-x-0 ${colors.panel}`}
+        className={`absolute inset-x-0 bottom-0 translate-y-full overflow-y-auto overscroll-contain outline-none transition-[translate] duration-(--overlay-duration) ease-overlay group-data-open:translate-y-0 md:inset-y-0 md:right-0 md:left-auto md:h-full md:translate-x-full md:translate-y-0 md:group-data-open:translate-x-0 ${colors.panel}`}
       >
         <div className="sticky top-0 z-10 flex h-0 justify-end">
           <button
