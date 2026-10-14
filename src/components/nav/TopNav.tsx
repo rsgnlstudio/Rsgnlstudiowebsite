@@ -2,11 +2,10 @@
 
 import { DayNightSwitch } from "@/components/nav/DayNightSwitch";
 import { NavItems } from "@/components/nav/NavItems";
-import { DAY_NIGHT_DURATION, DAY_NIGHT_DURATION_REDUCED } from "@/config/scene";
-import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
+import { useContent } from "@/content/ContentProvider";
 import { useOverlayFade } from "@/hooks/useOverlayFade";
 import { useReveal } from "@/hooks/useReveal";
-import { useSceneStore } from "@/store/scene";
+import { useSceneTone } from "@/hooks/useSceneTone";
 
 /**
  * The top navigation: one frosted pill at the top centre holding the
@@ -20,19 +19,16 @@ import { useSceneStore } from "@/store/scene";
  * its place.
  */
 export function TopNav() {
-  const timeOfDay = useSceneStore((s) => s.timeOfDay);
-  const reducedMotion = usePrefersReducedMotion();
-  const duration = reducedMotion ? DAY_NIGHT_DURATION_REDUCED : DAY_NIGHT_DURATION;
+  const { ui } = useContent();
+  const tone = useSceneTone();
   const reveal = useReveal<HTMLDivElement>(0, useOverlayFade().hidden);
 
   return (
-    <nav aria-label="Hauptnavigation" className="fixed top-8 left-1/2 z-20 hidden -translate-x-1/2 md:block">
+    <nav aria-label={ui.nav.main} className="fixed top-8 left-1/2 z-20 hidden -translate-x-1/2 md:block">
       <div
         ref={reveal}
-        className={`invisible flex items-center rounded-full border border-current/10 p-1.5 whitespace-nowrap opacity-0 backdrop-blur-md transition-colors ease-smooth ${
-          timeOfDay === "night" ? "bg-on-day/30 text-on-night" : "bg-on-night/30 text-on-day"
-        }`}
-        style={{ transitionDuration: `${duration}s` }}
+        className={`invisible flex items-center rounded-full border border-current/10 p-1.5 whitespace-nowrap opacity-0 backdrop-blur-md transition-colors ease-smooth ${tone.glass}`}
+        style={tone.style}
       >
         <DayNightSwitch />
         <NavItems />

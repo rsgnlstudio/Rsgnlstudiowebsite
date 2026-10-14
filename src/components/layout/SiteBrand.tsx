@@ -2,11 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { DAY_NIGHT_DURATION, DAY_NIGHT_DURATION_REDUCED } from "@/config/scene";
 import { PAGE_OUT } from "@/config/navigation";
 import { useContent } from "@/content/ContentProvider";
 import { useOverlayFade } from "@/hooks/useOverlayFade";
-import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
+import { useSceneTone } from "@/hooks/useSceneTone";
 import { useSceneStore } from "@/store/scene";
 
 /**
@@ -22,8 +21,7 @@ export function SiteBrand() {
   const { site } = useContent();
   const onMap = useSceneStore((s) => s.sceneMode !== "hidden");
   const onNight = useSceneStore((s) => s.timeOfDay === "night") && onMap;
-  const reducedMotion = usePrefersReducedMotion();
-  const duration = reducedMotion ? DAY_NIGHT_DURATION_REDUCED : DAY_NIGHT_DURATION;
+  const { duration } = useSceneTone();
   const home = usePathname() === "/";
   const fade = useOverlayFade();
   // The fade on the text, as the element itself transitions its color.

@@ -3,16 +3,16 @@
 import { Menu, Volume2, VolumeX, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { DayNightSwitch } from "@/components/nav/DayNightSwitch";
-import { NIGHT_LINKS, NightCta } from "@/components/nav/NightNavLinks";
-import { openPanel } from "@/components/night/PanelParts";
+import { NightCta } from "@/components/nav/NightNavLinks";
 import { Button } from "@/components/ui/Button";
-import { DAY_NIGHT_DURATION, DAY_NIGHT_DURATION_REDUCED } from "@/config/scene";
-import { UI } from "@/content/consulting";
+import { Icon } from "@/components/ui/Icon";
+import { NIGHT_SECTIONS } from "@/config/navigation";
+import { useContent } from "@/content/ContentProvider";
 import { useOverlayFade } from "@/hooks/useOverlayFade";
-import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { useReveal } from "@/hooks/useReveal";
+import { useSceneTone } from "@/hooks/useSceneTone";
 import { setSoundEnabled } from "@/lib/ambient";
-import { useSceneStore } from "@/store/scene";
+import { openPanel } from "@/store/scene";
 import { useSoundStore } from "@/store/sound";
 
 const divider = <span aria-hidden className="mx-4 my-2 block h-px bg-current opacity-15" />;
@@ -48,10 +48,9 @@ function swallowNextClick() {
  * it appears after the intro and fades out while an overlay is open.
  */
 export function MobileMenu() {
-  const timeOfDay = useSceneStore((s) => s.timeOfDay);
+  const { ui } = useContent();
+  const tone = useSceneTone();
   const sound = useSoundStore((s) => s.enabled);
-  const reducedMotion = usePrefersReducedMotion();
-  const duration = reducedMotion ? DAY_NIGHT_DURATION_REDUCED : DAY_NIGHT_DURATION;
   const fade = useOverlayFade();
   const reveal = useReveal<HTMLDivElement>(0, fade.hidden);
   const rootRef = useRef<HTMLElement>(null);
@@ -81,11 +80,9 @@ export function MobileMenu() {
     };
   }, [open]);
 
-  const night = timeOfDay === "night";
-  const Sound = sound ? Volume2 : VolumeX;
 
   return (
-    <nav ref={rootRef} aria-label="Hauptnavigation" className="pointer-events-none fixed inset-x-0 top-0 z-30 px-4 pt-6 md:hidden">
+    <nav ref={rootRef} aria-label={ui.nav.main} className="pointer-events-none fixed inset-x-0 top-0 z-30 px-4 pt-6 md:hidden">
       <div ref={reveal} className="invisible flex flex-col items-end opacity-0">
         <Button
           ref={buttonRef}
@@ -93,18 +90,12 @@ export function MobileMenu() {
           size="icon"
           aria-expanded={open}
           aria-controls="mobile-menu"
-          aria-label={open ? UI.nav.closeMenu : UI.nav.menu}
+          aria-label={open ? ui.nav.closeMenu : ui.nav.menu}
           onClick={() => setOpen(!open)}
-          className={`pointer-events-auto mr-2 ${
-            night ? "bg-on-day/30 text-on-night" : "bg-on-night/30 text-on-day"
-          }`}
-          style={{ transitionDuration: `${duration}s` }}
+          className={`pointer-events-auto mr-2 ${tone.glass}`}
+          style={tone.style}
         >
-          {open ? (
-            <X aria-hidden className="size-[1.125rem]" strokeWidth={1.5} />
-          ) : (
-            <Menu aria-hidden className="size-[1.125rem]" strokeWidth={1.5} />
-          )}
+          <Icon icon={open ? X : Menu} />
         </Button>
         <div
           id="mobile-menu"
@@ -115,19 +106,19 @@ export function MobileMenu() {
             if (target.closest("button") && !target.closest("[data-keep-open]")) setOpen(false);
           }}
           className={`mt-4 flex w-full origin-top flex-col items-stretch gap-1 rounded-3xl border border-current/10 p-4 backdrop-blur-md transition-[opacity,translate,scale,color,background-color] ease-reveal ${
-            night ? "bg-panel-night/90 text-on-night" : "bg-on-night/90 text-on-day"
+            tone.menu
           } ${open ? "pointer-events-auto translate-y-0 scale-100 opacity-100 duration-500" : "-translate-y-1 scale-[0.98] opacity-0 duration-300"}`}
         >
           {/* The switch's two halves share the row, with their sun and moon (hidden in the pill on narrow screens). */}
           <div className="[&_button]:flex-1 [&_svg]:block [&>div]:w-full">
             <DayNightSwitch />
           </div>
-          {night && (
+          {tone.night && (
             <>
               {divider}
-              {NIGHT_LINKS.map((link) => (
-                <Button key={link.label} variant="ghost" block align="start" onClick={() => openPanel(link.panel)}>
-                  {link.label}
+              {NIGHT_SECTIONS.map((s) => (
+                <Button key={s.key} variant="ghost" block align="start" onClick={() => openPanel(s.panel)}>
+                  {ui.nav[s.key]}
                 </Button>
               ))}
               <div className="mt-2">
@@ -137,8 +128,8 @@ export function MobileMenu() {
           )}
           {divider}
           <Button variant="ghost" block align="start" data-keep-open aria-pressed={sound} onClick={() => setSoundEnabled(!sound)}>
-            <Sound aria-hidden className="size-[1.125rem]" strokeWidth={1.5} />
-            {UI.nav.sound}
+            <Icon icon={sound ? Volume2 : VolumeX} />
+            {ui.nav.sound}
           </Button>
         </div>
       </div>

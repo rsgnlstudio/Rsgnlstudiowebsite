@@ -80,8 +80,8 @@ src/
                        night light and morph, dust uniforms and trail, the nightingale's strokes and material, the cursor gust, the flower beds' layout and glow, the brush simulation, strokes and
                        stroke fields, plant painters, landscape shape and conifer layout,
                        PainterlyEffect, WetCanvasPass, VolumetricMist, RNG
-    cursor/            The dot cursor (CursorDot), mounted in the root layout
-    nav/               Top navigation (TopNav: one pill with the Day/Night switch and the night's items; below md the burger menu, MobileMenu), the wordmark (SiteBrand) and the footer (SiteFooter) mounted in the root layout, and the sound toggle
+    layout/            The chrome mounted in the root layout: the wordmark (SiteBrand), the footer (SiteFooter) and the dot cursor (CursorDot)
+    nav/               Top navigation (TopNav: one pill with the Day/Night switch and the night's items; below md the burger menu, MobileMenu) and the sound toggle
     ui/                Shared UI primitives: Button (and ButtonLink), the one button of the site, with its variants and sizes
     night/             The night map's DOM: the place buttons (MapPlaces), the side panel and its content (NightPanel, PathStory, PanelContent, PanelParts) and the intro
     sections/          DOM sections, the entry screen, the flower hover label, the day's hint (DayHint), the project overlay, the shared slide panel (SlidePanel) and per-page scroll controllers (e.g. HomeScroll)

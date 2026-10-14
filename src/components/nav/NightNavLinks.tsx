@@ -2,18 +2,10 @@
 
 import { CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import type { NightPanel } from "@/config/nightMap";
-import { UI } from "@/content/consulting";
-import { useSceneStore } from "@/store/scene";
-
-/** The consulting site's sections, also in the mobile menu (`MobileMenu`). */
-export const NIGHT_LINKS: { label: string; panel: NightPanel }[] = [
-  { label: UI.nav.services, panel: { kind: "services" } },
-  { label: UI.nav.process, panel: { kind: "process" } },
-  { label: UI.nav.about, panel: { kind: "about" } },
-];
-
-const open = (panel: NightPanel) => useSceneStore.getState().setPanel(panel);
+import { Icon } from "@/components/ui/Icon";
+import { NIGHT_SECTIONS } from "@/config/navigation";
+import { useContent } from "@/content/ContentProvider";
+import { openPanel } from "@/store/scene";
 
 /**
  * The night's items in the top navigation (`TopNav`), for the consulting
@@ -22,12 +14,13 @@ const open = (panel: NightPanel) => useSceneStore.getState().setPanel(panel);
  * the footer, or below md the mobile menu, lead there).
  */
 export function NightNavLinks() {
+  const { ui } = useContent();
   return (
     // Room before the call to action, so its glow doesn't crowd the last link.
     <div className="mr-3 hidden lg:flex">
-      {NIGHT_LINKS.map((link) => (
-        <Button key={link.label} variant="ghost" size="sm" onClick={() => open(link.panel)}>
-          {link.label}
+      {NIGHT_SECTIONS.map((s) => (
+        <Button key={s.key} variant="ghost" size="sm" onClick={() => openPanel(s.panel)}>
+          {ui.nav[s.key]}
         </Button>
       ))}
     </div>
@@ -40,11 +33,12 @@ export function NightNavLinks() {
  * opens the contact panel. `block` fills the width (in the mobile menu).
  */
 export function NightCta({ block }: { block?: boolean }) {
+  const { ui } = useContent();
   return (
-    <Button variant="primary" block={block} onClick={() => open({ kind: "contact" })}>
-      <CalendarDays aria-hidden className="hidden size-[1.125rem] sm:block" strokeWidth={1.5} />
-      <span className="sm:hidden">{UI.nav.contactShort}</span>
-      <span className="hidden sm:inline">{UI.nav.contact}</span>
+    <Button variant="primary" block={block} onClick={() => openPanel({ kind: "contact" })}>
+      <Icon icon={CalendarDays} className="hidden sm:block" />
+      <span className="sm:hidden">{ui.nav.contactShort}</span>
+      <span className="hidden sm:inline">{ui.nav.contact}</span>
     </Button>
   );
 }

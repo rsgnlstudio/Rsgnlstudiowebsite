@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { SceneCanvasLoader } from "@/components/canvas/SceneCanvasLoader";
-import { CursorDot } from "@/components/cursor/CursorDot";
-import { SiteBrand } from "@/components/nav/SiteBrand";
-import { SiteFooter } from "@/components/nav/SiteFooter";
+import { CursorDot } from "@/components/layout/CursorDot";
+import { SiteBrand } from "@/components/layout/SiteBrand";
+import { SiteFooter } from "@/components/layout/SiteFooter";
 import { getSiteContent } from "@/content";
 import { ContentProvider } from "@/content/ContentProvider";
 import { calendas } from "@/fonts/calendas";
