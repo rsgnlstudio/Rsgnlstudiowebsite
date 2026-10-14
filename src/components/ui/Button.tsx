@@ -55,13 +55,25 @@ const SIZES: Record<ButtonSize, string> = {
   "icon-lg": "grid size-14.5 shrink-0 place-items-center",
 };
 
+// An icon looks lighter than text at the same distance from the edge, so the
+// side with an icon gets a quarter less padding (`sm` and `md`, see `SIZES`)
+// and the button looks evenly padded. Not for `block` buttons: their label is
+// centred or lines up with the rows around it. The label must be an element
+// (e.g. a `<span>`): text nodes don't count as children, so a lone icon next
+// to bare text would be both first and last child and trim both sides.
+const ICON_SIDE: Partial<Record<ButtonSize, string>> = {
+  sm: "has-[>svg:first-child]:pl-3 has-[>svg:last-child]:pr-3",
+  md: "has-[>svg:first-child]:pl-3 has-[>svg:last-child]:pr-3 md:has-[>svg:first-child]:pl-4.5 md:has-[>svg:last-child]:pr-4.5",
+};
+
 /** The classes of a button; for the rare element that can't be `Button` or `ButtonLink`. */
 export function buttonClass({ variant = "ghost", size = "md", block, align = "center" }: ButtonStyle = {}) {
   const icon = size.startsWith("icon");
   // Icon sizes set their own width (`size-*`); `w-max` would override it.
   const width = block ? "w-full" : icon ? "" : "w-max";
   const justify = icon ? "" : align === "start" ? "justify-start text-left" : "justify-center";
-  return `${BASE} ${VARIANTS[variant]} ${SIZES[size]} ${width} ${justify}`;
+  const iconSide = block ? "" : (ICON_SIDE[size] ?? "");
+  return `${BASE} ${VARIANTS[variant]} ${SIZES[size]} ${iconSide} ${width} ${justify}`;
 }
 
 type ButtonProps = ButtonStyle & ButtonHTMLAttributes<HTMLButtonElement> & { ref?: Ref<HTMLButtonElement> };

@@ -69,14 +69,14 @@ export function Cta({ book, challenge }: { book?: boolean; challenge?: string })
   if (book) {
     return (
       <ButtonLink variant="primary" href={bookingHref(challenge)}>
-        {CONTACT.cta}
+        <span>{CONTACT.cta}</span>
         <ArrowUpRight aria-hidden className="size-[1.125rem]" strokeWidth={1.5} />
       </ButtonLink>
     );
   }
   return (
     <Button variant="primary" onClick={() => openPanel({ kind: "contact" })}>
-      {CONTACT.cta}
+      <span>{CONTACT.cta}</span>
       <ArrowRight aria-hidden className="size-[1.125rem]" strokeWidth={1.5} />
     </Button>
   );
