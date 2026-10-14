@@ -16,10 +16,14 @@ import {
 } from "three";
 
 /**
- * World rectangle (x, z) covered by the trail texture: everything the night
- * top view sees, with margin. minX, minZ, width, depth.
+ * World rectangle (x, z) covered by the trail texture: the night ground the
+ * dust covers (NIGHT_GROUND in landscape.ts), square so the wake stays round.
+ * minX, minZ, width, depth.
  */
-export const TRAIL_RECT = new Vector4(-128, -190, 256, 256);
+export const TRAIL_RECT = new Vector4(-285, -332.5, 570, 570);
+
+/** Radius of the wake the light splats into the trail, in metres. */
+const TRAIL_RADIUS = 6.4;
 
 /**
  * State of the night dust world, shared by Dust (the particles) and
@@ -106,7 +110,7 @@ export class DustTrail {
         uTexel: { value: new Vector2(1 / size, 1 / size) },
         uPoint: { value: new Vector2() },
         uVelocity: { value: new Vector2() },
-        uRadius: { value: 0.025 },
+        uRadius: { value: TRAIL_RADIUS / TRAIL_RECT.z },
         uAmount: { value: 0 },
         uDecay: { value: 1 },
       },

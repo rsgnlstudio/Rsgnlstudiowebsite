@@ -1,9 +1,18 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
-import { AdditiveBlending, BufferGeometry, Float32BufferAttribute, ShaderMaterial, Sphere, Vector3 } from "three";
+import { useEffect, useMemo, useRef } from "react";
+import {
+  AdditiveBlending,
+  BufferGeometry,
+  Float32BufferAttribute,
+  type Group,
+  Points,
+  ShaderMaterial,
+  Sphere,
+  Vector3,
+} from "three";
 import { qualityPresets } from "@/config/look";
-import { CITY_AREA, CLEARING_RADIUS, CLEARINGS, PLACES, placeIndex } from "@/config/nightMap";
+import { CITY_AREA, CLEARING_RADIUS, CLEARINGS, MAP_FRAME, PLACES, placeIndex } from "@/config/nightMap";
 import type { PaletteKey } from "@/config/palette";
 import { useLookStore } from "@/store/look";
 import { scatterConifers } from "../painterly/conifers";
@@ -11,7 +20,7 @@ import { scatterBeds } from "../painterly/beds";
 import { layoutCity } from "../painterly/city";
 import { dustUniforms } from "../painterly/dust";
 import { mapUniforms } from "../painterly/mapUniforms";
-import { inStream, terrainHeight } from "../painterly/landscape";
+import { inStream, NIGHT_GROUND, nightGroundDensity, terrainHeight } from "../painterly/landscape";
 import type { PetalTint } from "../painterly/plants";
 import { paletteGLSL, paletteUniformsFor, sharedUniforms } from "../painterly/palette";
 import { NIGHT_LIGHT_KEYS, nightLightGLSL, nightLightUniforms } from "../painterly/nightLight";
@@ -236,7 +245,7 @@ interface DustBuffers {
 const normal = new Vector3();
 
 function push(b: DustBuffers, rng: Rng, p: [number, number, number], n: Vector3, kind: number, tint = 0) {
-  b.position.push(...p);
+  b.position.push(p[0], p[1], p[2]);
   b.normal.push(n.x, n.y, n.z);
   // Mostly faint specks with a few bright ones, like real dust.
   b.seed.push(rng(), rng(), 0.35 + Math.pow(rng(), 3) * 1.6, rng());
@@ -255,13 +264,83 @@ function groundNormal(x: number, z: number) {
   return normal.set(-dx, 2 * e, -dz).normalize();
 }
 
-function scatterGround(b: DustBuffers, rng: Rng, count: number) {
-  let placed = 0;
-  while (placed < count) {
-    // Dense where the top view looks, thinner out to the horizon.
-    const wide = rng() < 0.3;
-    const x = (rng() * 2 - 1) * (wide ? 160 : 100);
-    const d = wide ? -40 + rng() * 300 : -20 + rng() * 128;
+/**
+ * The ground and its flowers as dust cover every screen's view of the night
+ * (NIGHT_GROUND), far more than any one screen shows. They are split into
+ * square tiles of this size (m), each its own draw call, so a screen only
+ * draws the tiles it sees, and built in idle time after load (GroundDust).
+ */
+const TILE = 80;
+/** Room around a tile's points for the wake to push them out of it (m). */
+const TILE_MARGIN = 16;
+
+/**
+ * Past the night ground, out to the horizon the camera sees on its flight
+ * up, a thin haze of dust: this share of the full density, this far out.
+ */
+const HORIZON = { density: 0.1, halfWidth: 160, far: 260 } as const;
+
+/** Relative density (0..1) of the ground dust: the night ground and the horizon haze. */
+const groundDensity = (x: number, d: number) =>
+  Math.max(nightGroundDensity(x, d), Math.abs(x) < HORIZON.halfWidth && d < HORIZON.far ? HORIZON.density : 0);
+
+/** A ground tile: x from x0, d from d0, TILE metres each way. */
+interface GroundTile {
+  x0: number;
+  d0: number;
+}
+
+/** The ground tiles, nearest the middle of the map first, so what the night shows is built first. */
+function groundTiles(): GroundTile[] {
+  const { outer, fade } = NIGHT_GROUND;
+  const halfWidth = Math.max(outer.halfWidth + fade, HORIZON.halfWidth);
+  const tiles: GroundTile[] = [];
+  for (let x0 = Math.floor(-halfWidth / TILE) * TILE; x0 < halfWidth; x0 += TILE) {
+    for (let d0 = Math.floor((outer.near - fade) / TILE) * TILE; d0 < HORIZON.far; d0 += TILE) {
+      tiles.push({ x0, d0 });
+    }
+  }
+  const middleX = (MAP_FRAME.minX + MAP_FRAME.maxX) / 2;
+  const middleD = (MAP_FRAME.minD + MAP_FRAME.maxD) / 2;
+  const distance = (t: GroundTile) => Math.hypot(t.x0 + TILE / 2 - middleX, t.d0 + TILE / 2 - middleD);
+  return tiles.sort((a, b) => distance(a) - distance(b));
+}
+
+/** Square metres of a tile at full density, by a density function. */
+function tileArea(tile: GroundTile, density: (x: number, d: number) => number) {
+  const step = 2;
+  let area = 0;
+  for (let x = tile.x0 + step / 2; x < tile.x0 + TILE; x += step) {
+    for (let d = tile.d0 + step / 2; d < tile.d0 + TILE; d += step) area += density(x, d) * step * step;
+  }
+  return area;
+}
+
+/** A random point (x, d) in a tile, spread as `density`. */
+function tilePoint(rng: Rng, tile: GroundTile, density: (x: number, d: number) => number): [x: number, d: number] {
+  for (;;) {
+    const x = tile.x0 + rng() * TILE;
+    const d = tile.d0 + rng() * TILE;
+    if (rng() < density(x, d)) return [x, d];
+  }
+}
+
+/** Points scattered between two yields of a tile's build. */
+const BUILD_SLICE = 1500;
+
+/**
+ * Builds one ground tile's dust, `density` specks per square metre of
+ * ground and `flowerDensity` of flowers at full density. Yields every
+ * BUILD_SLICE points so the build can run in idle time; returns the
+ * geometry, or null for an empty tile.
+ */
+function* buildGroundTile(tile: GroundTile, density: number, flowerDensity: number) {
+  const b: DustBuffers = { position: [], normal: [], seed: [], info: [] };
+  const rng = mulberry32(2718 + tile.x0 * 31 + tile.d0 * 7);
+
+  const ground = Math.round(density * tileArea(tile, groundDensity));
+  for (let placed = 0; placed < ground; ) {
+    const [x, d] = tilePoint(rng, tile, groundDensity);
     const z = -d;
     // Drifts: dust gathers in bands and patches.
     const drift = valueNoise(x * 0.05, z * 0.05, 5) * 0.7 + valueNoise(x * 0.17, z * 0.17, 6) * 0.3;
@@ -270,8 +349,37 @@ function scatterGround(b: DustBuffers, rng: Rng, count: number) {
     if (inStream(x, d, 0)) continue;
     const y = terrainHeight(x, z) + rng() * rng() * 0.6;
     push(b, rng, [x, y, z], groundNormal(x, z), GROUND);
-    placed++;
+    if (++placed % BUILD_SLICE === 0) yield;
   }
+
+  const flowers = Math.round(flowerDensity * tileArea(tile, nightGroundDensity));
+  for (let placed = 0, slice = BUILD_SLICE; placed < flowers; ) {
+    const [x, d] = tilePoint(rng, tile, nightGroundDensity);
+    const z = -d;
+    // Flowers grow in drifts of one color.
+    if (rng() > valueNoise(x * 0.06, z * 0.06, 21) * 1.2 - 0.15 || inStream(x, d)) continue;
+    const hue = valueNoise(x * 0.04, z * 0.04, 22);
+    const tint = hue < 0.35 ? 0 : hue < 0.55 ? 1 : hue < 0.72 ? 2 : 3;
+    const specks = 4 + Math.floor(rng() * 10);
+    const spread = 0.25 + rng() * 0.7;
+    const y = terrainHeight(x, z) + 0.15 + rng() * 0.5;
+    for (let k = 0; k < specks && placed < flowers; k++, placed++) {
+      const a = rng() * Math.PI * 2;
+      const r = Math.sqrt(rng()) * spread;
+      push(b, rng, [x + Math.cos(a) * r, y + rng() * 0.2, z + Math.sin(a) * r], normal.set(0, 1, 0), FLOWER, tint);
+    }
+    // Clusters step over the slice boundaries, so yield once past each.
+    if (placed >= slice) {
+      slice += BUILD_SLICE;
+      yield;
+    }
+  }
+
+  if (b.position.length === 0) return null;
+  const geometry = toGeometry(b);
+  geometry.computeBoundingSphere();
+  geometry.boundingSphere!.radius += TILE_MARGIN;
+  return geometry;
 }
 
 function scatterTrees(b: DustBuffers, rng: Rng, budget: number, conifers: number, woods: number) {
@@ -365,27 +473,6 @@ function scatterCity(b: DustBuffers, rng: Rng, budget: number) {
   }
 }
 
-function scatterFlowers(b: DustBuffers, rng: Rng, count: number) {
-  let placed = 0;
-  while (placed < count) {
-    const x = (rng() * 2 - 1) * 105;
-    const d = -20 + rng() * 135;
-    const z = -d;
-    // Flowers grow in drifts of one color.
-    if (rng() > valueNoise(x * 0.06, z * 0.06, 21) * 1.2 - 0.15 || inStream(x, d)) continue;
-    const hue = valueNoise(x * 0.04, z * 0.04, 22);
-    const tint = hue < 0.35 ? 0 : hue < 0.55 ? 1 : hue < 0.72 ? 2 : 3;
-    const specks = 4 + Math.floor(rng() * 10);
-    const spread = 0.25 + rng() * 0.7;
-    const y = terrainHeight(x, z) + 0.15 + rng() * 0.5;
-    for (let k = 0; k < specks && placed < count; k++, placed++) {
-      const a = rng() * Math.PI * 2;
-      const r = Math.sqrt(rng()) * spread;
-      push(b, rng, [x + Math.cos(a) * r, y + rng() * 0.2, z + Math.sin(a) * r], normal.set(0, 1, 0), FLOWER, tint);
-    }
-  }
-}
-
 /** The flower beds as dust: a small cloud of specks in its color at every plant's head. */
 function scatterBedFlowers(b: DustBuffers, rng: Rng, scale: number) {
   for (const plant of scatterBeds(scale)) {
@@ -411,28 +498,84 @@ function scatterMotes(b: DustBuffers, rng: Rng, count: number) {
   }
 }
 
-function buildDust(preset: (typeof qualityPresets)["high"]) {
-  const b: DustBuffers = { position: [], normal: [], seed: [], info: [] };
-  const rng = mulberry32(2718);
-  scatterGround(b, rng, preset.dust.ground);
-  scatterTrees(b, rng, preset.dust.trees, preset.conifers, preset.woods);
-  scatterCity(b, rng, preset.dust.city);
-  scatterFlowers(b, rng, preset.dust.flowers);
-  scatterBedFlowers(b, rng, preset.beds);
-  scatterMotes(b, rng, preset.dust.motes);
+function toGeometry(b: DustBuffers) {
   const geometry = new BufferGeometry();
   geometry.setAttribute("position", new Float32BufferAttribute(b.position, 3));
   geometry.setAttribute("normal", new Float32BufferAttribute(b.normal, 3));
   geometry.setAttribute("aSeed", new Float32BufferAttribute(b.seed, 4));
   geometry.setAttribute("aInfo", new Float32BufferAttribute(b.info, 2));
+  return geometry;
+}
+
+/** The dust but the ground: trees, the city, the beds and the motes, in one geometry. */
+function buildDust(preset: (typeof qualityPresets)["high"]) {
+  const b: DustBuffers = { position: [], normal: [], seed: [], info: [] };
+  const rng = mulberry32(2718);
+  scatterTrees(b, rng, preset.dust.trees, preset.conifers, preset.woods);
+  scatterCity(b, rng, preset.dust.city);
+  scatterBedFlowers(b, rng, preset.beds);
+  scatterMotes(b, rng, preset.dust.motes);
+  const geometry = toGeometry(b);
   // Points move in the shader; a generous fixed bound is enough.
   geometry.boundingSphere = new Sphere(new Vector3(0, 0, -60), 400);
   return geometry;
 }
 
+/** requestIdleCallback, or for browsers without it a short timeout with an 8 ms slot. */
+const requestIdle = (callback: (deadline: Pick<IdleDeadline, "timeRemaining">) => void) => {
+  if (typeof requestIdleCallback === "function") {
+    const handle = requestIdleCallback(callback, { timeout: 500 });
+    return () => cancelIdleCallback(handle);
+  }
+  const handle = window.setTimeout(() => {
+    const start = performance.now();
+    callback({ timeRemaining: () => Math.max(0, 8 - (performance.now() - start)) });
+  }, 16);
+  return () => window.clearTimeout(handle);
+};
+
 /**
- * The night world: the meadow, its trees and flowers as fine dust, in one
- * draw call. It condenses everywhere at once as the painting sinks into the
+ * Builds the ground tiles in idle time, nearest the map first, and adds each
+ * to `group` as it is done (drawn with `material`, culled on its own).
+ * Returns a cleanup that stops the build and disposes the tiles.
+ */
+function buildGroundDust(group: Group, material: ShaderMaterial, preset: (typeof qualityPresets)["high"]) {
+  const tiles = groundTiles();
+  const built: Points[] = [];
+  let next = 0;
+  let job: Generator<void, BufferGeometry | null> | null = null;
+  const step = (deadline: Pick<IdleDeadline, "timeRemaining">) => {
+    // At least one slice per call, so the build goes on on a busy page.
+    do {
+      if (!job) {
+        if (next >= tiles.length) return;
+        job = buildGroundTile(tiles[next++], preset.dust.ground, preset.dust.flowers);
+      }
+      const result = job.next();
+      if (!result.done) continue;
+      job = null;
+      if (!result.value) continue;
+      const points = new Points(result.value, material);
+      points.name = "dust-ground";
+      points.renderOrder = 4;
+      group.add(points);
+      built.push(points);
+    } while (deadline.timeRemaining() > 1);
+    cancel = requestIdle(step);
+  };
+  let cancel = requestIdle(step);
+  return () => {
+    cancel();
+    for (const points of built) {
+      group.remove(points);
+      points.geometry.dispose();
+    }
+  };
+}
+
+/**
+ * The night world: the meadow, its trees and flowers as fine dust, with one
+ * material (the ground in culled tiles, see TILE). It condenses everywhere at once as the painting sinks into the
  * dark, lit by the same night light (painterly/nightLight.ts). In the dark only a faint moonlit haze of it shows;
  * the cursor light (CursorLight) reveals the shapes, and its wake kicks the
  * dust up. Out-of-focus specks open into bokeh discs.
@@ -465,5 +608,16 @@ export function Dust() {
   );
   useEffect(() => () => material.dispose(), [material]);
 
-  return <points name="dust" geometry={geometry} material={material} renderOrder={4} />;
+  const ground = useRef<Group>(null);
+  useEffect(() => {
+    if (!ground.current) return;
+    return buildGroundDust(ground.current, material, preset);
+  }, [material, preset]);
+
+  return (
+    <>
+      <points name="dust" geometry={geometry} material={material} renderOrder={4} />
+      <group ref={ground} name="dust-ground" />
+    </>
+  );
 }
