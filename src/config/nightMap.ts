@@ -93,20 +93,6 @@ export const GOAL_TRAIL: readonly MapPoint[] = [[58, 91]];
 export const MEADOW: MapPoint = [-3, 8];
 
 /**
- * Peaks of the mountains along the top edge, drawn as contour lines: x, d,
- * height, and the spread across (sx) and up the map (sd).
- */
-export const PEAKS = [
-  { x: -56, d: 98, height: 1, sx: 16, sd: 10 },
-  { x: -24, d: 95, height: 0.8, sx: 14, sd: 9 },
-  { x: 10, d: 99, height: 0.95, sx: 18, sd: 10 },
-  { x: 44, d: 89, height: 1.15, sx: 13, sd: 9 },
-  { x: 72, d: 98, height: 0.8, sx: 10, sd: 8 },
-] as const;
-/** The mountains' contour lines start at this d and fade in above it. */
-export const MOUNTAINS_FROM = 72;
-
-/**
  * The paths, one per clearing. A path runs from its clearing along `trail`
  * to its first service, along the road to its second, then along `climb` to
  * the foot of the mountains, up to the summit and on to the goal. The path

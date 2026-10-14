@@ -2,14 +2,13 @@
 
 import { useEffect, useMemo } from "react";
 import { AdditiveBlending, BufferGeometry, Float32BufferAttribute, ShaderMaterial, Sphere, Vector3 } from "three";
-import { MOUNTAINS_FROM } from "@/config/nightMap";
 import type { PaletteKey } from "@/config/palette";
 import { mapUniforms } from "../painterly/mapUniforms";
 import { buildMapLines, LINE } from "../painterly/nightMap";
 import { paletteGLSL, paletteUniformsFor, sharedUniforms } from "../painterly/palette";
 import { viewUniforms } from "../painterly/view";
 
-const COLORS = ["mapLine", "mapPath", "cityLight", "contour"] as const satisfies readonly PaletteKey[];
+const COLORS = ["mapLine", "mapPath", "cityLight"] as const satisfies readonly PaletteKey[];
 
 const vertexShader = /* glsl */ `
 attribute vec4 aInfo; // kind, path, arc (metres), seed
@@ -54,17 +53,12 @@ void main() {
     col = uCityLight;
     bright = 0.16 + 0.3 * seed * seed;
     size = 0.2;
-  } else if (kind < ${LINE.NODE}.5) {
+  } else {
     // Bright points at the crossings, some of them flickering slowly.
     col = uCityLight;
     float flicker = 0.85 + 0.15 * sin(uTime * (0.6 + seed * 1.7) + seed * 30.0);
     bright = (1.0 + 1.6 * seed) * flicker;
     size = 0.4;
-  } else {
-    // Contour lines, fading in toward the top.
-    col = uContour;
-    bright = (0.45 + 0.4 * seed) * smoothstep(${MOUNTAINS_FROM.toFixed(1)}, ${(MOUNTAINS_FROM + 9).toFixed(1)}, -position.z);
-    size = 0.2;
   }
 
   bool onPath = path > -0.5;
@@ -106,7 +100,7 @@ void main() {
 /**
  * The lines of the night map as dots of light, in one draw call: faint
  * trails through the woods, the city's street grid with bright crossings and
- * the roads between its lights, and the mountains' contour lines. The active
+ * the roads between its lights. The active
  * path glows from its clearing up to where the panel has got to. Night only.
  */
 export function MapLines() {

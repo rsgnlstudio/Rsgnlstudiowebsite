@@ -14,7 +14,6 @@ import { mapUniforms, PLACE_KIND_INDEX as K } from "../painterly/mapUniforms";
 import { paletteGLSL, paletteUniformsFor, sharedUniforms } from "../painterly/palette";
 
 const COLORS = [
-  "clearingGlow",
   "cityLight",
   "goalLight",
   "lantern",
@@ -25,12 +24,15 @@ const COLORS = [
 
 const N = PLACES.length;
 
+/** The clearings have no light of their own: their groves glow instead (Dust). */
+const LIT = PLACES.flatMap((p, i) => (p.kind === "clearing" ? [] : [i]));
+
 /** Half the size of each place's sprite, in metres. */
 function spriteSize(index: number) {
   const place = PLACES[index];
   switch (place.kind) {
     case "clearing":
-      return 7.5;
+      return 0;
     case "service": {
       const light = CITY_LIGHTS.find((l) => `service:${l.id}` === place.id);
       return light?.size === "small" ? 6 : 9;
@@ -92,14 +94,7 @@ void main() {
   float pulse = current * (0.5 + 0.5 * sin(t * 3.0));
   vec3 col;
 
-  if (vKind < ${K.clearing}.5) {
-    // A clearing: a ring of light in the dark woods, breathing slowly.
-    float ring = exp(-pow((r - 0.62) / 0.07, 2.0));
-    float fill = (1.0 - smoothstep(0.0, 0.7, r)) * 0.25;
-    float breathe = 0.85 + 0.15 * sin(t * 0.7 + vSeed * 4.0);
-    float b = (0.35 + 0.9 * hover + 1.1 * lit + 0.8 * pulse) * breathe;
-    col = mix(uClearingGlow, uMapPath, lit) * (ring + fill) * b;
-  } else if (vKind < ${K.service}.5) {
+  if (vKind < ${K.service}.5) {
     // A light of the city: a hot core in a wide halo.
     float core = exp(-r * r * 80.0);
     float halo = exp(-r * 5.0) * (1.0 - r);
@@ -145,7 +140,7 @@ void main() {
 
 /**
  * The places of the night map as lights, in one instanced draw call: the
- * clearings (rings of light in the woods), the city's lights, the summit,
+ * city's lights, the summit,
  * the goal (the brightest light, pulsing), the meadow, the lantern and the
  * testimonials (fireflies). Hover, the active path and the step the panel
  * is at brighten them (mapUniforms, written by NightMap). HDR, so bloom
@@ -158,10 +153,10 @@ export function MapLights() {
     geom.index = quad.index;
     geom.setAttribute("position", quad.attributes.position);
     geom.setAttribute("uv", quad.attributes.uv);
-    const place = new Float32Array(N * 3);
-    PLACES.forEach((p, i) => place.set([i, K[p.kind], spriteSize(i)], i * 3));
+    const place = new Float32Array(LIT.length * 3);
+    LIT.forEach((i, k) => place.set([i, K[PLACES[i].kind], spriteSize(i)], k * 3));
     geom.setAttribute("aPlace", new InstancedBufferAttribute(place, 3));
-    geom.instanceCount = N;
+    geom.instanceCount = LIT.length;
     return geom;
   }, []);
   useEffect(() => () => geometry.dispose(), [geometry]);

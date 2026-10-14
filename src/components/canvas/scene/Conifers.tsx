@@ -14,6 +14,9 @@ function paintConifers(count: number, woods: number) {
   const out = new StrokeBuffer();
   const rng = mulberry32(777);
   for (let i = 0; i < layout.count; i++) {
+    // The groves in the clearings are night-only (dust); by day the
+    // clearings stay open, so the day doesn't change.
+    if (layout.grove[i] >= 0) continue;
     const far = layout.far[i] === 1;
     paintConifer(
       {

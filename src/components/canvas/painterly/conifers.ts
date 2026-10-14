@@ -24,7 +24,12 @@ export interface ConiferLayout {
   variation: Float32Array; // vec3
   /** Wind phase. */
   phase: Float32Array;
+  /** Index in CLEARINGS of the grove around a clearing the tree belongs to, -1 for none. */
+  grove: Int8Array;
 }
+
+/** Trees in the grove around each clearing. */
+const GROVE_TREES = 12;
 
 /**
  * True where the woods of the night map grow (src/config/nightMap.ts): left
@@ -46,9 +51,9 @@ function inWoods(x: number, d: number) {
  * camera looks (inside its view, |x| < 0.8 d + 6), so the day keeps its loose
  * tree line beyond the stream; dense outside it.
  */
-function scatterWoods(data: ConiferLayout, from: number) {
+function scatterWoods(data: ConiferLayout, from: number, to: number) {
   const rng = mulberry32(6161);
-  for (let i = from; i < data.count; ) {
+  for (let i = from; i < to; ) {
     const x = -82 + rng() * 64;
     const d = -8 + rng() * 92;
     if (!inWoods(x, d)) continue;
@@ -65,12 +70,54 @@ function scatterWoods(data: ConiferLayout, from: number) {
 }
 
 /**
+ * A grove in every clearing of the night map: a loose copse of trees,
+ * tallest in the middle, standing on its own in the open space the woods
+ * leave around it, so each clearing reads as a group of trees that lights
+ * up together (the night's counterpart of the day's flower beds). Appended
+ * after the woods with their own random sequence. Night only: the painted
+ * trees (Conifers) skip them, so by day the clearings stay open.
+ */
+function scatterGroves(data: ConiferLayout, from: number) {
+  const rng = mulberry32(7373);
+  let i = from;
+  CLEARINGS.forEach((c, grove) => {
+    const placed: [number, number][] = [];
+    for (let k = 0; k < GROVE_TREES; k++) {
+      let x = c.position[0];
+      let d = c.position[1];
+      // Spread out a little: each tree keeps some room from the others.
+      for (let attempt = 0; attempt < 30; attempt++) {
+        const a = rng() * Math.PI * 2;
+        const r = Math.sqrt(rng()) * CLEARING_RADIUS;
+        x = c.position[0] + Math.cos(a) * r;
+        d = c.position[1] + Math.sin(a) * r;
+        if (placed.every(([px, pd]) => Math.hypot(x - px, d - pd) > 2.4)) break;
+      }
+      placed.push([x, d]);
+      // Taller toward the middle of the grove.
+      const middle = 1 - Math.hypot(x - c.position[0], d - c.position[1]) / CLEARING_RADIUS;
+      const height = 6 + middle * 4 + rng() * 3;
+      data.offset.set([x, -0.8, -d], i * 3);
+      data.size.set([height * 0.32 * (rng() < 0.5 ? -1 : 1), height], i * 2);
+      data.variation.set([(rng() - 0.5) * 0.3, 0.8 + rng() * 0.4, 0.75 + rng() * 0.5], i * 3);
+      data.phase[i] = rng() * Math.PI * 2;
+      data.grove[i] = grove;
+      i++;
+    }
+  });
+}
+
+/** Number of grove trees appended after the woods (none without woods). */
+const groveCount = (woods: number) => (woods > 0 ? CLEARINGS.length * GROVE_TREES : 0);
+
+/**
  * Conifer layout, shared by the painted trees (Conifers) and their dust twins
  * (Dust), so the night world stands where the day world did: `count` trees
- * around the meadow, then `woods` trees in the woods of the night map.
+ * around the meadow, then `woods` trees in the woods of the night map, then
+ * the groves around its clearings.
  */
 export function scatterConifers(count: number, woods = 0): ConiferLayout {
-  const total = count + woods;
+  const total = count + woods + groveCount(woods);
   const data: ConiferLayout = {
     count: total,
     offset: new Float32Array(total * 3),
@@ -78,6 +125,7 @@ export function scatterConifers(count: number, woods = 0): ConiferLayout {
     far: new Uint8Array(total),
     variation: new Float32Array(total * 3),
     phase: new Float32Array(total),
+    grove: new Int8Array(total).fill(-1),
   };
   const rng = mulberry32(4242);
   const right = Math.round(count * SHARE.right);
@@ -126,6 +174,7 @@ export function scatterConifers(count: number, woods = 0): ConiferLayout {
     data.variation.set([(rng() - 0.5) * 0.3, 0.8 + rng() * 0.4, 0.75 + rng() * 0.5], i * 3);
     data.phase[i] = rng() * Math.PI * 2;
   }
-  scatterWoods(data, count);
+  scatterWoods(data, count, count + woods);
+  if (woods > 0) scatterGroves(data, count + woods);
   return data;
 }
