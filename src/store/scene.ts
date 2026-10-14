@@ -55,6 +55,10 @@ export interface SceneState {
    * The DOM reads it with getState() in its own frame loop; never subscribe.
    */
   placeScreen: Float32Array;
+  /** How many testimonials exist (fireflies beyond it stay dark). Written by ContentProvider. */
+  testimonialCount: number;
+  /** The BAFA subsidy runs (the lantern shows). Written by ContentProvider. */
+  bafaActive: boolean;
 
   setActiveSection: (id: string | null) => void;
   setSectionProgress: (progress: number) => void;
@@ -70,6 +74,7 @@ export interface SceneState {
   setNightIntro: (state: SceneState["nightIntro"]) => void;
   /** Opens the night panel; a path's panel also lights its path, from its clearing. */
   setPanel: (panel: NightPanel | null) => void;
+  setContentFlags: (flags: { testimonialCount: number; bafaActive: boolean }) => void;
   setPathStation: (station: number) => void;
   setHoveredPlace: (index: number | null) => void;
   /** Clears scroll-derived state, e.g. when a page unmounts. */
@@ -97,6 +102,8 @@ export const useSceneStore = create<SceneState>()((set) => ({
   pathStation: 0,
   hoveredPlace: null,
   placeScreen: new Float32Array(PLACES.length * 3),
+  testimonialCount: 0,
+  bafaActive: false,
 
   setActiveSection: (activeSection) => set({ activeSection }),
   setSectionProgress: (sectionProgress) => set({ sectionProgress }),
@@ -112,8 +119,12 @@ export const useSceneStore = create<SceneState>()((set) => ({
   setNightIntro: (nightIntro) => set({ nightIntro }),
   setPanel: (panel) =>
     set(panel?.kind === "path" ? { panel, activePath: panel.id, pathStation: 0 } : { panel }),
+  setContentFlags: (flags) => set(flags),
   setPathStation: (pathStation) => set({ pathStation }),
   setHoveredPlace: (hoveredPlace) => set({ hoveredPlace }),
   resetScroll: () =>
     set({ activeSection: null, sectionProgress: 0, scrollProgress: 0 }),
 }));
+
+/** Opens a night panel (or another one); the map follows. */
+export const openPanel = (panel: NightPanel) => useSceneStore.getState().setPanel(panel);

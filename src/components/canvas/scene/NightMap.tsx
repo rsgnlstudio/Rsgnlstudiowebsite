@@ -4,7 +4,6 @@ import { useFrame } from "@react-three/fiber";
 import { useRef } from "react";
 import { MathUtils, Vector3 } from "three";
 import { type ChallengeId, PLACES, pathIndex, samePanel } from "@/config/nightMap";
-import { TESTIMONIALS } from "@/content/consulting";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { useSceneStore } from "@/store/scene";
 import { mapUniforms } from "../painterly/mapUniforms";
@@ -83,8 +82,8 @@ export function NightMap() {
   useFrame((state, delta) => {
     const dt = Math.min(delta, 0.05);
     const store = useSceneStore.getState();
-    const { activePath, pathStation, panel, hoveredPlace, placeScreen, night } = store;
-    const lantern = updatePlaceWorld(sharedUniforms.uTime.value, activePath);
+    const { activePath, pathStation, panel, hoveredPlace, placeScreen, night, testimonialCount, bafaActive } = store;
+    const lantern = updatePlaceWorld(sharedUniforms.uTime.value, activePath, bafaActive);
 
     // Highlighted paths draw themselves in (trim path); a path clicked while
     // its preview is drawing carries on from there.
@@ -128,7 +127,7 @@ export function NightMap() {
       const shown =
         place.kind === "lantern"
           ? lantern
-          : place.panel.kind !== "testimonial" || place.panel.index < TESTIMONIALS.length;
+          : place.panel.kind !== "testimonial" || place.panel.index < testimonialCount;
       const open = panel !== null && panel.kind !== "path" && samePanel(place.panel, panel);
       const s = mapUniforms.uPlaceState.value[i];
       s.x = shown ? 1 : 0;

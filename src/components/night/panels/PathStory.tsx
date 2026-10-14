@@ -1,22 +1,28 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { BAFA_ENABLED, type ChallengeId, PATHS, type RoadId, ROADS } from "@/config/nightMap";
-import { BAFA_TEXT, CHALLENGES, CONTACT, ROAD_TEXTS, SERVICES, UI } from "@/content/consulting";
-import { Block, Category, Cta, Heading, Highlight, Intro, PanelLink } from "./PanelParts";
+import { Block, Eyebrow, Heading, Highlight, Intro } from "@/components/ui/Typography";
+import { type ChallengeId, PATHS, type RoadId, ROADS } from "@/config/nightMap";
+import { useBafaActive, useContent } from "@/content/ContentProvider";
+import { byId } from "@/content/selectors";
+import { Cta, PANEL_TITLE_ID, PanelLink } from "./PanelEnd";
 
 /** One step of the story; the panel follows its scroll through them (`data-step`). */
 function Step({ index, label, children }: { index: number; label: string; children: ReactNode }) {
   return (
     <section data-step={index} className="border-t border-current/10 pt-14 pb-24 first:border-t-0 first:pt-0">
-      <Category>{label}</Category>
+      <Eyebrow>{label}</Eyebrow>
       {children}
     </section>
   );
 }
 
 function StepHeading({ children }: { children: ReactNode }) {
-  return <h3 className="mt-3 max-w-[26ch] font-display text-heading">{children}</h3>;
+  return (
+    <Heading as="h3" size="heading" className="mt-3 max-w-[26ch]">
+      {children}
+    </Heading>
+  );
 }
 
 const roadOf = (a: string, b: string) =>
@@ -32,30 +38,35 @@ const roadOf = (a: string, b: string) =>
  * the challenge to the goal.
  */
 export function PathStory({ id }: { id: ChallengeId }) {
-  const challenge = CHALLENGES[id];
+  const c = useContent();
+  const { ui } = c;
+  const { bafa: bafaText, contact } = c.consulting;
+  const challenge = byId(c.consulting.challenges, id);
   const path = PATHS.find((p) => p.id === id)!;
-  const bafa = BAFA_ENABLED && path.bafa;
+  const bafa = useBafaActive() && path.bafa;
 
   const challengeStep = (
-    <Step index={0} label={UI.categories.challenge}>
-      <Heading>{challenge.line}</Heading>
+    <Step index={0} label={ui.categories.challenge}>
+      <Heading id={PANEL_TITLE_ID} size="title" className="mt-3 max-w-[22ch]">
+        {challenge.line}
+      </Heading>
       <Intro detail={challenge.detail} />
-      {challenge.noticed && <Block title={UI.blocks.noticed}>{challenge.noticed}</Block>}
-      {challenge.behind && <Block title={UI.blocks.behind}>{challenge.behind}</Block>}
-      {challenge.support && <Block title={UI.blocks.support}>{challenge.support}</Block>}
+      {challenge.noticed && <Block title={ui.blocks.noticed} text={challenge.noticed} />}
+      {challenge.behind && <Block title={ui.blocks.behind} text={challenge.behind} />}
+      {challenge.support && <Block title={ui.blocks.support} text={challenge.support} />}
       {bafa && (
-        <Highlight title={BAFA_TEXT.title}>
-          {challenge.bafaNote ?? UI.path.bafaDefault}{" "}
-          <PanelLink to={{ kind: "bafa" }}>{UI.path.bafaLink}</PanelLink>
+        <Highlight title={bafaText.title}>
+          {challenge.bafaNote ?? bafaText.pathNote}{" "}
+          <PanelLink to={{ kind: "bafa" }}>{ui.path.bafaLink}</PanelLink>
         </Highlight>
       )}
     </Step>
   );
 
   const goalStep = (index: number) => (
-    <Step index={index} label={UI.categories.contact}>
-      <StepHeading>{CONTACT.title}</StepHeading>
-      <Intro detail={CONTACT.text}>{path.services ? null : challenge.result.line}</Intro>
+    <Step index={index} label={ui.categories.contact}>
+      <StepHeading>{contact.title}</StepHeading>
+      <Intro text={path.services ? null : challenge.result.line} detail={contact.text} />
       <div className="mt-10">
         <Cta book challenge={challenge.line} />
       </div>
@@ -72,17 +83,17 @@ export function PathStory({ id }: { id: ChallengeId }) {
   }
 
   const [a, b] = path.services;
-  const road = ROAD_TEXTS[roadOf(a, b)];
+  const road = byId(c.consulting.roads, roadOf(a, b));
   const service = (index: number, which: 0 | 1) => {
-    const s = SERVICES[path.services[which]];
+    const s = byId(c.consulting.services, path.services[which]);
     const station = challenge.stations![which];
     return (
-      <Step index={index} label={`${UI.path.station} ${which + 1} · ${UI.categories.service}`}>
+      <Step index={index} label={`${ui.path.station} ${which + 1} · ${ui.categories.service}`}>
         <StepHeading>{s.title}</StepHeading>
-        <Intro detail={station.detail}>{station.line}</Intro>
+        <Intro text={station.line} detail={station.detail} />
         <p className="mt-6">
           <PanelLink to={{ kind: "service", id: path.services[which] }}>
-            {UI.path.more} {s.title}
+            {ui.path.more} {s.title}
           </PanelLink>
         </p>
       </Step>
@@ -93,20 +104,20 @@ export function PathStory({ id }: { id: ChallengeId }) {
     <>
       {challengeStep}
       {service(1, 0)}
-      <Step index={2} label={UI.categories.road}>
+      <Step index={2} label={ui.categories.road}>
         <StepHeading>
           <strong className="font-normal">{road.link}</strong>
         </StepHeading>
-        <Block title={UI.blocks.roadNoticed}>{road.noticed}</Block>
-        <Block title={UI.blocks.roadWhy}>{road.why}</Block>
-        <Block title={UI.blocks.roadSupport}>{road.support}</Block>
+        <Block title={ui.blocks.roadNoticed} text={road.noticed} />
+        <Block title={ui.blocks.roadWhy} text={road.why} />
+        <Block title={ui.blocks.roadSupport} text={road.support} />
       </Step>
       {service(3, 1)}
-      <Step index={4} label={UI.categories.results}>
+      <Step index={4} label={ui.categories.results}>
         <StepHeading>{challenge.result.line}</StepHeading>
         <Intro detail={challenge.result.detail} />
         <p className="mt-6">
-          <PanelLink to={{ kind: "results" }}>{UI.path.results}</PanelLink>
+          <PanelLink to={{ kind: "results" }}>{ui.path.results}</PanelLink>
         </p>
       </Step>
       {goalStep(5)}

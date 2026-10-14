@@ -9,7 +9,7 @@
  * Positions are ground points (x, d) in metres, as in painterly/landscape.ts:
  * x to the right, d = -z, the distance into the field, which runs up the
  * screen in the top view. The copy for every place lives in
- * src/content/consulting.ts, keyed by the same ids.
+ * the `consulting` document in src/content, keyed by the same ids.
  */
 
 export type MapPoint = readonly [x: number, d: number];
@@ -156,12 +156,6 @@ export const PATHS = [
   climb: readonly MapPoint[];
   bafa: boolean;
 }[];
-
-/**
- * The BAFA subsidy runs until the end of 2026. Set to false on 1.1.2027:
- * that takes the lantern and every hint at it off the site at once.
- */
-export const BAFA_ENABLED = true;
 
 /**
  * Testimonials fly as fireflies over the map, each around its own home

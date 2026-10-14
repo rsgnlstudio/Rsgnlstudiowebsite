@@ -2,50 +2,13 @@
 
 import { ArrowUpRight } from "lucide-react";
 import { type CSSProperties, useEffect, useRef, useState } from "react";
-import { AREAS, CLEARING_RADIUS, CLEARINGS, type Place, PLACES } from "@/config/nightMap";
-import {
-  ABOUT,
-  AREA_TITLES,
-  BAFA_TEXT,
-  CHALLENGES,
-  CONTACT,
-  firstSentence,
-  RESULTS,
-  SERVICES,
-  TESTIMONIALS,
-  type TwoLines,
-  UI,
-} from "@/content/consulting";
+import { Icon } from "@/components/ui/Icon";
+import { PreviewCard, previewSurface } from "@/components/ui/PreviewCard";
+import { AREAS, CLEARING_RADIUS, CLEARINGS, PLACES } from "@/config/nightMap";
 import { PORTRAIT_ASPECT } from "@/config/scene";
+import { useContent } from "@/content/ContentProvider";
+import { byId, placePreview } from "@/content/selectors";
 import { useSceneStore } from "@/store/scene";
-
-/** The hover preview of a place: one or two lines. */
-function previewOf(place: Place, activePath: string | null): TwoLines {
-  const p = place.panel;
-  switch (p.kind) {
-    case "path":
-      return CHALLENGES[p.id];
-    case "service":
-      return { line: SERVICES[p.id].title, detail: SERVICES[p.id].preview.line };
-    case "results": {
-      const result = activePath ? CHALLENGES[activePath as keyof typeof CHALLENGES].result : null;
-      return result ?? RESULTS.preview;
-    }
-    case "contact":
-      return { line: CONTACT.preview, detail: UI.nav.contact };
-    case "about":
-      return { line: ABOUT.name, detail: ABOUT.role };
-    case "bafa":
-      return { line: BAFA_TEXT.title, detail: "" };
-    case "testimonial":
-      return { line: `„${firstSentence(TESTIMONIALS[p.index]?.quote ?? "")}“`, detail: UI.categories.testimonial };
-    default:
-      return { line: "", detail: "" };
-  }
-}
-
-/** Whether a place takes part at all (the lantern only on subsidised paths, decided per frame). */
-const exists = (place: Place) => place.panel.kind !== "testimonial" || place.panel.index < TESTIMONIALS.length;
 
 /** Gap between a place and its preview card, in pixels (clearings: past their grove). */
 const CARD_GAP = 26;
@@ -62,13 +25,6 @@ const SCALE_METRES = Math.hypot(
   CLEARINGS[0].position[1] - CLEARINGS[1].position[1],
 );
 
-/** Places grouped for the keyboard and screen readers, in this order. */
-const GROUPS = [
-  { label: UI.map.challenges, kinds: ["clearing"] },
-  { label: UI.categories.services, kinds: ["service"] },
-  { label: UI.map.more, kinds: ["summit", "goal", "meadow", "lantern", "testimonial"] },
-] as const;
-
 /**
  * The places of the night map as real buttons, over their lights in the
  * canvas: tab and enter reach every one, and hover or focus shows its
@@ -82,6 +38,17 @@ const GROUPS = [
  * steps aside while the panel is open (a click beside the panel closes it).
  */
 export function MapPlaces() {
+  const content = useContent();
+  const { ui } = content;
+  // Places grouped for the keyboard and screen readers, in this order.
+  const groups = [
+    { label: ui.map.challenges, kinds: ["clearing"] },
+    { label: ui.categories.services, kinds: ["service"] },
+    { label: ui.map.more, kinds: ["summit", "goal", "meadow", "lantern", "testimonial"] },
+  ] as const;
+  // Whether a place takes part at all (the lantern only on subsidised paths, decided per frame).
+  const exists = (place: (typeof PLACES)[number]) =>
+    place.panel.kind !== "testimonial" || place.panel.index < content.consulting.testimonials.length;
   const ready = useSceneStore((s) => s.nightIntro === "done" && s.timeOfDay === "night" && s.night > 0.98);
   const panelOpen = useSceneStore((s) => s.panel !== null);
   const hoveredPlace = useSceneStore((s) => s.hoveredPlace);
@@ -170,11 +137,11 @@ export function MapPlaces() {
 
   // Beside the place for mouse and keyboard; touch has its card instead.
   const shown = active && touchPreview === null ? hoveredPlace : null;
-  const cardPreview = card !== null ? previewOf(PLACES[card], activePath) : null;
+  const cardPreview = card !== null ? placePreview(PLACES[card], content, activePath) : null;
 
   return (
     <nav
-      aria-label={UI.map.label}
+      aria-label={ui.map.label}
       inert={!active}
       className={`pointer-events-none fixed inset-0 z-10 transition-opacity duration-1000 ease-smooth ${
         active ? "opacity-100" : "opacity-0"
@@ -190,16 +157,16 @@ export function MapPlaces() {
             data-on="false"
             className="absolute top-0 left-0 -translate-x-1/2 font-display text-body whitespace-nowrap text-on-night italic opacity-0 transition-opacity duration-700 ease-smooth data-[on=true]:opacity-55"
           >
-            {AREA_TITLES[area.id]}
+            {byId(content.consulting.areas, area.id).title}
           </li>
         ))}
       </ul>
-      {GROUPS.map((group) => (
+      {groups.map((group) => (
         <section key={group.label} aria-label={group.label}>
           <ul>
             {PLACES.map((place, i) => {
               if (!(group.kinds as readonly string[]).includes(place.kind) || !exists(place)) return null;
-              const preview = previewOf(place, activePath);
+              const preview = placePreview(place, content, activePath);
               const area = place.panel.kind === "path" ? CLEARINGS.find((c) => c.id === place.id.split(":")[1])?.area : null;
               const grove = place.kind === "clearing";
               return (
@@ -232,14 +199,15 @@ export function MapPlaces() {
                     className={`pointer-events-auto absolute -translate-1/2 cursor-pointer rounded-full ${grove ? "size-(--grove)" : "size-12"} focus-visible:outline-1 focus-visible:outline-offset-4 focus-visible:outline-on-night`}
                   >
                     <span className="sr-only">
-                      {area ? `${AREA_TITLES[area]}: ` : ""}
+                      {area ? `${byId(content.consulting.areas, area).title}: ` : ""}
                       {preview.line}
                       {preview.detail ? ` ${preview.detail}` : ""}
                     </span>
                   </button>
-                  <div
+                  <PreviewCard
+                    tone="night"
                     aria-hidden
-                    className={`pointer-events-none absolute top-0 w-max max-w-80 -translate-y-1/2 rounded-2xl border border-current/10 bg-panel-night/75 px-5 py-4 text-on-night backdrop-blur-md transition-[opacity,translate] duration-700 ease-reveal group-data-[flip=true]/place:right-[var(--gap)] group-data-[flip=false]/place:left-[var(--gap)] ${
+                    className={`pointer-events-none absolute top-0 w-max max-w-80 -translate-y-1/2 transition-[opacity,translate] duration-700 ease-reveal group-data-[flip=true]/place:right-[var(--gap)] group-data-[flip=false]/place:left-[var(--gap)] ${
                       shown === i ? "opacity-100" : "translate-x-1 opacity-0"
                     }`}
                     style={
@@ -248,7 +216,7 @@ export function MapPlaces() {
                   >
                     <p className="font-display text-body">{preview.line}</p>
                     {preview.detail && <p className="mt-1 text-caption italic opacity-65">{preview.detail}</p>}
-                  </div>
+                  </PreviewCard>
                 </li>
               );
             })}
@@ -261,17 +229,17 @@ export function MapPlaces() {
         data-touch-card
         inert={touchPreview === null}
         onClick={() => card !== null && open(card)}
-        className={`fixed inset-x-6 bottom-24 mx-auto flex max-w-sm cursor-pointer items-center gap-4 rounded-2xl border border-current/10 bg-panel-night/90 px-5 py-4 text-left text-on-night backdrop-blur-md transition-[opacity,translate] duration-700 ease-reveal ${
+        className={`fixed inset-x-6 bottom-24 mx-auto flex max-w-sm cursor-pointer items-center gap-4 ${previewSurface("night-strong")} text-left transition-[opacity,translate] duration-700 ease-reveal ${
           touchPreview !== null ? "pointer-events-auto opacity-100" : "translate-y-2 opacity-0"
         }`}
       >
         <span className="min-w-0 flex-1">
           <span className="block font-display text-body">{cardPreview?.line}</span>
           {cardPreview?.detail && <span className="mt-1 block text-caption italic opacity-65">{cardPreview.detail}</span>}
-          <span className="mt-2 block text-caption tracking-wide opacity-55">{UI.map.tapToOpen}</span>
+          <span className="mt-2 block text-caption tracking-wide opacity-55">{ui.map.tapToOpen}</span>
         </span>
         <span aria-hidden className="grid size-9 shrink-0 place-items-center rounded-full border border-current/20">
-          <ArrowUpRight className="size-[1.125rem]" strokeWidth={1.5} />
+          <Icon icon={ArrowUpRight} />
         </span>
       </button>
     </nav>

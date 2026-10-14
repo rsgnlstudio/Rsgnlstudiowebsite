@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { DAY_NIGHT_DURATION, DAY_NIGHT_DURATION_REDUCED } from "@/config/scene";
-import { PAGE_OUT, SITE_NAME } from "@/config/site";
+import { PAGE_OUT } from "@/config/navigation";
+import { useContent } from "@/content/ContentProvider";
 import { useOverlayFade } from "@/hooks/useOverlayFade";
-import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
+import { useSceneTone } from "@/hooks/useSceneTone";
 import { useSceneStore } from "@/store/scene";
 
 /**
@@ -18,14 +18,14 @@ import { useSceneStore } from "@/store/scene";
  * out while an overlay is open.
  */
 export function SiteBrand() {
+  const { site } = useContent();
   const onMap = useSceneStore((s) => s.sceneMode !== "hidden");
   const onNight = useSceneStore((s) => s.timeOfDay === "night") && onMap;
-  const reducedMotion = usePrefersReducedMotion();
-  const duration = reducedMotion ? DAY_NIGHT_DURATION_REDUCED : DAY_NIGHT_DURATION;
+  const { duration } = useSceneTone();
   const home = usePathname() === "/";
   const fade = useOverlayFade();
   // The fade on the text, as the element itself transitions its color.
-  const name = <span className={fade.className}>{SITE_NAME}</span>;
+  const name = <span className={fade.className}>{site.name}</span>;
 
   const className = `${onMap ? "fixed" : "absolute"} top-6 left-6 z-20 flex h-11.5 items-center md:top-8 md:left-8 md:h-14.5 font-display text-lead italic [view-transition-name:site-brand] transition-colors ease-smooth ${
     onNight ? "text-on-night" : "text-on-day"

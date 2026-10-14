@@ -3,6 +3,7 @@
 import { X } from "lucide-react";
 import { type ReactNode, type RefObject, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/Button";
+import { Icon } from "@/components/ui/Icon";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 
 /** Closes the dialog in case the slide out never reports its end. */
@@ -25,7 +26,7 @@ interface SlidePanelProps {
   tone: keyof typeof TONES;
   /** The scrolling panel element, e.g. to follow its scroll. */
   panelRef?: RefObject<HTMLDivElement | null>;
-  closeLabel?: string;
+  closeLabel: string;
   children: ReactNode;
 }
 
@@ -40,7 +41,7 @@ interface SlidePanelProps {
  * so its content should stay rendered until then. The panel scrolls natively
  * (Lenis is stopped while it is open, see `useSectionScroll`).
  */
-export function SlidePanel({ open, onClose, labelledBy, tone, panelRef, closeLabel = "Schließen", children }: SlidePanelProps) {
+export function SlidePanel({ open, onClose, labelledBy, tone, panelRef, closeLabel, children }: SlidePanelProps) {
   const reducedMotion = usePrefersReducedMotion();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const ownPanelRef = useRef<HTMLDivElement>(null);
@@ -107,7 +108,7 @@ export function SlidePanel({ open, onClose, labelledBy, tone, panelRef, closeLab
       >
         <div className="sticky top-0 z-10 flex h-0 justify-end">
           <Button variant="glass" size="icon" aria-label={closeLabel} onClick={onClose} className={`mt-6 mr-6 hover:opacity-80 ${colors.button}`}>
-            <X aria-hidden className="size-[1.125rem]" strokeWidth={1.5} />
+            <Icon icon={X} />
           </Button>
         </div>
         {children}

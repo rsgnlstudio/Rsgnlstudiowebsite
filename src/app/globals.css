@@ -142,7 +142,7 @@
 
 /*
  * Page slide (view transitions, typed by the links: PAGE_IN and PAGE_OUT in
- * src/config/site.ts). A sub-page slides in from the right over the home
+ * src/config/navigation.ts). A sub-page slides in from the right over the home
  * page and pushes it aside, like the project overlay and its stage; going
  * back reverses it. The sub-page's own <ViewTransition> runs the slide; the
  * root snapshot carries the home page (canvas included).

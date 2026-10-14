@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { UI } from "@/content/consulting";
+import { SlidePanel } from "@/components/overlay/SlidePanel";
+import { useContent } from "@/content/ContentProvider";
 import { useSceneStore } from "@/store/scene";
-import { SlidePanel } from "@/components/sections/SlidePanel";
-import { PanelContent } from "./PanelContent";
+import { PANEL_TITLE_ID } from "./panels/PanelEnd";
+import { PanelContent } from "./panels/PanelContent";
 
 /** Where the panel reads, as a share of its height from the top: the step crossing it is the current one. */
 const READING_LINE = 0.4;
@@ -18,6 +19,7 @@ const READING_LINE = 0.4;
  * steps (`pathStation`), so the light and the camera move along the path.
  */
 export function NightPanel() {
+  const { ui } = useContent();
   const panel = useSceneStore((s) => s.panel);
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -74,10 +76,10 @@ export function NightPanel() {
     <SlidePanel
       open={panel !== null}
       onClose={() => useSceneStore.getState().setPanel(null)}
-      labelledBy="night-panel-title"
+      labelledBy={PANEL_TITLE_ID}
       tone="night"
       panelRef={panelRef}
-      closeLabel={UI.close}
+      closeLabel={ui.close}
     >
       {shown && (
         <article className="px-gutter pt-24 pb-section md:px-edge">

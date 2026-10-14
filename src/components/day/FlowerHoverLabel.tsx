@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { PreviewCard } from "@/components/ui/PreviewCard";
 import { PROJECT_BEDS } from "@/config/flowers";
+import { useContent } from "@/content/ContentProvider";
+import { byId } from "@/content/selectors";
 import { useSceneStore } from "@/store/scene";
 
 /** Gap between the cursor and the label, in pixels. */
@@ -15,6 +18,7 @@ const OFFSET = 20;
  * left near the right edge. Mouse only, like the hover itself.
  */
 export function FlowerHoverLabel() {
+  const { projects } = useContent();
   const hovered = useSceneStore((s) => s.hoveredBed);
   const timeOfDay = useSceneStore((s) => s.timeOfDay);
   const ref = useRef<HTMLDivElement>(null);
@@ -33,17 +37,21 @@ export function FlowerHoverLabel() {
 
   return (
     <div ref={ref} aria-hidden className="pointer-events-none fixed top-0 left-0 z-30 grid">
-      {PROJECT_BEDS.map((bed) => (
-        <div
-          key={bed.id}
-          className={`col-start-1 row-start-1 w-max max-w-72 self-start rounded-2xl border border-current/10 px-5 py-4 backdrop-blur-md transition-[opacity,translate] duration-700 ease-reveal ${
-            timeOfDay === "night" ? "bg-on-day/75 text-on-night" : "bg-on-night/75 text-on-day"
-          } ${bed.id === hovered ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0"}`}
-        >
-          <p className="font-display text-body italic">{bed.title}</p>
-          <p className="mt-1 text-caption opacity-70">{bed.teaser}</p>
-        </div>
-      ))}
+      {PROJECT_BEDS.map((bed) => {
+        const project = byId(projects, bed.id);
+        return (
+          <PreviewCard
+            key={bed.id}
+            tone={timeOfDay === "night" ? "dusk" : "day"}
+            className={`col-start-1 row-start-1 w-max max-w-72 self-start transition-[opacity,translate] duration-700 ease-reveal ${
+              bed.id === hovered ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0"
+            }`}
+          >
+            <p className="font-display text-body italic">{project.title}</p>
+            <p className="mt-1 text-caption opacity-70">{project.teaser}</p>
+          </PreviewCard>
+        );
+      })}
     </div>
   );
 }

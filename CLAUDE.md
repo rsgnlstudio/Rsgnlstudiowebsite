@@ -10,8 +10,9 @@ Next.js 16 (App Router, Turbopack, Cache Components) site with a persistent R3F 
 - `npm run build` creates the production build
 - `npm run lint` runs ESLint
 - `npm run typecheck` runs `next typegen` then `tsc --noEmit` (`LayoutProps` and `PageProps` are generated types)
+- `npm test` runs Vitest (content layer)
 
-Before calling work done, run lint, typecheck, and build.
+Before calling work done, run lint, typecheck, test, and build.
 
 ## Architecture rules
 
@@ -27,19 +28,21 @@ Before calling work done, run lint, typecheck, and build.
 - Scroll logic (`useSectionScroll`) is called by pages, never the layout. It must fully clean up: revert its gsap context, remove ScrollTrigger listeners, and destroy Lenis.
 - With Cache Components, Next hides pages with `<Activity>` instead of unmounting them. Effect cleanups run on hide, so put page-scoped setup in `useEffect` with cleanup and expect it to re-run when the page is shown again.
 - Each page claims the scene with `useSceneMode(mode)`. The default and fallback mode is `"hidden"`, which pauses the frameloop and hides the canvas. `useSceneMode` uses a layout effect so the canvas is visible in view transition snapshots (passive effects run only after the transition); keep it that way. To add a mode, extend `SCENE_MODES` and `sectionsByMode` in `src/config/scene.ts`.
+- All copy comes from the content layer (`src/content`): types in `schema.ts`, values in `data/`, read with `useContent()` in client components or `getSiteContent()` on the server. Never hardcode copy in components. The canvas never imports `@/content`; values it needs go through the store (`ContentProvider` writes them). Layout stays in `src/config` and links to content by id; `validateContent` must pass.
 - Don't add routes or assume a navigation structure unless asked.
 - Never hardcode a color in a shader or material. Add it to `src/config/palette.ts` (day, dusk and night) and read it through `paletteUniformsFor` / `paletteGLSL` from `src/components/canvas/painterly/palette.ts`. `Lights` calls `updateLight(night)` every frame (palette, sun, moon, glow). Anything that should glow at night must output HDR (> 1) color scaled by `uGlow`, so bloom picks it up. 
 - Materials are unlit `ShaderMaterial`s. Don't add per-object meshes for things that repeat.
 - The day world is built from brushstrokes, never from a brush filter over the frame. Plants are painted as strokes (`painterly/plants.ts`) into a `StrokeBuffer` and drawn with `StrokeLayer` (instanced, one layer per kind, opaque core plus translucent fringe). Big surfaces use `strokeFieldGLSL`. Brushes come from the simulated atlas in `painterly/brushes.ts`; its alpha is paint opacity, so thin paint stays translucent. Nothing in a stroke may change over time except through the wind (anything else reads as jitter) and the one-off intro build-up, which grows each plant from its root as its spot is painted (`buildAt` in `painterly/build.ts`, driven by `uBuild`). Painted materials mix with the wet canvas (`wetMix` from `painterly/WetCanvasPass.ts`) so colors bleed between neighbours.
 - Tunable look values live in `src/config/look.ts` (defaults and quality presets) and `src/store/look.ts` (runtime, canvas-internal). Per-frame code reads it with `getState()`. The depth-of-field focus is not a setting: `Effects` focuses on the near meadow, on the ground a little below the centre of the frame (`focusDistance` in `painterly/view.ts`, which the nightingale also uses).
 - Sound is synthesized in `src/lib/ambient.ts` (Web Audio, no sound files) and follows the same `night` value as the scene, read with `getState()` in its own animation-frame loop. Levels and frequencies live in `src/config/sound.ts`. Sound starts from the entry screen's "Enter with sound" click (`EntryScreen` calls `setSoundEnabled`), the user gesture browsers require, and swells in with `intro`; never try to start audio without a gesture.
-- The night is the consulting site, a map over the dust world. `src/config/nightMap.ts` is the single source of its layout (places, roads, paths, frame) and `src/content/consulting.ts` of its copy (keyed by the same ids); don't hardcode copy in components. The woods are part of the shared conifer layout (appended with their own random sequence, so the day doesn't move); the rest of the map (`MapLines`, `MapLights`) is night-only light.
+- The night is the consulting site, a map over the dust world. `src/config/nightMap.ts` is the single source of its layout (places, roads, paths, frame) and the `consulting` document in `src/content` of its copy (keyed by the same ids); don't hardcode copy in components. The woods are part of the shared conifer layout (appended with their own random sequence, so the day doesn't move); the rest of the map (`MapLines`, `MapLights`) is night-only light.
 - Map interaction stays in two patterns: clearings open a path told by scrolling the panel (`pathStation` moves the camera and the light), every other place is a light (preview on hover/focus, panel on click). Places are real DOM buttons (`MapPlaces`) positioned from `placeScreen`, which the canvas fills in place every frame; read it with `getState()` in a frame loop, never subscribe. The night panel (`panel`) and the day overlay (`openBed`) share `SlidePanel`; check both with `overlayOpen`.
 - `terrainHeight` in `painterly/landscape.ts` has a GLSL twin (`terrainHeightGLSL`), and so do `streamX` and `streamHalfWidth` (`streamGLSL`). Keep each pair in sync.
 - The meadow's layout follows the site's flower plan: every site section is a bed of one flower species (`src/config/flowers.ts`). Beds react to hover and clicks as a group, never as single flowers. Bed plants come from `scatterBeds` (`painterly/beds.ts`), shared by the painted beds and the dust.
 
 ## Conventions
 
+- Shared UI lives in `src/components/ui/` (`Button`, `TextLink`/`TextButton`, `Icon`, `PreviewCard`, `BottomHint`, `Disclosure`, `Typography`, `RichText`). Use them instead of repeating their classes; add a variant there rather than styling locally. The chrome's day/night colors come from `useSceneTone()`.
 - Import gsap and ScrollTrigger from `@/lib/gsap` (plugins are registered there), not from `gsap` directly.
 - Scene parts go in `src/components/canvas/scene/`, one component per file, as named exports. Shared non-component scene code (shaders, textures, palette uniforms) goes in `src/components/canvas/painterly/`.
 - Pages stay Server Components. Put client-only page wiring in a small component that renders `null` (e.g. `HomeScroll`).

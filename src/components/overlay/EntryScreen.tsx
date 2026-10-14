@@ -3,6 +3,8 @@
 import { Volume2, VolumeX } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { Icon } from "@/components/ui/Icon";
+import { useContent } from "@/content/ContentProvider";
 import { setSoundEnabled } from "@/lib/ambient";
 import { useSceneStore } from "@/store/scene";
 
@@ -25,6 +27,7 @@ const STALL_MS = 4000;
  * never get going, it skips the intro (STALL_MS).
  */
 export function EntryScreen() {
+  const { entry } = useContent().studio;
   const entered = useSceneStore((s) => s.entered);
   const sceneReady = useSceneStore((s) => s.sceneReady);
   const [timedOut, setTimedOut] = useState(false);
@@ -74,10 +77,9 @@ export function EntryScreen() {
       }`}
     >
       <div className="flex max-w-md flex-col items-center text-center">
-        <p className="font-display text-heading italic">Willkommen auf der Wiese</p>
+        <p className="font-display text-heading italic">{entry.title}</p>
         <p className="mt-3 text-body opacity-75">
-          Eine gemalte Welt, die auf deinen Cursor antwortet, mit Klang, der live entsteht,
-          während du dich bewegst. Am schönsten mit Ton, am besten mit Kopfhörern.
+          {entry.text}
         </p>
 
         <div className="mt-10 grid w-full">
@@ -85,19 +87,19 @@ export function EntryScreen() {
             aria-live="polite"
             className="col-start-1 row-start-1 animate-pulse self-center font-display text-body italic opacity-55 transition-opacity duration-1000 ease-smooth group-data-ready:invisible group-data-ready:opacity-0"
           >
-            Lädt
+            {entry.loading}
           </p>
           <div className="invisible col-start-1 row-start-1 mx-auto flex w-full max-w-xs translate-y-3 flex-col items-stretch gap-3 opacity-0 transition-[opacity,translate,visibility] duration-1800 ease-reveal group-data-ready:visible group-data-ready:translate-y-0 group-data-ready:opacity-100">
             <Button ref={enterRef} variant="solid" block onClick={() => enter(true)}>
-              <Volume2 aria-hidden className="size-[1.125rem]" strokeWidth={1.5} />
-              Mit Ton eintreten
+              <Icon icon={Volume2} />
+              {entry.withSound}
             </Button>
             <span aria-hidden className="text-center text-caption opacity-55">
-              oder
+              {entry.or}
             </span>
             <Button variant="outline" block onClick={() => enter(false)}>
-              <VolumeX aria-hidden className="size-[1.125rem] opacity-75" strokeWidth={1.5} />
-              Ohne Ton eintreten
+              <Icon icon={VolumeX} className="opacity-75" />
+              {entry.withoutSound}
             </Button>
           </div>
         </div>
