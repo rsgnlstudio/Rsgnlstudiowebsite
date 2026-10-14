@@ -28,6 +28,10 @@ export function validateContent(docs: SiteDocuments): string[] {
   if (consulting.testimonials.length > TESTIMONIAL_HOMES.length) {
     problems.push(`consulting.testimonials: at most ${TESTIMONIAL_HOMES.length}`);
   }
+  const { enabledUntil } = consulting.bafa;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(enabledUntil) || Number.isNaN(Date.parse(enabledUntil))) {
+    problems.push("consulting.bafa.enabledUntil: expected YYYY-MM-DD");
+  }
   if (!docs.legal.some((page) => page.slug === "imprint")) problems.push('legal: missing "imprint"');
   return problems;
 }

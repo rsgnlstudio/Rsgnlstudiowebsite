@@ -153,7 +153,7 @@ export interface Testimonial {
 export interface Bafa {
   title: string;
   text: string;
-  /** Last day of the subsidy (ISO date, inclusive, German time). */
+  /** Last day of the subsidy (YYYY-MM-DD, inclusive). It ends at midnight CET (UTC+1, German winter time), so use a date outside summer time. */
   enabledUntil: string;
   /** Added to FAQ answers marked `bafa`. */
   faqNote: string;
@@ -288,8 +288,5 @@ export interface SiteDocuments {
   legal: readonly LegalPage[];
 }
 
-/** What `getSiteContent()` returns: the documents plus values derived from them. */
-export interface SiteContent extends SiteDocuments {
-  /** The BAFA subsidy still runs (from `consulting.bafa.enabledUntil`). */
-  bafaActive: boolean;
-}
+/** What `getSiteContent()` returns: the documents. Anything that depends on the time (the BAFA cutoff) is decided on the client, so it never lags a cache. */
+export type SiteContent = SiteDocuments;

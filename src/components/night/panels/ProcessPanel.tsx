@@ -1,11 +1,12 @@
 "use client";
 
 import { Block, Eyebrow, Heading, Highlight, Intro } from "@/components/ui/Typography";
-import { useContent } from "@/content/ContentProvider";
+import { useBafaActive, useContent } from "@/content/ContentProvider";
 import { PANEL_TITLE_ID, PanelEnd, PanelLink } from "./PanelEnd";
 
 export function ProcessPanel() {
   const c = useContent();
+  const bafaActive = useBafaActive();
   const { ui } = c;
   const { process } = c.consulting;
   return (
@@ -40,7 +41,7 @@ export function ProcessPanel() {
         </ul>
       </Block>
       <Block title={ui.blocks.costs} text={process.costs} />
-      {c.bafaActive && (
+      {bafaActive && (
         <Highlight title={c.consulting.bafa.title}>
           <PanelLink to={{ kind: "bafa" }}>{ui.path.bafaLink}</PanelLink>
         </Highlight>

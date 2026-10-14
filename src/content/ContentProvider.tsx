@@ -2,6 +2,7 @@
 
 import { createContext, type ReactNode, use, useLayoutEffect } from "react";
 import type { SiteContent } from "@/content/schema";
+import { bafaActive } from "@/content/selectors";
 import { useSceneStore } from "@/store/scene";
 
 const ContentContext = createContext<SiteContent | null>(null);
@@ -15,7 +16,7 @@ export function ContentProvider({ content, children }: { content: SiteContent; c
   useLayoutEffect(() => {
     useSceneStore.getState().setContentFlags({
       testimonialCount: content.consulting.testimonials.length,
-      bafaActive: content.bafaActive,
+      bafaActive: bafaActive(content.consulting.bafa, new Date()),
     });
   }, [content]);
   return <ContentContext value={content}>{children}</ContentContext>;
@@ -26,4 +27,13 @@ export function useContent(): SiteContent {
   const content = use(ContentContext);
   if (!content) throw new Error("useContent needs a ContentProvider.");
   return content;
+}
+
+/**
+ * Whether the BAFA subsidy runs now. Decided on the client at render, so it
+ * never lags a cache; every BAFA hint renders inside the night panel, which
+ * only renders after a click, so server and client never disagree.
+ */
+export function useBafaActive(): boolean {
+  return bafaActive(useContent().consulting.bafa, new Date());
 }

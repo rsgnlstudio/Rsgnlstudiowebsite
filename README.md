@@ -72,7 +72,7 @@ npm test           # Vitest (content layer)
 
 All copy (German) comes from the content layer in `src/content`. Components never hold text.
 
-- **Flow.** The root layout calls `getSiteContent()` (a cached server function) and hands the result to `ContentProvider`. Client components read it with `useContent()`; server components call `getSiteContent()` or `getLegalPage()` directly. The canvas never imports `@/content`: the few values it needs (such as whether BAFA is active) go through the store, which `ContentProvider` writes.
+- **Flow.** The root layout calls `getSiteContent()` (a cached server function) and hands the result to `ContentProvider`. Client components read it with `useContent()`; server components call `getSiteContent()` or `getLegalPage()` directly. The canvas never imports `@/content`: the few values it needs (such as whether BAFA is active) go through the store, which `ContentProvider` writes. `getSiteContent()` returns only the documents; the BAFA cutoff is decided on the client at render (`useBafaActive()`), so it never lags the cache.
 - **Where to add copy.** Add a field to the type in `schema.ts`, then the value in `data/`. Never put it in a component.
 - **Layout ids vs content.** Layout stays in `src/config` (night map places, flower beds, sections) and links to content by id. `validateContent` checks that every id has its copy and fails the build on gaps.
 - **Tests.** `npm test` runs Vitest on the selectors and the validator.
@@ -85,6 +85,8 @@ The types in `schema.ts` are shaped like documents, so the move is mechanical:
 2. Import the files in `data/` as seed documents.
 3. Replace the body of `getSiteContent()` with a GROQ query. Keep `"use cache"` and `cacheTag("content")`, and revalidate the tag from a Sanity webhook.
 4. Swap `RichText` for a Portable Text renderer.
+
+With Sanity, validation runs whenever content is fetched or revalidated, not only at build. A failing `validateContent` must not take the live site down: catch it, log it, and keep serving the last good content (the previous cached result or the seed data), and surface the problems to editors.
 
 ## Folder structure
 
@@ -100,9 +102,9 @@ src/
                        night light and morph, dust uniforms and trail, the nightingale's strokes and material, the cursor gust, the flower beds' layout and glow, the brush simulation, strokes and
                        stroke fields, plant painters, landscape shape and conifer layout,
                        PainterlyEffect, WetCanvasPass, VolumetricMist, RNG
-    layout/            The chrome mounted in the root layout: the wordmark (SiteBrand), the footer (SiteFooter) and the dot cursor (CursorDot)
+    layout/            The chrome mounted in the root layout: the wordmark (SiteBrand), the footer (SiteFooter), the legal page layout (LegalPage) and the dot cursor (CursorDot)
     nav/               Top navigation (TopNav: one pill with the Day/Night switch and the night's items; below md the burger menu, MobileMenu) and the sound toggle
-    ui/                Shared UI primitives: Button (and ButtonLink), TextLink, Icon, Typography, Disclosure, PreviewCard, BottomHint, RichText
+    ui/                Shared UI primitives: Button (and ButtonLink), TextLink, TextButton, Icon, Typography, Disclosure, PreviewCard, BottomHint, RichText
     night/             The night map's DOM: the place buttons (MapPlaces), the side panel (NightPanel) and the intro
     night/panels/      The night panel's content, one file per kind (PanelContent picks it; PathStory, ServicePanel, FaqPanel, ...) and their shared end, links and title id (PanelEnd)
     day/               The day's DOM: the scroll sections (Section, HomeScroll), the flower hover label, the hint (DayHint) and the project overlay
@@ -111,7 +113,7 @@ src/
   config/              Section config (camera keyframes), scene modes and the night camera, palette, look and quality presets, sound levels, the flower beds, the night map's layout, navigation (night sections, imprint link, page transitions)
   content/             The content layer: document types (schema.ts), seed data (data/), getSiteContent(), ContentProvider/useContent, selectors and validateContent
   hooks/               useSectionScroll, useSceneMode, usePrefersReducedMotion, useWindowPointer,
-                       useIntroRevealed, useReveal
+                       useIntroRevealed, useReveal, useSceneTone, useOverlayFade
   lib/                 GSAP setup (plugin registration), the Lenis + GSAP ticker integration, quality tier detection, the ambient sound engine
   store/               The zustand store bridging DOM and canvas, the canvas-internal look store, and the sound on/off store
 ```

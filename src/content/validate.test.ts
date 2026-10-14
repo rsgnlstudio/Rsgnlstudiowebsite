@@ -33,6 +33,11 @@ describe("validateContent", () => {
     const docs = { ...siteDocuments, consulting: { ...siteDocuments.consulting, testimonials: extra } };
     expect(validateContent(docs)).toContain(`consulting.testimonials: at most ${TESTIMONIAL_HOMES.length}`);
   });
+  it("needs a YYYY-MM-DD BAFA end date", () => {
+    const bafa = { ...siteDocuments.consulting.bafa, enabledUntil: "31.12.2026" };
+    const docs = { ...siteDocuments, consulting: { ...siteDocuments.consulting, bafa } };
+    expect(validateContent(docs)).toContain("consulting.bafa.enabledUntil: expected YYYY-MM-DD");
+  });
   it("needs the imprint", () => {
     expect(validateContent({ ...siteDocuments, legal: [] })).toContain('legal: missing "imprint"');
   });

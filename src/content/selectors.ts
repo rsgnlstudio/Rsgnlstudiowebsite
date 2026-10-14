@@ -11,7 +11,7 @@ export function byId<T extends { id: string }>(list: readonly T[], id: T["id"]):
 /** The first sentence of a text, e.g. a quote for its hover preview. */
 export const firstSentence = (text: string) => text.match(/^.*?[.!?](\s|$)/)?.[0].trim() ?? text;
 
-/** Whether the BAFA subsidy runs at `now`: through the whole last day, German time (CET in winter). */
+/** Whether the BAFA subsidy runs at `now`: through the whole last day, ending at midnight CET (UTC+1, German winter time), so `enabledUntil` should be a date outside summer time. */
 export function bafaActive(bafa: Pick<Bafa, "enabledUntil">, now: Date) {
   const DAY = 24 * 60 * 60 * 1000;
   return now.getTime() < Date.parse(`${bafa.enabledUntil}T00:00:00+01:00`) + DAY;

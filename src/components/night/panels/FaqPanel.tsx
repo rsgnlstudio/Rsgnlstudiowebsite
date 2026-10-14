@@ -2,11 +2,12 @@
 
 import { Disclosure } from "@/components/ui/Disclosure";
 import { Eyebrow, Heading } from "@/components/ui/Typography";
-import { useContent } from "@/content/ContentProvider";
+import { useBafaActive, useContent } from "@/content/ContentProvider";
 import { PANEL_TITLE_ID, PanelEnd } from "./PanelEnd";
 
 export function FaqPanel() {
   const c = useContent();
+  const bafaActive = useBafaActive();
   const { ui } = c;
   return (
     <>
@@ -19,7 +20,7 @@ export function FaqPanel() {
           <Disclosure key={item.question} variant="faq" summary={item.question}>
             <p className="pr-12 pb-2 text-body opacity-80">
               {item.answer}
-              {item.bafa && c.bafaActive && ` ${c.consulting.bafa.faqNote}`}
+              {item.bafa && bafaActive && ` ${c.consulting.bafa.faqNote}`}
             </p>
           </Disclosure>
         ))}

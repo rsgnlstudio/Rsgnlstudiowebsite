@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { Block, Eyebrow, Heading, Highlight, Intro } from "@/components/ui/Typography";
 import { type ChallengeId, PATHS, type RoadId, ROADS } from "@/config/nightMap";
-import { useContent } from "@/content/ContentProvider";
+import { useBafaActive, useContent } from "@/content/ContentProvider";
 import { byId } from "@/content/selectors";
 import { Cta, PANEL_TITLE_ID, PanelLink } from "./PanelEnd";
 
@@ -43,7 +43,7 @@ export function PathStory({ id }: { id: ChallengeId }) {
   const { bafa: bafaText, contact } = c.consulting;
   const challenge = byId(c.consulting.challenges, id);
   const path = PATHS.find((p) => p.id === id)!;
-  const bafa = c.bafaActive && path.bafa;
+  const bafa = useBafaActive() && path.bafa;
 
   const challengeStep = (
     <Step index={0} label={ui.categories.challenge}>

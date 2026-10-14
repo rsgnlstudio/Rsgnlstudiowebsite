@@ -4,7 +4,7 @@ import { siteDocuments } from "@/content/data";
 import { bafaActive, bookingHref, byId, firstSentence, placePreview } from "@/content/selectors";
 import type { SiteContent } from "@/content/schema";
 
-const content: SiteContent = { ...siteDocuments, bafaActive: true };
+const content: SiteContent = siteDocuments;
 const place = (id: string) => PLACES.find((p) => p.id === id)!;
 
 describe("byId", () => {
