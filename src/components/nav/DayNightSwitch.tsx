@@ -1,6 +1,7 @@
 "use client";
 
 import { type LucideIcon, Moon, Sun } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 import { TIMES_OF_DAY, type TimeOfDay } from "@/config/scene";
 import { useSceneStore } from "@/store/scene";
 
@@ -25,16 +26,16 @@ export function DayNightSwitch() {
       {TIMES_OF_DAY.map((time) => {
         const { label, Icon } = ITEMS[time];
         return (
-          <button
+          <Button
             key={time}
-            type="button"
+            variant="ghost"
             aria-pressed={time === timeOfDay}
             onClick={() => setTimeOfDay(time)}
-            className="relative flex cursor-pointer items-center justify-center gap-1.5 rounded-full px-4 py-2.5 text-nav opacity-55 transition-opacity duration-700 ease-smooth decoration-1 underline-offset-4 hover:opacity-80 focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-current aria-pressed:underline aria-pressed:opacity-100 md:px-6"
+            className="decoration-1 underline-offset-4 aria-pressed:underline"
           >
             <Icon aria-hidden className="hidden size-4 sm:block" strokeWidth={1.5} />
             {label}
-          </button>
+          </Button>
         );
       })}
     </div>

@@ -2,6 +2,7 @@
 
 import { X } from "lucide-react";
 import { type ReactNode, type RefObject, useEffect, useRef } from "react";
+import { Button } from "@/components/ui/Button";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 
 /** Closes the dialog in case the slide out never reports its end. */
@@ -105,14 +106,9 @@ export function SlidePanel({ open, onClose, labelledBy, tone, panelRef, closeLab
         className={`absolute inset-x-0 bottom-0 translate-y-full overflow-y-auto overscroll-contain outline-none transition-[translate] duration-(--overlay-duration) ease-overlay group-data-open:translate-y-0 md:inset-y-0 md:right-0 md:left-auto md:h-full md:translate-x-full md:translate-y-0 md:group-data-open:translate-x-0 ${colors.panel}`}
       >
         <div className="sticky top-0 z-10 flex h-0 justify-end">
-          <button
-            type="button"
-            aria-label={closeLabel}
-            onClick={onClose}
-            className={`mt-6 mr-6 grid size-11.5 cursor-pointer place-items-center rounded-full border border-current/10 transition-opacity duration-700 ease-smooth hover:opacity-80 focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-current ${colors.button}`}
-          >
+          <Button variant="glass" size="icon" aria-label={closeLabel} onClick={onClose} className={`mt-6 mr-6 hover:opacity-80 ${colors.button}`}>
             <X aria-hidden className="size-[1.125rem]" strokeWidth={1.5} />
-          </button>
+          </Button>
         </div>
         {children}
       </div>

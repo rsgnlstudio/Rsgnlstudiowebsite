@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { DayNightSwitch } from "@/components/nav/DayNightSwitch";
 import { NIGHT_LINKS, NightCta } from "@/components/nav/NightNavLinks";
 import { openPanel } from "@/components/night/PanelParts";
+import { Button } from "@/components/ui/Button";
 import { DAY_NIGHT_DURATION, DAY_NIGHT_DURATION_REDUCED } from "@/config/scene";
 import { UI } from "@/content/consulting";
 import { useOverlayFade } from "@/hooks/useOverlayFade";
@@ -13,9 +14,6 @@ import { useReveal } from "@/hooks/useReveal";
 import { setSoundEnabled } from "@/lib/ambient";
 import { useSceneStore } from "@/store/scene";
 import { useSoundStore } from "@/store/sound";
-
-const item =
-  "flex w-full cursor-pointer items-center gap-3 rounded-full px-4 py-3 text-left text-nav opacity-70 transition-opacity duration-700 ease-smooth hover:opacity-100 focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-current";
 
 const divider = <span aria-hidden className="mx-4 my-2 block h-px bg-current opacity-15" />;
 
@@ -89,14 +87,15 @@ export function MobileMenu() {
   return (
     <nav ref={rootRef} aria-label="Hauptnavigation" className="pointer-events-none fixed inset-x-0 top-0 z-30 px-4 pt-6 md:hidden">
       <div ref={reveal} className="invisible flex flex-col items-end opacity-0">
-        <button
+        <Button
           ref={buttonRef}
-          type="button"
+          variant="glass"
+          size="icon"
           aria-expanded={open}
           aria-controls="mobile-menu"
           aria-label={open ? UI.nav.closeMenu : UI.nav.menu}
           onClick={() => setOpen(!open)}
-          className={`pointer-events-auto mr-2 grid size-11.5 cursor-pointer place-items-center rounded-full border border-current/10 backdrop-blur-md transition-colors ease-smooth focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-current ${
+          className={`pointer-events-auto mr-2 ${
             night ? "bg-on-day/30 text-on-night" : "bg-on-night/30 text-on-day"
           }`}
           style={{ transitionDuration: `${duration}s` }}
@@ -106,7 +105,7 @@ export function MobileMenu() {
           ) : (
             <Menu aria-hidden className="size-[1.125rem]" strokeWidth={1.5} />
           )}
-        </button>
+        </Button>
         <div
           id="mobile-menu"
           inert={!open}
@@ -127,26 +126,20 @@ export function MobileMenu() {
             <>
               {divider}
               {NIGHT_LINKS.map((link) => (
-                <button key={link.label} type="button" className={item} onClick={() => openPanel(link.panel)}>
+                <Button key={link.label} variant="ghost" block align="start" onClick={() => openPanel(link.panel)}>
                   {link.label}
-                </button>
+                </Button>
               ))}
-              <div className="mt-2 flex [&>button]:w-full [&>button]:justify-center [&>button]:py-3">
-                <NightCta />
+              <div className="mt-2">
+                <NightCta block />
               </div>
             </>
           )}
           {divider}
-          <button
-            type="button"
-            data-keep-open
-            aria-pressed={sound}
-            onClick={() => setSoundEnabled(!sound)}
-            className={`${item} aria-pressed:opacity-100`}
-          >
+          <Button variant="ghost" block align="start" data-keep-open aria-pressed={sound} onClick={() => setSoundEnabled(!sound)}>
             <Sound aria-hidden className="size-[1.125rem]" strokeWidth={1.5} />
             {UI.nav.sound}
-          </button>
+          </Button>
         </div>
       </div>
     </nav>

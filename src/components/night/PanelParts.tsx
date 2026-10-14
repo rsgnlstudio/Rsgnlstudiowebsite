@@ -2,6 +2,7 @@
 
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 import type { ReactNode } from "react";
+import { Button, ButtonLink } from "@/components/ui/Button";
 import type { NightPanel } from "@/config/nightMap";
 import { CONTACT, UI } from "@/content/consulting";
 import { useSceneStore } from "@/store/scene";
@@ -11,7 +12,7 @@ export const openPanel = (panel: NightPanel) => useSceneStore.getState().setPane
 
 /** The small category above a panel's heading, e.g. "Leistung". */
 export function Category({ children }: { children: ReactNode }) {
-  return <p className="text-caption tracking-widest uppercase opacity-60">{children}</p>;
+  return <p className="font-display text-body italic opacity-60">{children}</p>;
 }
 
 /** A panel's heading (it names the dialog). */
@@ -37,24 +38,21 @@ export function Intro({ children, detail }: { children?: ReactNode; detail?: Rea
 export function Block({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="mt-10 max-w-prose">
-      <h3 className="text-caption tracking-widest uppercase opacity-60">{title}</h3>
-      <div className="mt-2 text-body opacity-90">{children}</div>
+      <h3 className="font-display text-lead">{title}</h3>
+      <div className="mt-3 text-body opacity-90">{children}</div>
     </section>
   );
 }
 
-/** A highlighted box (e.g. an entry format, or the subsidy). */
+/** A highlighted passage (e.g. an entry format, or the subsidy): set apart by its title's color, not by a box. */
 export function Highlight({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <aside className="mt-10 max-w-prose rounded-2xl border border-city-light/35 bg-city-light/5 px-5 py-4">
-      <p className="font-display text-body italic text-city-light">{title}</p>
+    <aside className="mt-10 max-w-prose">
+      <p className="font-display text-lead italic text-city-light">{title}</p>
       <div className="mt-1 text-body opacity-90">{children}</div>
     </aside>
   );
 }
-
-const ctaClass =
-  "inline-flex items-center gap-2 rounded-full bg-city-light px-6 py-3 text-body text-on-day shadow-[0_0_36px_-6px_var(--color-city-light)] transition-opacity duration-700 ease-smooth hover:opacity-85 focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-city-light";
 
 /** The mail link that stands in for the calendar until a booking tool is chosen. */
 export function bookingHref(challenge?: string) {
@@ -70,17 +68,17 @@ export function bookingHref(challenge?: string) {
 export function Cta({ book, challenge }: { book?: boolean; challenge?: string }) {
   if (book) {
     return (
-      <a href={bookingHref(challenge)} className={ctaClass}>
+      <ButtonLink variant="primary" href={bookingHref(challenge)}>
         {CONTACT.cta}
         <ArrowUpRight aria-hidden className="size-[1.125rem]" strokeWidth={1.5} />
-      </a>
+      </ButtonLink>
     );
   }
   return (
-    <button type="button" onClick={() => openPanel({ kind: "contact" })} className={`${ctaClass} cursor-pointer`}>
+    <Button variant="primary" onClick={() => openPanel({ kind: "contact" })}>
       {CONTACT.cta}
       <ArrowRight aria-hidden className="size-[1.125rem]" strokeWidth={1.5} />
-    </button>
+    </Button>
   );
 }
 
@@ -109,7 +107,7 @@ export function PanelEnd({ related, book, challenge }: { related?: { to: NightPa
       <Cta book={book} challenge={challenge} />
       {related && related.length > 0 && (
         <nav aria-label={UI.related} className="mt-12">
-          <p className="text-caption tracking-widest uppercase opacity-60">{UI.related}</p>
+          <p className="font-display text-body italic opacity-60">{UI.related}</p>
           <ul className="mt-3 grid gap-2">
             {related.map((r) => (
               <li key={r.label}>

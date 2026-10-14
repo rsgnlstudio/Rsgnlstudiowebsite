@@ -1,6 +1,7 @@
 "use client";
 
 import { CalendarDays } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 import type { NightPanel } from "@/config/nightMap";
 import { UI } from "@/content/consulting";
 import { useSceneStore } from "@/store/scene";
@@ -24,14 +25,9 @@ export function NightNavLinks() {
   return (
     <div className="hidden lg:flex">
       {NIGHT_LINKS.map((link) => (
-        <button
-          key={link.label}
-          type="button"
-          onClick={() => open(link.panel)}
-          className="cursor-pointer rounded-full px-4 py-2.5 text-nav opacity-55 transition-opacity duration-700 ease-smooth hover:opacity-80 focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-current"
-        >
+        <Button key={link.label} variant="ghost" size="sm" onClick={() => open(link.panel)}>
           {link.label}
-        </button>
+        </Button>
       ))}
     </div>
   );
@@ -40,18 +36,14 @@ export function NightNavLinks() {
 /**
  * The night's main action at the end of the top navigation: "Erstgespräch
  * vereinbaren", the only item that glows, like the lights of the city. It
- * opens the contact panel.
+ * opens the contact panel. `block` fills the width (in the mobile menu).
  */
-export function NightCta() {
+export function NightCta({ block }: { block?: boolean }) {
   return (
-    <button
-      type="button"
-      onClick={() => open({ kind: "contact" })}
-      className="flex cursor-pointer items-center gap-1.5 rounded-full bg-city-light px-4 py-2.5 text-nav text-on-day shadow-[0_0_28px_-4px_var(--color-city-light)] transition-opacity duration-700 ease-smooth hover:opacity-85 focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-city-light md:px-6"
-    >
+    <Button variant="primary" block={block} onClick={() => open({ kind: "contact" })}>
       <CalendarDays aria-hidden className="hidden size-[1.125rem] sm:block" strokeWidth={1.5} />
       <span className="sm:hidden">{UI.nav.contactShort}</span>
       <span className="hidden sm:inline">{UI.nav.contact}</span>
-    </button>
+    </Button>
   );
 }

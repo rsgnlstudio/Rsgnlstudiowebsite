@@ -40,7 +40,7 @@ export function FlowerHoverLabel() {
             timeOfDay === "night" ? "bg-on-day/75 text-on-night" : "bg-on-night/75 text-on-day"
           } ${bed.id === hovered ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0"}`}
         >
-          <p className="text-body italic">{bed.title}</p>
+          <p className="font-display text-body italic">{bed.title}</p>
           <p className="mt-1 text-caption opacity-70">{bed.teaser}</p>
         </div>
       ))}
