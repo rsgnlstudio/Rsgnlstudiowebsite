@@ -23,7 +23,8 @@ const open = (panel: NightPanel) => useSceneStore.getState().setPanel(panel);
  */
 export function NightNavLinks() {
   return (
-    <div className="hidden lg:flex">
+    // Room before the call to action, so its glow doesn't crowd the last link.
+    <div className="mr-3 hidden lg:flex">
       {NIGHT_LINKS.map((link) => (
         <Button key={link.label} variant="ghost" size="sm" onClick={() => open(link.panel)}>
           {link.label}
