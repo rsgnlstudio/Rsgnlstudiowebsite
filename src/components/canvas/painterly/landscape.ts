@@ -80,6 +80,35 @@ export const FIELD = { near: 1.2, far: 85 } as const;
 export const OVERHEAD = { halfWidth: 120, near: -40, far: 125 } as const;
 
 /**
+ * Ground the night dust covers. The night camera fits the whole map to the
+ * screen (CameraRig), so the wider or squarer the screen, the more ground
+ * around the map it shows. `core` is what it shows with the panel closed on
+ * screens from a portrait phone (0.45) to an ultrawide (2.4), at full
+ * density; the dust thins to `edge` out to `outer` (32:9, and the map above
+ * the mobile sheet) and fades out over `fade` metres past it, so no screen
+ * meets a hard edge.
+ */
+export const NIGHT_GROUND = {
+  core: { halfWidth: 150, near: -50, far: 142 },
+  outer: { halfWidth: 260, near: -80, far: 175 },
+  edge: 0.45,
+  fade: 25,
+} as const;
+
+/** Relative density (0..1) of the night dust at ground point (x, d); see NIGHT_GROUND. */
+export function nightGroundDensity(x: number, d: number) {
+  const { core, outer, edge, fade } = NIGHT_GROUND;
+  const ax = Math.abs(x);
+  const ring = Math.max(
+    (ax - core.halfWidth) / (outer.halfWidth - core.halfWidth),
+    (core.near - d) / (core.near - outer.near),
+    (d - core.far) / (outer.far - core.far),
+  );
+  const past = Math.max(ax - outer.halfWidth, outer.near - d, d - outer.far);
+  return (1 + (edge - 1) * smoothstep(0, 1, ring)) * (1 - smoothstep(0, fade, past));
+}
+
+/**
  * A random ground point (x, d) inside OVERHEAD. With `skipNearField`, points
  * close in front of the day camera are re-rolled: the day wedge covers them,
  * and sprites sized for the top view would loom there.
