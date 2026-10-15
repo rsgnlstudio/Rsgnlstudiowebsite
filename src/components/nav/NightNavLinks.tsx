@@ -16,7 +16,7 @@ import { openPanel } from "@/store/scene";
 export function NightNavLinks() {
   const { ui } = useContent();
   return (
-    // Room before the call to action, so its glow doesn't crowd the last link.
+    // Room before the call to action, so it doesn't crowd the last link.
     <div className="mr-3 hidden lg:flex">
       {NIGHT_SECTIONS.map((s) => (
         <Button key={s.key} variant="ghost" size="sm" onClick={() => openPanel(s.panel)}>
@@ -29,7 +29,7 @@ export function NightNavLinks() {
 
 /**
  * The night's main action at the end of the top navigation: "Erstgespräch
- * vereinbaren", the only item that glows, like the lights of the city. It
+ * vereinbaren", the only filled item, in the color of the city lights. It
  * opens the contact panel. `block` fills the width (in the mobile menu).
  */
 export function NightCta({ block }: { block?: boolean }) {

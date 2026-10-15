@@ -10,7 +10,7 @@ import { Cta, PANEL_TITLE_ID, PanelLink } from "./PanelEnd";
 /** One step of the story; the panel follows its scroll through them (`data-step`). */
 function Step({ index, label, children }: { index: number; label: string; children: ReactNode }) {
   return (
-    <section data-step={index} className="border-t border-current/10 pt-14 pb-24 first:border-t-0 first:pt-0">
+    <section data-step={index} className="pb-40 last:pb-0">
       <Eyebrow>{label}</Eyebrow>
       {children}
     </section>
@@ -19,7 +19,7 @@ function Step({ index, label, children }: { index: number; label: string; childr
 
 function StepHeading({ children }: { children: ReactNode }) {
   return (
-    <Heading as="h3" size="heading" className="mt-3 max-w-[26ch]">
+    <Heading as="h3" size="heading" className="mt-3 max-w-[28ch]">
       {children}
     </Heading>
   );
@@ -47,7 +47,7 @@ export function PathStory({ id }: { id: ChallengeId }) {
 
   const challengeStep = (
     <Step index={0} label={ui.categories.challenge}>
-      <Heading id={PANEL_TITLE_ID} size="title" className="mt-3 max-w-[22ch]">
+      <Heading id={PANEL_TITLE_ID} size="panel" className="mt-3 max-w-[24ch]">
         {challenge.line}
       </Heading>
       <Intro detail={challenge.detail} />

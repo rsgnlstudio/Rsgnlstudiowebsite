@@ -77,15 +77,15 @@ export function EntryScreen() {
       }`}
     >
       <div className="flex max-w-md flex-col items-center text-center">
-        <p className="font-display text-heading italic">{entry.title}</p>
-        <p className="mt-3 text-body opacity-75">
+        <p className="font-display text-4xl italic">{entry.title}</p>
+        <p className="mt-3 text-base opacity-75">
           {entry.text}
         </p>
 
         <div className="mt-10 grid w-full">
           <p
             aria-live="polite"
-            className="col-start-1 row-start-1 animate-pulse self-center font-display text-body italic opacity-55 transition-opacity duration-1000 ease-smooth group-data-ready:invisible group-data-ready:opacity-0"
+            className="col-start-1 row-start-1 animate-pulse self-center font-display text-base italic opacity-55 transition-opacity duration-1000 ease-smooth group-data-ready:invisible group-data-ready:opacity-0"
           >
             {entry.loading}
           </p>
@@ -94,7 +94,7 @@ export function EntryScreen() {
               <Icon icon={Volume2} />
               {entry.withSound}
             </Button>
-            <span aria-hidden className="text-center text-caption opacity-55">
+            <span aria-hidden className="text-center text-sm opacity-55">
               {entry.or}
             </span>
             <Button variant="outline" block onClick={() => enter(false)}>

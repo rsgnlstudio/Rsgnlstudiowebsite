@@ -4,8 +4,8 @@ import { ArrowRight, ArrowUpRight } from "lucide-react";
 import type { ReactNode } from "react";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
-import { TextButton } from "@/components/ui/TextLink";
-import { Eyebrow } from "@/components/ui/Typography";
+import { TextButton, type TextLinkVariant } from "@/components/ui/TextLink";
+import { Eyebrow, Heading } from "@/components/ui/Typography";
 import type { NightPanel } from "@/config/nightMap";
 import { useContent } from "@/content/ContentProvider";
 import { bookingHref } from "@/content/selectors";
@@ -14,10 +14,23 @@ import { openPanel } from "@/store/scene";
 /** id of the element that names the night panel (its heading). */
 export const PANEL_TITLE_ID = "night-panel-title";
 
-/** A link to another panel, e.g. from a service to its challenge. */
-export function PanelLink({ to, children }: { to: NightPanel; children: ReactNode }) {
+/** A panel's title, under its category label; the label is left out where it would repeat the title. */
+export function PanelTitle({ label, children }: { label: string; children: string }) {
+  const repeats = label.trim().toLowerCase() === children.trim().toLowerCase();
   return (
-    <TextButton onClick={() => openPanel(to)} className="group inline-flex items-center gap-2 text-left text-body">
+    <>
+      {!repeats && <Eyebrow>{label}</Eyebrow>}
+      <Heading id={PANEL_TITLE_ID} size="panel" className={`max-w-[24ch] ${repeats ? "" : "mt-3"}`}>
+        {children}
+      </Heading>
+    </>
+  );
+}
+
+/** A link to another panel, e.g. from a service to its challenge. */
+export function PanelLink({ to, variant, children }: { to: NightPanel; variant?: TextLinkVariant; children: ReactNode }) {
+  return (
+    <TextButton variant={variant} onClick={() => openPanel(to)} className="group inline-flex items-center gap-2 text-left text-base">
       {children}
       <Icon icon={ArrowRight} size="sm" className="shrink-0 transition-transform duration-700 ease-smooth group-hover:translate-x-0.5" />
     </TextButton>

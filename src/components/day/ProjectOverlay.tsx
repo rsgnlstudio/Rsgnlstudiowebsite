@@ -39,7 +39,7 @@ export function ProjectOverlay() {
           <Heading id="project-title" size="title" italic>
             {project.title}
           </Heading>
-          <p className="mt-4 max-w-prose text-body opacity-70">{project.teaser}</p>
+          <p className="mt-4 max-w-prose text-lg opacity-70">{project.teaser}</p>
           {/* Placeholders until the real media exist. */}
           <div className="mt-12 grid gap-gutter md:grid-cols-2">
             {project.media.map((m, i) => (

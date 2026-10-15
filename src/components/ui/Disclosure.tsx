@@ -22,7 +22,7 @@ export function Disclosure({
   if (variant === "more") {
     return (
       <details className={`group/details ${className}`}>
-        <summary className="cursor-pointer text-body opacity-60 transition-opacity duration-700 ease-smooth hover:opacity-90">
+        <summary className="cursor-pointer text-base opacity-60 transition-opacity duration-700 ease-smooth hover:opacity-90">
           {summary}
         </summary>
         {children}
@@ -31,7 +31,7 @@ export function Disclosure({
   }
   return (
     <details className={`group/faq faq-item border-b border-current/10 pb-3 ${className}`}>
-      <summary className="flex cursor-pointer list-none items-start justify-between gap-6 py-2 text-body transition-opacity duration-700 ease-smooth hover:opacity-80 focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-current [&::-webkit-details-marker]:hidden">
+      <summary className="flex cursor-pointer list-none items-start justify-between gap-6 py-2 text-base font-medium transition-opacity duration-700 ease-smooth hover:opacity-80 focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-current [&::-webkit-details-marker]:hidden">
         {summary}
         <Icon
           icon={ChevronDown}

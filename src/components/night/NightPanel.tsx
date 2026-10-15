@@ -83,7 +83,10 @@ export function NightPanel() {
     >
       {shown && (
         <article className="px-gutter pt-24 pb-section md:px-edge">
-          <PanelContent panel={shown} />
+          {/* Lines of about 60 characters, like a printed page (60ch runs longer in DM Sans). */}
+          <div className="max-w-120">
+            <PanelContent panel={shown} />
+          </div>
         </article>
       )}
     </SlidePanel>

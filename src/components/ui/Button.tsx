@@ -2,8 +2,8 @@ import type { AnchorHTMLAttributes, ButtonHTMLAttributes, Ref } from "react";
 
 /**
  * How a button looks. Every button carries the navigation's label size
- * (`text-nav`), whatever it does.
- * - `primary`: the night's call to action, filled with the city light.
+ * (`text-sm`), whatever it does.
+ * - `primary`: the night's call to action, filled with the city light (no glow).
  * - `solid`: filled with the light text color, e.g. the entry screen's first choice.
  * - `outline`: a frosted outline over the scene, e.g. the second choice or "skip".
  * - `ghost`: a quiet label, e.g. the navigation's items; full strength when pressed.
@@ -30,7 +30,7 @@ export interface ButtonStyle {
 // Every variant has a border (transparent where it shows none), so all are the same height
 // (the padding gives up the border's pixel, keeping the navigation pill as tall as the sound toggle).
 const BASE =
-  "cursor-pointer rounded-full border text-nav duration-700 ease-smooth focus-visible:outline-1 focus-visible:outline-offset-2";
+  "cursor-pointer rounded-full border text-sm duration-700 ease-smooth focus-visible:outline-1 focus-visible:outline-offset-2";
 
 // Only `glass` transitions its color, because it sets its own (crossing over
 // with the scene). The others inherit theirs: transitioning an inherited
@@ -41,7 +41,7 @@ const BASE =
 // to the color crossover's duration, would drag every fade.
 const VARIANTS: Record<ButtonVariant, string> = {
   primary:
-    "transition-[opacity,background-color] border-transparent bg-city-light text-on-day shadow-[0_0_28px_-4px_var(--color-city-light)] hover:opacity-85 focus-visible:outline-city-light",
+    "transition-[opacity,background-color] border-transparent bg-city-light text-on-day hover:opacity-85 focus-visible:outline-city-light",
   solid: "transition-[opacity,background-color] border-transparent bg-on-night text-on-day hover:opacity-85 focus-visible:outline-current",
   outline: "transition-[opacity,background-color] border-current/25 bg-on-day/30 backdrop-blur-md hover:bg-on-day/50 focus-visible:outline-current",
   ghost: "transition-[opacity,background-color] border-transparent opacity-55 hover:opacity-80 aria-pressed:opacity-100 focus-visible:outline-current",
@@ -49,8 +49,8 @@ const VARIANTS: Record<ButtonVariant, string> = {
 };
 
 const SIZES: Record<ButtonSize, string> = {
-  sm: "flex items-center gap-2 px-4 py-[calc(0.625rem-1px)]",
-  md: "flex items-center gap-2 px-4 py-[calc(0.625rem-1px)] md:px-6",
+  sm: "flex items-center gap-2 px-4 py-[calc(0.75rem-1px)]",
+  md: "flex items-center gap-2 px-4 py-[calc(0.75rem-1px)] md:px-6",
   icon: "grid size-11.5 shrink-0 place-items-center",
   "icon-lg": "grid size-14.5 shrink-0 place-items-center",
 };
