@@ -12,12 +12,12 @@ export function TestimonialPanel({ index }: { index: number }) {
     <>
       <Eyebrow>{c.ui.categories.testimonial}</Eyebrow>
       <figure className="mt-3">
-        <blockquote id={PANEL_TITLE_ID} className="max-w-prose font-display text-heading">
+        <blockquote id={PANEL_TITLE_ID} className="max-w-prose font-display text-2xl">
           „{t.quote}“
         </blockquote>
-        <figcaption className="mt-6 text-body">
+        <figcaption className="mt-6 text-base">
           {t.name}
-          <span className="block italic opacity-60">
+          <span className="block opacity-70">
             {t.role}, {t.company}
           </span>
         </figcaption>

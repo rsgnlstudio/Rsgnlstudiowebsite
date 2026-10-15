@@ -4,7 +4,7 @@
 /*
  * Design tokens. All values are placeholders; replace them with the real
  * brand values. Tokens become Tailwind utilities (e.g. bg-background,
- * font-display, text-heading, p-section).
+ * font-display, bg-on-night, p-section).
  */
 @theme {
   /* Colors */
@@ -13,29 +13,14 @@
   --color-muted: #808080;
   --color-accent: #808080;
   /* Text drawn over the scene: dark over the day sky, light over the night */
-  --color-on-day: #2a2118;
-  --color-on-night: #f4efe6;
+  --color-on-day: #33200f;
+  --color-on-night: #f8ecd8;
   /* The night panel (consulting), as dark as the night world */
   --color-panel-night: #080b18;
   /* Lights of the night map's city; the night's call to action glows in it */
   --color-city-light: #ffb24e;
 
-  /* Type scale (fluid between small and wide screens) */
-  --text-display: clamp(2.75rem, 2.25rem + 1.25vw, 3.5rem);
-  --text-display--line-height: 1;
-  --text-heading: clamp(2.25rem, 1.9rem + 0.9vw, 2.75rem);
-  --text-heading--line-height: 1.2;
-  --text-lead: clamp(1.375rem, 1.1rem + 0.6vw, 1.875rem);
-  --text-lead--line-height: 1.35;
-  --text-body: clamp(1.125rem, 1.05rem + 0.25vw, 1.25rem);
-  --text-body--line-height: 1.5;
-  --text-caption: clamp(0.875rem, 0.84rem + 0.1vw, 0.9375rem);
-  --text-caption--line-height: 1.4;
-  /* Navigation (top bar, menu, footer) keeps its own, smaller sizes */
-  --text-nav: 1rem;
-  --text-nav--line-height: 1.5;
-  --text-nav-caption: 0.875rem;
-  --text-nav-caption--line-height: 1.4;
+  /* Type: Tailwind's default scale (text-sm, text-base, ... text-5xl) */
 
   /* Spacing (base unit drives p-4, gap-2, etc.) */
   --spacing: 0.25rem;

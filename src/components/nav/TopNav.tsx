@@ -10,7 +10,7 @@ import { useSceneTone } from "@/hooks/useSceneTone";
 /**
  * The top navigation: one frosted pill at the top centre holding the
  * Day/Night switch ("Kunst" and "Consulting"), alone by day, followed by night
- * by the consulting site's items (services, process, about) and its glowing
+ * by the consulting site's items (services, process, about) and its amber
  * call to action, "Erstgespräch vereinbaren"; the pill grows and shrinks
  * around them on a switch (`NavItems`). The wordmark (`SiteBrand`) and the
  * footer (`SiteFooter`, with imprint and contact) live in the root layout. The text color and the frosted

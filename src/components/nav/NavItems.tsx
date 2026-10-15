@@ -45,8 +45,8 @@ export function NavItems() {
 
   return (
     <div
-      // Clipped across only, with room for the call to action's glow; it
-      // may run a little past the right edge while the slot grows.
+      // Clipped across only; the call to action may run a little past the
+      // right edge while the slot grows.
       className="relative self-stretch transition-[width] delay-150 duration-1000 ease-overlay [clip-path:inset(-2rem_-2rem_-2rem_0)] motion-reduce:transition-none"
       style={{ width: widths[timeOfDay] }}
     >

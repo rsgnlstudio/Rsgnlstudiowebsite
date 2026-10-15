@@ -8,7 +8,7 @@ import { useIntroRevealed } from "@/hooks/useIntroRevealed";
 import { useOverlayFade } from "@/hooks/useOverlayFade";
 import { openPanel, useSceneStore } from "@/store/scene";
 
-const set = "flex flex-wrap gap-x-5 gap-y-2 text-nav-caption tracking-wide transition-opacity ease-smooth";
+const set = "flex flex-wrap gap-x-5 gap-y-2 text-sm tracking-wide transition-opacity ease-smooth";
 const overScene = "pointer-events-none fixed inset-x-6 bottom-6 z-20";
 
 /**

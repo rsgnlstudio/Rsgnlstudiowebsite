@@ -21,7 +21,7 @@ export function LegalPage({ page, back }: { page: LegalPageDoc; back: string }) 
     >
       <div className="min-h-dvh bg-on-night text-on-day">
         <article className="mx-auto max-w-2xl px-gutter py-section">
-          <TextLink href="/" transitionTypes={[PAGE_OUT]} variant="subtle" className="group inline-flex items-center gap-1.5 text-body">
+          <TextLink href="/" transitionTypes={[PAGE_OUT]} variant="subtle" className="group inline-flex items-center gap-1.5 text-base">
             <Icon icon={ArrowLeft} className="transition-transform duration-700 ease-smooth group-hover:-translate-x-0.5" />
             {back}
           </TextLink>
@@ -34,11 +34,11 @@ export function LegalPage({ page, back }: { page: LegalPageDoc; back: string }) 
             <section key={section.heading} className={i === 0 ? "mt-16" : "mt-12"}>
               <Heading size="heading">{section.heading}</Heading>
               {section.address ? (
-                <address className="mt-4 text-body not-italic">
+                <address className="mt-4 text-base not-italic">
                   <RichText text={section.body} />
                 </address>
               ) : (
-                <p className={`mt-4 text-body ${section.muted ? "opacity-70" : ""}`}>
+                <p className={`mt-4 text-base ${section.muted ? "opacity-70" : ""}`}>
                   <RichText text={section.body} />
                 </p>
               )}

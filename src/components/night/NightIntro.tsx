@@ -90,11 +90,11 @@ export function NightIntro() {
         className="pointer-events-none invisible fixed top-1/2 left-edge z-20 max-w-[min(40rem,calc(100vw-2*var(--spacing-edge)))] -translate-y-1/2 text-on-night opacity-0"
       >
         {intro.lines.map((line) => (
-          <p key={line} data-line className="text-body opacity-0 md:text-lead">
+          <p key={line} data-line className="text-lg opacity-0 md:text-2xl">
             {line}
           </p>
         ))}
-        <p data-line className="mt-6 font-display text-lead italic opacity-0 md:text-heading">
+        <p data-line className="mt-6 font-display text-2xl italic opacity-0 md:text-4xl">
           {intro.transition}
         </p>
       </div>

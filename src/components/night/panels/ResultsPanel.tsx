@@ -1,10 +1,10 @@
 "use client";
 
-import { Eyebrow, Heading, Highlight, Intro } from "@/components/ui/Typography";
+import { Highlight, Intro } from "@/components/ui/Typography";
 import { useContent } from "@/content/ContentProvider";
 import { byId } from "@/content/selectors";
 import { useSceneStore } from "@/store/scene";
-import { PANEL_TITLE_ID, PanelEnd } from "./PanelEnd";
+import { PanelEnd, PanelTitle } from "./PanelEnd";
 
 export function ResultsPanel() {
   const c = useContent();
@@ -14,17 +14,14 @@ export function ResultsPanel() {
   const result = activePath ? byId(c.consulting.challenges, activePath).result : null;
   return (
     <>
-      <Eyebrow>{ui.categories.results}</Eyebrow>
-      <Heading id={PANEL_TITLE_ID} size="title" className="mt-3 max-w-[22ch]">
-        {results.title}
-      </Heading>
+      <PanelTitle label={ui.categories.results}>{results.title}</PanelTitle>
       <Intro text={results.intro} detail={results.emphasis} />
       {result && (
         <Highlight title={result.line}>
-          <span className="italic opacity-80">{result.detail}</span>
+          <span className="opacity-70">{result.detail}</span>
         </Highlight>
       )}
-      <ul className="mt-10 grid max-w-prose gap-3 text-body">
+      <ul className="mt-10 grid max-w-prose gap-3 text-base">
         {results.points.map((p) => (
           <li key={p}>{p}</li>
         ))}

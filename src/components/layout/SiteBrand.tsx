@@ -27,7 +27,7 @@ export function SiteBrand() {
   // The fade on the text, as the element itself transitions its color.
   const name = <span className={fade.className}>{site.name}</span>;
 
-  const className = `${onMap ? "fixed" : "absolute"} top-6 left-6 z-20 flex h-11.5 items-center md:top-8 md:left-8 md:h-14.5 font-display text-lead italic [view-transition-name:site-brand] transition-colors ease-smooth ${
+  const className = `${onMap ? "fixed" : "absolute"} top-6 left-6 z-20 flex h-11.5 items-center md:top-8 md:left-8 md:h-14.5 font-display text-2xl italic [view-transition-name:site-brand] transition-colors ease-smooth ${
     onNight ? "text-on-night" : "text-on-day"
   }`;
   const style = { transitionDuration: onMap ? `${duration}s` : "0s" };

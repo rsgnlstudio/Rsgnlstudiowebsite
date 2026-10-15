@@ -46,7 +46,7 @@ Before calling work done, run lint, typecheck, test, and build.
 - Import gsap and ScrollTrigger from `@/lib/gsap` (plugins are registered there), not from `gsap` directly.
 - Scene parts go in `src/components/canvas/scene/`, one component per file, as named exports. Shared non-component scene code (shaders, textures, palette uniforms) goes in `src/components/canvas/painterly/`.
 - Pages stay Server Components. Put client-only page wiring in a small component that renders `null` (e.g. `HomeScroll`).
-- Styling uses Tailwind utilities. Design tokens live in `@theme` in `src/app/globals.css`. Don't hardcode colors or font sizes in components.
+- Styling uses Tailwind utilities. Design tokens live in `@theme` in `src/app/globals.css`. Don't hardcode colors in components. Font sizes use Tailwind's default scale (`text-sm` captions, `text-base` body, `text-lg` intros, `text-2xl`/`text-3xl` headings); headings go through `Heading` sizes in `Typography`.
 - Use the `@/*` path alias for imports from `src/`.
 - Every button is `Button` (or `ButtonLink` for an `<a>`) from `src/components/ui/Button.tsx`: pick a `variant` and `size`, and pass only placement and state in `className`, never size, color or font. Add a variant there instead of styling a button locally.
 - The mouse cursor is `CursorDot` (root layout, every page). Don't set `cursor` styles to signal interactivity; the dot grows over interactive elements and hovered beds instead.
