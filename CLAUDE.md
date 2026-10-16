@@ -16,7 +16,8 @@ Before calling work done, run lint, typecheck, test, and build.
 
 ## Architecture rules
 
-- Mount exactly one `<Canvas>`, in the root layout via `SceneCanvasLoader` (`next/dynamic` with `ssr: false` inside a client component). Never mount a canvas in a page.
+- Mount exactly one `<Canvas>`, in the root layout via `SceneCanvasLoader` (`next/dynamic` with `ssr: false` inside a client component), which mounts it after load in idle time. Never mount a canvas in a page.
+- Keep heavy work off the load path: the canvas renders nothing until `FrameloopController` has the brush atlas (simulated in a Web Worker) and the compiled shaders (`compileAsync`), renders on demand behind the entry screen, and the night world (`DustWorld`) mounts lazily and builds in idle time. Don't add synchronous startup work to the scene; build big buffers in idle time or a worker, and precompile materials that appear later.
 - The canvas is fixed, full-viewport, behind `<main>`, with `pointer-events: none`. Text content stays in the DOM, never in WebGL.
 - `src/store/scene.ts` (zustand) is the only bridge between DOM and canvas. Don't pass scroll or scene state through props or context.
 - In `useFrame`, read the store with `useSceneStore.getState()` or refs. Never use React state or store subscriptions for per-frame values. Use `useSceneStore.subscribe` (outside React) for side effects such as the frameloop.

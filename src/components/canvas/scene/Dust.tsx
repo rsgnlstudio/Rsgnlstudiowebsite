@@ -14,7 +14,9 @@ import {
 import { qualityPresets } from "@/config/look";
 import { CITY_AREA, CLEARING_RADIUS, CLEARINGS, MAP_FRAME, PLACES, placeIndex } from "@/config/nightMap";
 import type { PaletteKey } from "@/config/palette";
+import { requestIdle, type IdleDeadlineLike } from "@/lib/idle";
 import { useLookStore } from "@/store/look";
+import { useSceneStore } from "@/store/scene";
 import { scatterConifers } from "../painterly/conifers";
 import { scatterBeds } from "../painterly/beds";
 import { layoutCity } from "../painterly/city";
@@ -268,7 +270,7 @@ function groundNormal(x: number, z: number) {
  * The ground and its flowers as dust cover every screen's view of the night
  * (NIGHT_GROUND), far more than any one screen shows. They are split into
  * square tiles of this size (m), each its own draw call, so a screen only
- * draws the tiles it sees, and built in idle time after load (GroundDust).
+ * draws the tiles it sees, and built in idle time (buildDustInIdle).
  */
 const TILE = 80;
 /** Room around a tile's points for the wake to push them out of it (m). */
@@ -382,12 +384,13 @@ function* buildGroundTile(tile: GroundTile, density: number, flowerDensity: numb
   return geometry;
 }
 
-function scatterTrees(b: DustBuffers, rng: Rng, budget: number, conifers: number, woods: number) {
+function* scatterTrees(b: DustBuffers, rng: Rng, budget: number, conifers: number, woods: number) {
   const trees = scatterConifers(conifers, woods);
   // Particles in proportion to each tree's surface.
   const area = (i: number) => trees.size[i * 2 + 1] * Math.abs(trees.size[i * 2]) * (trees.far[i] ? 0.35 : 1);
   let total = 0;
   for (let i = 0; i < trees.count; i++) total += area(i);
+  let placed = 0;
   for (let i = 0; i < trees.count; i++) {
     const x = trees.offset[i * 3];
     const z = trees.offset[i * 3 + 2];
@@ -407,6 +410,7 @@ function scatterTrees(b: DustBuffers, rng: Rng, budget: number, conifers: number
       const droop = (1 - tier) * 0.12 * height / tiers;
       normal.set(Math.cos(a), 0.55 + tier * 0.4, Math.sin(a)).normalize();
       push(b, rng, [x + Math.cos(a) * r, base + f * height - droop, z + Math.sin(a) * r], normal, TREE, grove);
+      if (++placed % BUILD_SLICE === 0) yield;
     }
   }
 }
@@ -420,7 +424,7 @@ const STOREY = 0.9;
  * surface, gathering along the edges and in bands at every storey, so the
  * boxes read from above when the light passes.
  */
-function scatterCity(b: DustBuffers, rng: Rng, budget: number) {
+function* scatterCity(b: DustBuffers, rng: Rng, budget: number) {
   const buildings = layoutCity();
   const cos = Math.cos(CITY_AREA.turn);
   const sin = Math.sin(CITY_AREA.turn);
@@ -428,6 +432,7 @@ function scatterCity(b: DustBuffers, rng: Rng, budget: number) {
   const walls = (h: (typeof buildings)[number]) => 4 * (h.hu + h.hw) * h.height;
   let total = 0;
   for (const h of buildings) total += roof(h) + walls(h);
+  let placed = 0;
   for (const h of buildings) {
     const z = -h.d;
     const base = terrainHeight(h.x, z) - 0.3;
@@ -469,12 +474,14 @@ function scatterCity(b: DustBuffers, rng: Rng, budget: number) {
       const d = h.d + u * sin + w * cos;
       normal.set(nu * cos - nw * sin, ny + 0.35, -(nu * sin + nw * cos)).normalize();
       push(b, rng, [x, base + y, -d], normal, TREE);
+      if (++placed % BUILD_SLICE === 0) yield;
     }
   }
 }
 
 /** The flower beds as dust: a small cloud of specks in its color at every plant's head. */
-function scatterBedFlowers(b: DustBuffers, rng: Rng, scale: number) {
+function* scatterBedFlowers(b: DustBuffers, rng: Rng, scale: number) {
+  let placed = 0;
   for (const plant of scatterBeds(scale)) {
     const z = -plant.d;
     const y = terrainHeight(plant.x, z) + plant.height * 0.8;
@@ -485,21 +492,26 @@ function scatterBedFlowers(b: DustBuffers, rng: Rng, scale: number) {
       const r = Math.sqrt(rng()) * 0.18;
       push(b, rng, [plant.x + Math.cos(a) * r, y + rng() * 0.15, z + Math.sin(a) * r], normal.set(0, 1, 0), FLOWER, tint);
     }
+    placed += specks;
+    if (placed >= BUILD_SLICE) {
+      placed = 0;
+      yield;
+    }
   }
 }
 
-function scatterMotes(b: DustBuffers, rng: Rng, count: number) {
+function* scatterMotes(b: DustBuffers, rng: Rng, count: number) {
   for (let i = 0; i < count; i++) {
     // Between the night camera and the ground: they float out of focus.
     const x = (rng() * 2 - 1) * 70;
     const z = -42 + (rng() * 2 - 1) * 48;
     const y = 18 + rng() * 80;
     push(b, rng, [x, y, z], normal.set(0, 1, 0), MOTE);
+    if ((i + 1) % BUILD_SLICE === 0) yield;
   }
 }
 
-function toGeometry(b: DustBuffers) {
-  const geometry = new BufferGeometry();
+function toGeometry(b: DustBuffers, geometry = new BufferGeometry()) {
   geometry.setAttribute("position", new Float32BufferAttribute(b.position, 3));
   geometry.setAttribute("normal", new Float32BufferAttribute(b.normal, 3));
   geometry.setAttribute("aSeed", new Float32BufferAttribute(b.seed, 4));
@@ -507,44 +519,47 @@ function toGeometry(b: DustBuffers) {
   return geometry;
 }
 
-/** The dust but the ground: trees, the city, the beds and the motes, in one geometry. */
-function buildDust(preset: (typeof qualityPresets)["high"]) {
+/**
+ * The dust but the ground: trees, the city, the beds and the motes, filled
+ * into `geometry`. Yields every BUILD_SLICE points or so, like the tiles.
+ */
+function* buildDust(geometry: BufferGeometry, preset: (typeof qualityPresets)["high"]) {
   const b: DustBuffers = { position: [], normal: [], seed: [], info: [] };
   const rng = mulberry32(2718);
-  scatterTrees(b, rng, preset.dust.trees, preset.conifers, preset.woods);
-  scatterCity(b, rng, preset.dust.city);
-  scatterBedFlowers(b, rng, preset.beds);
-  scatterMotes(b, rng, preset.dust.motes);
-  const geometry = toGeometry(b);
-  // Points move in the shader; a generous fixed bound is enough.
-  geometry.boundingSphere = new Sphere(new Vector3(0, 0, -60), 400);
-  return geometry;
+  yield* scatterTrees(b, rng, preset.dust.trees, preset.conifers, preset.woods);
+  yield* scatterCity(b, rng, preset.dust.city);
+  yield* scatterBedFlowers(b, rng, preset.beds);
+  yield* scatterMotes(b, rng, preset.dust.motes);
+  return toGeometry(b, geometry);
 }
 
-/** requestIdleCallback, or for browsers without it a short timeout with an 8 ms slot. */
-const requestIdle = (callback: (deadline: Pick<IdleDeadline, "timeRemaining">) => void) => {
-  if (typeof requestIdleCallback === "function") {
-    const handle = requestIdleCallback(callback, { timeout: 500 });
-    return () => cancelIdleCallback(handle);
-  }
-  const handle = window.setTimeout(() => {
-    const start = performance.now();
-    callback({ timeRemaining: () => Math.max(0, 8 - (performance.now() - start)) });
-  }, 16);
-  return () => window.clearTimeout(handle);
-};
+/**
+ * Milliseconds of each frame the build may take beyond idle time once the
+ * night has been chosen, so the dust is there by the time the morph shows it.
+ */
+const URGENT_BUDGET = 6;
 
 /**
- * Builds the ground tiles in idle time, nearest the map first, and adds each
- * to `group` as it is done (drawn with `material`, culled on its own).
- * Returns a cleanup that stops the build and disposes the tiles.
+ * Builds the dust in idle time: first the trees, city, beds and motes into
+ * `dust`, then the ground tiles, nearest the map first, adding each to
+ * `group` as it is done (drawn with `material`, culled on its own). Once the
+ * night is chosen it also takes a few milliseconds of every frame
+ * (URGENT_BUDGET). Returns a cleanup that stops the build and disposes the
+ * tiles.
  */
-function buildGroundDust(group: Group, material: ShaderMaterial, preset: (typeof qualityPresets)["high"]) {
+function buildDustInIdle(
+  dust: BufferGeometry,
+  group: Group,
+  material: ShaderMaterial,
+  preset: (typeof qualityPresets)["high"],
+) {
   const tiles = groundTiles();
   const built: Points[] = [];
   let next = 0;
-  let job: Generator<void, BufferGeometry | null> | null = null;
-  const step = (deadline: Pick<IdleDeadline, "timeRemaining">) => {
+  let job: Generator<void, BufferGeometry | null> | null = buildDust(dust, preset);
+  const urgent = () => useSceneStore.getState().timeOfDay === "night";
+  const step = (deadline: IdleDeadlineLike) => {
+    const until = performance.now() + (urgent() ? URGENT_BUDGET : 0);
     // At least one slice per call, so the build goes on on a busy page.
     do {
       if (!job) {
@@ -554,16 +569,17 @@ function buildGroundDust(group: Group, material: ShaderMaterial, preset: (typeof
       const result = job.next();
       if (!result.done) continue;
       job = null;
-      if (!result.value) continue;
+      if (!result.value || result.value === dust) continue;
       const points = new Points(result.value, material);
       points.name = "dust-ground";
       points.renderOrder = 4;
       group.add(points);
       built.push(points);
-    } while (deadline.timeRemaining() > 1);
-    cancel = requestIdle(step);
+    } while (deadline.timeRemaining() > 1 || performance.now() < until);
+    cancel = schedule();
   };
-  let cancel = requestIdle(step);
+  const schedule = () => requestIdle(step, urgent() ? 16 : 500);
+  let cancel = schedule();
   return () => {
     cancel();
     for (const points of built) {
@@ -584,7 +600,13 @@ export function Dust() {
   const tier = useLookStore((s) => s.tier);
   const preset = qualityPresets[tier];
 
-  const geometry = useMemo(() => buildDust(preset), [preset]);
+  // Filled in idle time (buildDustInIdle). Points move in the shader; a
+  // generous fixed bound is enough.
+  const geometry = useMemo(() => {
+    const g = new BufferGeometry();
+    g.boundingSphere = new Sphere(new Vector3(0, 0, -60), 400);
+    return g;
+  }, []);
   useEffect(() => () => geometry.dispose(), [geometry]);
 
   const material = useMemo(
@@ -611,8 +633,8 @@ export function Dust() {
   const ground = useRef<Group>(null);
   useEffect(() => {
     if (!ground.current) return;
-    return buildGroundDust(ground.current, material, preset);
-  }, [material, preset]);
+    return buildDustInIdle(geometry, ground.current, material, preset);
+  }, [geometry, material, preset]);
 
   return (
     <>
