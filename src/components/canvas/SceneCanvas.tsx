@@ -68,6 +68,7 @@ export default function SceneCanvas() {
         className="absolute inset-0 opacity-0 transition-opacity duration-1500 ease-smooth data-ready:opacity-100"
       >
         <Canvas
+          frameloop="never" // FrameloopController starts it once the scene is compiled
           dpr={qualityPresets[tier].dpr}
           flat // unlit, painted colors: no tone mapping
           gl={{
@@ -82,9 +83,9 @@ export default function SceneCanvas() {
             far: 1000,
           }}
         >
-          <FrameloopController />
           <Suspense fallback={null}>
             <Scene />
+            <FrameloopController />
           </Suspense>
         </Canvas>
       </div>
