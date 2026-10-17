@@ -1,5 +1,6 @@
 "use client";
 
+import { ImageSlot } from "@/components/ui/ImageSlot";
 import { Block, Intro } from "@/components/ui/Typography";
 import { useContent } from "@/content/ContentProvider";
 import { PanelEnd, PanelTitle } from "./PanelEnd";
@@ -12,8 +13,7 @@ export function AboutPanel() {
     <>
       <PanelTitle label={ui.categories.about}>{about.name}</PanelTitle>
       <Intro detail={about.role} />
-      {/* Placeholder until the photo exists (the face should be easy to see). */}
-      <div aria-hidden className="mt-10 aspect-4/5 w-full max-w-xs rounded-2xl bg-current/5" />
+      <ImageSlot image={about.portrait} sizes="320px" className="mt-10 aspect-4/5 w-full max-w-xs rounded-2xl" />
       <p className="mt-10 max-w-prose text-base">{about.intro}</p>
       <Block title={ui.blocks.approach}>
         {about.approach} <span className="opacity-70">{about.approachTags}</span>
