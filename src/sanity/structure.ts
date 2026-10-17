@@ -48,5 +48,5 @@ export const structure: StructureResolver = (S) =>
         single(S, "contact"),
       ]),
       S.divider(),
-      group(S, "Legal", [single(S, "legal.imprint")]),
+      group(S, "Legal", [single(S, "legal-imprint")]),
     ]);

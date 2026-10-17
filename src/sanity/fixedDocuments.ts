@@ -31,7 +31,7 @@ export const SINGLETONS = [
   { _id: "bafa", type: "bafa", key: "bafa", title: "BAFA subsidy" },
   { _id: "faq", type: "faq", key: "faq", title: "FAQ" },
   { _id: "contact", type: "contact", key: "contact", title: "Contact" },
-  { _id: "legal.imprint", type: "legalPage", key: "imprint", title: "Imprint" },
+  { _id: "legal-imprint", type: "legalPage", key: "imprint", title: "Imprint" },
 ] as const satisfies readonly Singleton[];
 
 export type SingletonKey = (typeof SINGLETONS)[number]["key"];
@@ -56,7 +56,7 @@ export interface FixedItem {
 
 /** The documents of a fixed item type, in config order. */
 export function fixedItems(type: FixedItemType): FixedItem[] {
-  return CONFIG_IDS[type].map((configId) => ({ _id: `${type}.${configId}`, type, configId }));
+  return CONFIG_IDS[type].map((configId) => ({ _id: `${type}-${configId}`, type, configId }));
 }
 
 /** Every fixed document type, for the Studio's locked actions. */

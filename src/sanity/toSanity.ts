@@ -48,7 +48,7 @@ export function toSanity(docs: SiteDocuments): SanityDocumentStub[] {
       return fields ? [{ _id: s._id, _type: s.type, ...(keyed(fields) as object) }] : [];
     }),
     ...Object.entries(items).flatMap(([type, list]) =>
-      list.map((item) => ({ _id: `${type}.${item.id}`, _type: type, ...(keyed(item) as object) })),
+      list.map((item) => ({ _id: `${type}-${item.id}`, _type: type, ...(keyed(item) as object) })),
     ),
   ];
 }
