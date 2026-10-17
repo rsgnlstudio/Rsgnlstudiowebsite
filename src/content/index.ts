@@ -1,21 +1,25 @@
 import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
-import { siteDocuments } from "@/content/data";
 import type { LegalPage, SiteContent } from "@/content/schema";
 import { validateContent } from "@/content/validate";
+import { client } from "@/sanity/client";
+import { fromSanity } from "@/sanity/fromSanity";
+import { SITE_QUERY } from "@/sanity/query";
 
 /**
- * The site's content: the only way copy gets into the site. Today it is
- * the local seed data (src/content/data); with Sanity this becomes a GROQ
- * query, revalidated by the `content` tag. Incomplete content fails the build.
+ * The site's content, from Sanity: the only way copy gets into the site.
+ * Cached until the webhook (src/app/api/revalidate) refreshes the `content`
+ * tag, which it only does for complete content, so the cache always holds
+ * the last good content. Incomplete content fails the build.
  */
 export async function getSiteContent(): Promise<SiteContent> {
   "use cache";
-  cacheLife("days");
+  cacheLife("max");
   cacheTag("content");
-  const problems = validateContent(siteDocuments);
+  const content = fromSanity(await client.fetch(SITE_QUERY));
+  const problems = validateContent(content);
   if (problems.length) throw new Error(`Incomplete content:\n${problems.join("\n")}`);
-  return siteDocuments;
+  return content;
 }
 
 /** A legal page (e.g. the imprint) by its slug. */
