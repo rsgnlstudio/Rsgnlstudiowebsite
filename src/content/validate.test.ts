@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { TESTIMONIAL_HOMES } from "@/config/nightMap";
-import { siteDocuments } from "@/content/data";
+import { siteDocuments } from "@/content/fixtures";
 import { validateContent } from "@/content/validate";
 
 describe("validateContent", () => {

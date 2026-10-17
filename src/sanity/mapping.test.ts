@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { siteDocuments } from "@/content/data";
+import { siteDocuments } from "@/content/fixtures";
 import { FIXED_ITEM_TYPES, SINGLETONS } from "@/sanity/fixedDocuments";
 import { fromSanity, type RawSiteContent } from "@/sanity/fromSanity";
 import { toSanity } from "@/sanity/toSanity";

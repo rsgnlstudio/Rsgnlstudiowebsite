@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { PLACES } from "@/config/nightMap";
-import { siteDocuments } from "@/content/data";
+import { siteDocuments } from "@/content/fixtures";
 import { bafaActive, bookingHref, byId, firstSentence, placePreview } from "@/content/selectors";
 import type { SiteContent } from "@/content/schema";
 

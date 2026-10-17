@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { siteDocuments } from "@/content/data";
+import { siteDocuments } from "@/content/fixtures";
 import { FIXED_TYPES } from "@/sanity/fixedDocuments";
 import { schemaTypes } from "@/sanity/schemaTypes";
 import { toSanity } from "@/sanity/toSanity";

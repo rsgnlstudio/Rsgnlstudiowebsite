@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { siteDocuments } from "@/content/data";
+import { siteDocuments } from "@/content/fixtures";
 import { handleWebhook } from "@/sanity/revalidate";
 
 const run = (isValidSignature: boolean | null, content = siteDocuments) => {
