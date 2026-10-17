@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { SlidePanel } from "@/components/overlay/SlidePanel";
+import { ImageSlot } from "@/components/ui/ImageSlot";
 import { Heading } from "@/components/ui/Typography";
 import { useContent } from "@/content/ContentProvider";
 import type { ProjectMedia } from "@/content/schema";
@@ -10,6 +11,12 @@ import { useSceneStore } from "@/store/scene";
 const ASPECT: Record<ProjectMedia["aspect"], string> = {
   landscape: "aspect-video md:col-span-2",
   portrait: "aspect-4/5",
+};
+
+/** Image widths for the slots: the panel is two thirds of the screen on desktop, full width on mobile. */
+const SIZES: Record<ProjectMedia["aspect"], string> = {
+  landscape: "(min-width: 768px) 67vw, 100vw",
+  portrait: "(min-width: 768px) 33vw, 100vw",
 };
 
 /**
@@ -40,10 +47,9 @@ export function ProjectOverlay() {
             {project.title}
           </Heading>
           <p className="mt-4 max-w-prose text-lg opacity-70">{project.teaser}</p>
-          {/* Placeholders until the real media exist. */}
           <div className="mt-12 grid gap-gutter md:grid-cols-2">
             {project.media.map((m, i) => (
-              <div key={i} className={`bg-current/5 ${ASPECT[m.aspect]}`} />
+              <ImageSlot key={i} image={m.image} sizes={SIZES[m.aspect]} className={ASPECT[m.aspect]} />
             ))}
           </div>
         </article>

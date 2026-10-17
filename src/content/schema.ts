@@ -2,7 +2,8 @@ import type { ProjectBedId } from "@/config/flowers";
 import type { AreaId, ChallengeId, RoadId, ServiceId } from "@/config/nightMap";
 
 /**
- * The site's content, one type per future Sanity document. Ids link a
+ * The site's content, as `getSiteContent` assembles it from the Sanity
+ * documents (src/sanity/fixedDocuments.ts). Ids link a
  * document to its place in the layout (src/config/flowers.ts,
  * src/config/nightMap.ts); everything else is copy. Lists, not maps:
  * Sanity stores arrays. Long texts are plain strings rendered with
@@ -45,9 +46,19 @@ export interface Studio {
   timeOfDay: { label: string; day: string; night: string };
 }
 
-/** A media slot of a project; `landscape` spans the full width, two `portrait`s share a row. */
+/** An image from Sanity: the asset, the editor's crop and focal point (`hotspot`), alt text, a blur placeholder. */
+export interface ContentImage {
+  asset: { _ref: string };
+  crop?: { top: number; bottom: number; left: number; right: number };
+  hotspot?: { x: number; y: number; width: number; height: number };
+  alt: string;
+  lqip?: string;
+}
+
+/** A media slot of a project; `landscape` spans the full width, two `portrait`s share a row. Empty until an image is set. */
 export interface ProjectMedia {
   aspect: "landscape" | "portrait";
+  image?: ContentImage;
 }
 
 /** `project`: what a project flower bed opens. */
@@ -133,6 +144,8 @@ export interface Process {
 }
 
 export interface About {
+  /** The photo of Simone (4:5); the face should be easy to see. */
+  portrait?: ContentImage;
   name: string;
   role: string;
   intro: string;
@@ -153,7 +166,7 @@ export interface Testimonial {
 export interface Bafa {
   title: string;
   text: string;
-  /** Last day of the subsidy (YYYY-MM-DD, inclusive). It ends at midnight CET (UTC+1, German winter time), so use a date outside summer time. */
+  /** Last day of the subsidy (YYYY-MM-DD, inclusive). It ends at midnight German time. */
   enabledUntil: string;
   /** Added to FAQ answers marked `bafa`. */
   faqNote: string;
@@ -198,7 +211,11 @@ export interface Consulting {
   contact: Contact;
 }
 
-/** `uiLabels`: navigation, categories and block titles. */
+/**
+ * Navigation, categories, block titles and other labels. In Sanity two
+ * documents: `uiLabels` (shown by day too) and `nightLabels` (only on the
+ * night map; which is which: `NIGHT_LABELS` in src/sanity/labels.ts).
+ */
 export interface UiLabels {
   nav: {
     main: string;
@@ -255,6 +272,8 @@ export interface UiLabels {
     costs: string;
     steps: string;
   };
+  /** The page for an address that doesn't exist (`global-not-found.tsx`). */
+  notFound: { metaTitle: string; title: string; text: string; home: string };
   related: string;
   close: string;
   back: string;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { TESTIMONIAL_HOMES } from "@/config/nightMap";
-import { siteDocuments } from "@/content/data";
+import { siteDocuments } from "@/content/fixtures";
 import { validateContent } from "@/content/validate";
 
 describe("validateContent", () => {
@@ -47,5 +47,27 @@ describe("validateContent", () => {
   });
   it("needs the imprint", () => {
     expect(validateContent({ ...siteDocuments, legal: [] })).toContain('legal: missing "imprint"');
+  });
+  it("names a missing group of labels", () => {
+    const ui = { ...siteDocuments.ui, nav: undefined as never };
+    expect(validateContent({ ...siteDocuments, ui })).toContain("ui.nav: missing");
+  });
+  it("needs the copy of the page for unknown addresses", () => {
+    const ui = { ...siteDocuments.ui, notFound: undefined as never };
+    expect(validateContent({ ...siteDocuments, ui })).toContain("ui.notFound: missing");
+  });
+  it("names a missing list a component walks through", () => {
+    const projects = siteDocuments.projects.map((p) => (p.id === "shop" ? { ...p, media: undefined as never } : p));
+    expect(validateContent({ ...siteDocuments, projects })).toContain('projects["shop"].media: missing');
+    const about = { ...siteDocuments.consulting.about, stations: undefined as never };
+    expect(validateContent({ ...siteDocuments, consulting: { ...siteDocuments.consulting, about } })).toContain("consulting.about.stations: missing");
+  });
+  it("needs points in a research block", () => {
+    const services = siteDocuments.consulting.services.map((s) =>
+      s.id === "strategy" ? { ...s, extra: [{ kind: "research" as const, title: "Studien", points: undefined as never }] } : s,
+    );
+    expect(validateContent({ ...siteDocuments, consulting: { ...siteDocuments.consulting, services } })).toContain(
+      'consulting.services["strategy"].extra[0].points: missing',
+    );
   });
 });

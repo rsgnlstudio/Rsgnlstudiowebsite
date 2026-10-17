@@ -10,13 +10,13 @@ Next.js 16 (App Router, Turbopack, Cache Components) site with a persistent R3F 
 - `npm run build` creates the production build
 - `npm run lint` runs ESLint
 - `npm run typecheck` runs `next typegen` then `tsc --noEmit` (`LayoutProps` and `PageProps` are generated types)
-- `npm test` runs Vitest (content layer)
+- `npm test` runs Vitest (content layer, Sanity mapping and schema)
 
 Before calling work done, run lint, typecheck, test, and build.
 
 ## Architecture rules
 
-- Mount exactly one `<Canvas>`, in the root layout via `SceneCanvasLoader` (`next/dynamic` with `ssr: false` inside a client component), which mounts it after load in idle time. Never mount a canvas in a page.
+- Mount exactly one `<Canvas>`, in the site's root layout (`src/app/(site)/layout.tsx`) via `SceneCanvasLoader` (`next/dynamic` with `ssr: false` inside a client component), which mounts it after load in idle time. Never mount a canvas in a page.
 - Keep heavy work off the load path: the canvas renders nothing until `FrameloopController` has the brush atlas (simulated in a Web Worker) and the compiled shaders (`compileAsync`), renders on demand behind the entry screen, and the night world (`DustWorld`) mounts lazily and builds in idle time. Don't add synchronous startup work to the scene; build big buffers in idle time or a worker, and precompile materials that appear later.
 - The canvas is fixed, full-viewport, behind `<main>`, with `pointer-events: none`. Text content stays in the DOM, never in WebGL.
 - `src/store/scene.ts` (zustand) is the only bridge between DOM and canvas. Don't pass scroll or scene state through props or context.
@@ -29,7 +29,8 @@ Before calling work done, run lint, typecheck, test, and build.
 - Scroll logic (`useSectionScroll`) is called by pages, never the layout. It must fully clean up: revert its gsap context, remove ScrollTrigger listeners, and destroy Lenis.
 - With Cache Components, Next hides pages with `<Activity>` instead of unmounting them. Effect cleanups run on hide, so put page-scoped setup in `useEffect` with cleanup and expect it to re-run when the page is shown again.
 - Each page claims the scene with `useSceneMode(mode)`. The default and fallback mode is `"hidden"`, which pauses the frameloop and hides the canvas. `useSceneMode` uses a layout effect so the canvas is visible in view transition snapshots (passive effects run only after the transition); keep it that way. To add a mode, extend `SCENE_MODES` and `sectionsByMode` in `src/config/scene.ts`.
-- All copy comes from the content layer (`src/content`): types in `schema.ts`, values in `data/`, read with `useContent()` in client components or `getSiteContent()` on the server. Never hardcode copy in components. The canvas never imports `@/content`; values it needs go through the store (`ContentProvider` writes them). Layout stays in `src/config` and links to content by id; `validateContent` must pass.
+- All copy and images come from Sanity through the content layer (`src/content`): types in `schema.ts`, read with `useContent()` in client components or `getSiteContent()` on the server. Never hardcode copy in components. The canvas never imports `@/content` or `@/sanity`; values it needs go through the store (`ContentProvider` writes them). Layout stays in `src/config` and links to content by id; `validateContent` must pass. `src/content/fixtures` is test data only.
+- Sanity: every document is fixed (`src/sanity/fixedDocuments.ts`, ids with dashes, never dots: Sanity keeps dotted ids private); the Studio can't create, delete, duplicate or unpublish. Lists that may grow are arrays inside documents. A new field goes into `schema.ts` and its Sanity schema type (`src/sanity/schemaTypes`, same name, required unless optional in `schema.ts`); `SITE_QUERY` and `fromSanity` must keep producing `SiteDocuments`. The Studio lives at `/studio` in its own root layout (`src/app/studio`). Everything editors see is German: every type, field and sidebar entry has a German `title` (the field helpers in `schemaTypes/fields.ts` require one; a test checks), descriptions and validation messages are German; names, keys and ids stay English. Only the webhook (`/api/revalidate`) refreshes the `content` tag, and only for content that passes `validateContent`.
 - Don't add routes or assume a navigation structure unless asked.
 - Never hardcode a color in a shader or material. Add it to `src/config/palette.ts` (day, dusk and night) and read it through `paletteUniformsFor` / `paletteGLSL` from `src/components/canvas/painterly/palette.ts`. `Lights` calls `updateLight(night)` every frame (palette, sun, moon, glow). Anything that should glow at night must output HDR (> 1) color scaled by `uGlow`, so bloom picks it up. 
 - Materials are unlit `ShaderMaterial`s. Don't add per-object meshes for things that repeat.
@@ -46,6 +47,7 @@ Before calling work done, run lint, typecheck, test, and build.
 - Shared UI lives in `src/components/ui/` (`Button`, `TextLink`/`TextButton`, `Icon`, `PreviewCard`, `BottomHint`, `Disclosure`, `Typography`, `RichText`). Use them instead of repeating their classes; add a variant there rather than styling locally. The chrome's day/night colors come from `useSceneTone()`.
 - Import gsap and ScrollTrigger from `@/lib/gsap` (plugins are registered there), not from `gsap` directly.
 - Scene parts go in `src/components/canvas/scene/`, one component per file, as named exports. Shared non-component scene code (shaders, textures, palette uniforms) goes in `src/components/canvas/painterly/`.
+- Images from Sanity render through `ImageSlot` (`src/components/ui`), never a bare `<img>`.
 - Pages stay Server Components. Put client-only page wiring in a small component that renders `null` (e.g. `HomeScroll`).
 - Styling uses Tailwind utilities. Design tokens live in `@theme` in `src/app/globals.css`. Don't hardcode colors in components. Font sizes use Tailwind's default scale (`text-sm` captions, `text-base` body, `text-lg` intros, `text-2xl`/`text-3xl` headings); headings go through `Heading` sizes in `Typography`.
 - Use the `@/*` path alias for imports from `src/`.

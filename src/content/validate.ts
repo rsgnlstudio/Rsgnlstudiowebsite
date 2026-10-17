@@ -12,6 +12,30 @@ const isCalendarDate = (date: string) => {
   return !Number.isNaN(time) && new Date(time).toISOString().startsWith(date);
 };
 
+/** Parts the components walk through or read from: a missing one would crash a render, not just leave a gap. */
+function missingParts(docs: SiteDocuments): string[] {
+  const { consulting: c } = docs;
+  const parts: [string, unknown][] = [
+    ["site.metadata", docs.site.metadata],
+    ...(["entry", "dayHint", "timeOfDay"] as const).map((k): [string, unknown] => [`studio.${k}`, docs.studio[k]]),
+    ...(["nav", "footer", "map", "path", "categories", "blocks", "notFound"] as const).map((k): [string, unknown] => [`ui.${k}`, docs.ui[k]]),
+    ...docs.projects.map((p): [string, unknown] => [`projects["${p.id}"].media`, p.media]),
+    ["consulting.intro.lines", c.intro?.lines],
+    ...c.challenges.map((ch): [string, unknown] => [`consulting.challenges["${ch.id}"].result`, ch.result]),
+    ...c.services.flatMap((s): [string, unknown][] => [
+      [`consulting.services["${s.id}"].preview`, s.preview],
+      ...(s.extra ?? []).flatMap((e, i): [string, unknown][] => (e.kind === "research" ? [[`consulting.services["${s.id}"].extra[${i}].points`, e.points]] : [])),
+    ]),
+    ["consulting.results.preview", c.results?.preview],
+    ["consulting.results.points", c.results?.points],
+    ["consulting.process.steps", c.process?.steps],
+    ["consulting.process.formats", c.process?.formats],
+    ["consulting.about.stations", c.about?.stations],
+    ...docs.legal.map((page): [string, unknown] => [`legal["${page.slug}"].sections`, page.sections]),
+  ];
+  return parts.filter(([, value]) => value === undefined || value === null).map(([path]) => `${path}: missing`);
+}
+
 /**
  * What the content lacks for the layout, as readable problems (empty when
  * complete). Every place in the layout needs its copy; the CMS can't know
@@ -20,6 +44,7 @@ const isCalendarDate = (date: string) => {
 export function validateContent(docs: SiteDocuments): string[] {
   const { consulting } = docs;
   const problems = [
+    ...missingParts(docs),
     ...missing("projects", docs.projects, PROJECT_BEDS),
     ...missing("consulting.areas", consulting.areas, AREAS),
     ...missing("consulting.challenges", consulting.challenges, CLEARINGS),
