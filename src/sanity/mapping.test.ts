@@ -36,6 +36,16 @@ describe("Sanity mapping", () => {
     const ids = [...SINGLETONS.map((s) => s._id)];
     expect(docs.filter((d) => SINGLETONS.some((s) => s._id === d._id)).map((d) => d._id).sort()).toEqual(ids.sort());
   });
+  it("keeps the labels only the night map shows in their own document", () => {
+    const docs = toSanity(siteDocuments);
+    const shared = docs.find((d) => d._id === "uiLabels")!;
+    const night = docs.find((d) => d._id === "nightLabels")!;
+    expect(Object.keys(shared.nav as object)).toEqual(["main", "menu", "closeMenu", "sound"]);
+    expect(Object.keys(night.nav as object)).toEqual(["services", "process", "about", "contact", "contactShort"]);
+    expect(Object.keys(night.footer as object)).toEqual(["faq"]);
+    expect(shared).not.toHaveProperty("map");
+    expect(night).toHaveProperty("map");
+  });
   it("treats an image without an asset as no image", () => {
     const raw = rawFrom(toSanity(siteDocuments));
     const about = raw.about as Record<string, unknown>;

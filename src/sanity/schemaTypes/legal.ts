@@ -4,25 +4,27 @@ import { str, txt } from "./fields";
 
 export const legalPage = defineType({
   name: "legalPage",
-  title: "Legal page",
+  title: "Rechtliche Seite",
   type: "document",
   icon: DocumentTextIcon,
   fields: [
-    defineField({ name: "slug", type: "string", readOnly: true, description: "Its address on the site. Fixed." }),
-    str("title"),
-    str("metaTitle", { title: "Browser tab title" }),
+    defineField({ name: "slug", type: "string", title: "Adresse", readOnly: true, description: "Ihre Adresse auf der Website. Fest." }),
+    str("title", "Titel"),
+    str("metaTitle", "Titel im Browser-Tab"),
     defineField({
       name: "sections",
       type: "array",
+      title: "Abschnitte",
       of: [
         defineArrayMember({
           type: "object",
           name: "legalSection",
+          title: "Abschnitt",
           fields: [
-            str("heading"),
-            txt("body", { description: "Line breaks are kept; e-mail addresses become links." }),
-            defineField({ name: "address", type: "boolean", description: "Set as an address." }),
-            defineField({ name: "muted", type: "boolean", description: "Quieter (placeholder or boilerplate text)." }),
+            str("heading", "Überschrift"),
+            txt("body", "Text", { description: "Zeilenumbrüche bleiben erhalten; E-Mail-Adressen werden zu Links." }),
+            defineField({ name: "address", type: "boolean", title: "Adresse", description: "Als Adresse gesetzt." }),
+            defineField({ name: "muted", type: "boolean", title: "Zurückhaltend", description: "Leiser gesetzt (Platzhalter oder Standardtext)." }),
           ],
           preview: { select: { title: "heading" } },
         }),

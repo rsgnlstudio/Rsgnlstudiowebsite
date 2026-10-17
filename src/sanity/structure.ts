@@ -24,21 +24,21 @@ const items = (S: StructureBuilder, type: FixedItemType, title: string) =>
 const group = (S: StructureBuilder, title: string, children: ReturnType<StructureBuilder["listItem"]>[]) =>
   S.listItem().title(title).child(S.list().title(title).items(children));
 
-/** The Studio's sidebar, grouped like the site: settings, the day, the night, the imprint. */
+/** The Studio's sidebar, grouped like the site: settings, the day, the night, the imprint. Titles in German, like the content. */
 export const structure: StructureResolver = (S) =>
   S.list()
-    .title("Content")
+    .title("Inhalte")
     .items([
-      group(S, "Settings", [single(S, "siteSettings"), single(S, "uiLabels")]),
+      group(S, "Einstellungen", [single(S, "siteSettings"), single(S, "uiLabels")]),
       S.divider(),
-      group(S, "Day: art studio", [single(S, "dayStudio"), items(S, "project", "Projects")]),
-      group(S, "Night: consulting", [
+      group(S, "Tag: Kunst", [single(S, "dayStudio"), items(S, "project", "Projekte")]),
+      group(S, "Nacht: Consulting", [
         single(S, "nightIntro"),
-        items(S, "area", "Areas"),
-        items(S, "challenge", "Challenges"),
+        items(S, "area", "Bereiche"),
+        items(S, "challenge", "Herausforderungen"),
         single(S, "servicesOverview"),
-        items(S, "service", "Services"),
-        items(S, "road", "Roads"),
+        items(S, "service", "Leistungen"),
+        items(S, "road", "Zusammenhänge"),
         single(S, "results"),
         single(S, "process"),
         single(S, "about"),
@@ -46,7 +46,8 @@ export const structure: StructureResolver = (S) =>
         single(S, "bafa"),
         single(S, "faq"),
         single(S, "contact"),
+        single(S, "nightLabels"),
       ]),
       S.divider(),
-      group(S, "Legal", [single(S, "legal-imprint")]),
+      group(S, "Rechtliches", [single(S, "legal-imprint")]),
     ]);

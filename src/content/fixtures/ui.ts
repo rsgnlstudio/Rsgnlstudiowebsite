@@ -57,6 +57,12 @@ export const ui: UiLabels = {
     costs: "Kosten",
     steps: "So läuft es ab",
   },
+  notFound: {
+    metaTitle: "Seite nicht gefunden",
+    title: "Diese Seite gibt es nicht.",
+    text: "Vielleicht hat sich die Adresse geändert. Von der Startseite aus findest du alles.",
+    home: "Zur Startseite",
+  },
   related: "Weiterlesen",
   close: "Schließen",
   back: "Zurück",

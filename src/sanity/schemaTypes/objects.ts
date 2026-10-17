@@ -3,52 +3,63 @@ import { str, txt } from "./fields";
 
 export const twoLines = defineType({
   name: "twoLines",
-  title: "Two lines",
+  title: "Zwei Zeilen",
   type: "object",
-  description: "A first line with a situation or a feeling, then a second, smaller one that names it in plain terms.",
-  fields: [txt("line"), txt("detail")],
+  description: "Erst eine Zeile mit einer Situation oder einem Gefühl, dann eine zweite, kleinere, die es klar benennt.",
+  fields: [txt("line", "Zeile"), txt("detail", "Einordnung")],
 });
 
 export const textBlock = defineType({
   name: "textBlock",
-  title: "Text block",
+  title: "Textblock",
   type: "object",
-  fields: [str("title"), txt("text")],
+  fields: [str("title", "Titel"), txt("text", "Text")],
 });
 
 export const contentImage = defineType({
   name: "contentImage",
-  title: "Image",
+  title: "Bild",
   type: "image",
   options: { hotspot: true },
   fields: [
     defineField({
       name: "alt",
       type: "string",
-      title: "Alt text",
-      description: "What the image shows, in German, for people who can't see it.",
+      title: "Alternativtext",
+      description: "Was das Bild zeigt, für Menschen, die es nicht sehen können.",
       validation: (r) =>
-        r.custom((alt, ctx) => ((ctx.parent as { asset?: unknown } | undefined)?.asset && !alt ? "Describe the image." : true)),
+        r.custom((alt, ctx) => ((ctx.parent as { asset?: unknown } | undefined)?.asset && !alt ? "Beschreibe das Bild." : true)),
     }),
   ],
 });
 
 export const projectMedia = defineType({
   name: "projectMedia",
-  title: "Media",
+  title: "Medium",
   type: "object",
   fields: [
     defineField({
       name: "aspect",
       type: "string",
-      description: "Landscape spans the full width; two portraits share a row.",
-      options: { list: ["landscape", "portrait"], layout: "radio", direction: "horizontal" },
+      title: "Format",
+      description: "Querformat nimmt die ganze Breite ein; zwei Hochformate teilen sich eine Reihe.",
+      options: {
+        list: [
+          { title: "Querformat", value: "landscape" },
+          { title: "Hochformat", value: "portrait" },
+        ],
+        layout: "radio",
+        direction: "horizontal",
+      },
       initialValue: "landscape",
       validation: (r) => r.required(),
     }),
-    defineField({ name: "image", type: "contentImage", description: "Shows a placeholder until set." }),
+    defineField({ name: "image", type: "contentImage", title: "Bild", description: "Bis eines gesetzt ist, steht ein Platzhalter da." }),
   ],
-  preview: { select: { title: "aspect", media: "image" } },
+  preview: {
+    select: { aspect: "aspect", media: "image" },
+    prepare: ({ aspect, media }) => ({ title: aspect === "portrait" ? "Hochformat" : "Querformat", media }),
+  },
 });
 
 /** A list of objects of one named type. */

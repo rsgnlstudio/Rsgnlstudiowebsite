@@ -11,10 +11,29 @@ export function byId<T extends { id: string }>(list: readonly T[], id: T["id"]):
 /** The first sentence of a text, e.g. a quote for its hover preview. */
 export const firstSentence = (text: string) => text.match(/^.*?[.!?](\s|$)/)?.[0].trim() ?? text;
 
-/** Whether the BAFA subsidy runs at `now`: through the whole last day, ending at midnight CET (UTC+1, German winter time), so `enabledUntil` should be a date outside summer time. */
+const germanTime = new Intl.DateTimeFormat("en-US", {
+  timeZone: "Europe/Berlin",
+  hourCycle: "h23",
+  year: "numeric",
+  month: "numeric",
+  day: "numeric",
+  hour: "numeric",
+  minute: "numeric",
+});
+
+/** How far German time is ahead of UTC at `time`, in ms (an hour in winter, two in summer). */
+function germanOffset(time: number) {
+  const parts = germanTime.formatToParts(time);
+  const part = (type: Intl.DateTimeFormatPartTypes) => Number(parts.find((p) => p.type === type)!.value);
+  return Date.UTC(part("year"), part("month") - 1, part("day"), part("hour"), part("minute")) - time;
+}
+
+/** Whether the BAFA subsidy runs at `now`: through the whole last day, ending at midnight German time (summer or winter). */
 export function bafaActive(bafa: Pick<Bafa, "enabledUntil">, now: Date) {
   const DAY = 24 * 60 * 60 * 1000;
-  return now.getTime() < Date.parse(`${bafa.enabledUntil}T00:00:00+01:00`) + DAY;
+  // Midnight after the last day in UTC, moved by German time's offset. The clocks change at 01:00 UTC, so the offset at that UTC midnight is the one at German midnight.
+  const midnight = Date.parse(`${bafa.enabledUntil}T00:00:00Z`) + DAY;
+  return now.getTime() < midnight - germanOffset(midnight);
 }
 
 /** The mail that stands in for the calendar until a booking tool is chosen. */

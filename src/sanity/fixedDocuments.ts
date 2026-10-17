@@ -19,19 +19,20 @@ export interface Singleton {
 }
 
 export const SINGLETONS = [
-  { _id: "siteSettings", type: "siteSettings", key: "site", title: "Site settings" },
-  { _id: "uiLabels", type: "uiLabels", key: "ui", title: "UI labels" },
-  { _id: "dayStudio", type: "dayStudio", key: "studio", title: "Entry & hints" },
+  { _id: "siteSettings", type: "siteSettings", key: "site", title: "Website-Einstellungen" },
+  { _id: "uiLabels", type: "uiLabels", key: "ui", title: "Beschriftungen" },
+  { _id: "dayStudio", type: "dayStudio", key: "studio", title: "Start & Hinweise" },
   { _id: "nightIntro", type: "nightIntro", key: "intro", title: "Intro" },
-  { _id: "servicesOverview", type: "servicesOverview", key: "servicesOverview", title: "Services overview" },
-  { _id: "results", type: "results", key: "results", title: "Results" },
-  { _id: "process", type: "process", key: "process", title: "Process" },
-  { _id: "about", type: "about", key: "about", title: "About", images: "portrait" },
-  { _id: "testimonials", type: "testimonials", key: "testimonials", title: "Testimonials" },
-  { _id: "bafa", type: "bafa", key: "bafa", title: "BAFA subsidy" },
-  { _id: "faq", type: "faq", key: "faq", title: "FAQ" },
-  { _id: "contact", type: "contact", key: "contact", title: "Contact" },
-  { _id: "legal-imprint", type: "legalPage", key: "imprint", title: "Imprint" },
+  { _id: "nightLabels", type: "nightLabels", key: "nightUi", title: "Beschriftungen der Karte" },
+  { _id: "servicesOverview", type: "servicesOverview", key: "servicesOverview", title: "Leistungsübersicht" },
+  { _id: "results", type: "results", key: "results", title: "Ergebnisse" },
+  { _id: "process", type: "process", key: "process", title: "Vorgehen" },
+  { _id: "about", type: "about", key: "about", title: "Über mich", images: "portrait" },
+  { _id: "testimonials", type: "testimonials", key: "testimonials", title: "Kundenstimmen" },
+  { _id: "bafa", type: "bafa", key: "bafa", title: "BAFA-Förderung" },
+  { _id: "faq", type: "faq", key: "faq", title: "Häufige Fragen" },
+  { _id: "contact", type: "contact", key: "contact", title: "Kontakt" },
+  { _id: "legal-imprint", type: "legalPage", key: "imprint", title: "Impressum" },
 ] as const satisfies readonly Singleton[];
 
 export type SingletonKey = (typeof SINGLETONS)[number]["key"];

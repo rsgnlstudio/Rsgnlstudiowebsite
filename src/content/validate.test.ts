@@ -52,6 +52,10 @@ describe("validateContent", () => {
     const ui = { ...siteDocuments.ui, nav: undefined as never };
     expect(validateContent({ ...siteDocuments, ui })).toContain("ui.nav: missing");
   });
+  it("needs the copy of the page for unknown addresses", () => {
+    const ui = { ...siteDocuments.ui, notFound: undefined as never };
+    expect(validateContent({ ...siteDocuments, ui })).toContain("ui.notFound: missing");
+  });
   it("names a missing list a component walks through", () => {
     const projects = siteDocuments.projects.map((p) => (p.id === "shop" ? { ...p, media: undefined as never } : p));
     expect(validateContent({ ...siteDocuments, projects })).toContain('projects["shop"].media: missing');

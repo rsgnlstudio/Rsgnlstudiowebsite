@@ -166,7 +166,7 @@ export interface Testimonial {
 export interface Bafa {
   title: string;
   text: string;
-  /** Last day of the subsidy (YYYY-MM-DD, inclusive). It ends at midnight CET (UTC+1, German winter time), so use a date outside summer time. */
+  /** Last day of the subsidy (YYYY-MM-DD, inclusive). It ends at midnight German time. */
   enabledUntil: string;
   /** Added to FAQ answers marked `bafa`. */
   faqNote: string;
@@ -211,7 +211,11 @@ export interface Consulting {
   contact: Contact;
 }
 
-/** `uiLabels`: navigation, categories and block titles. */
+/**
+ * Navigation, categories, block titles and other labels. In Sanity two
+ * documents: `uiLabels` (shown by day too) and `nightLabels` (only on the
+ * night map; which is which: `NIGHT_LABELS` in src/sanity/labels.ts).
+ */
 export interface UiLabels {
   nav: {
     main: string;
@@ -268,6 +272,8 @@ export interface UiLabels {
     costs: string;
     steps: string;
   };
+  /** The page for an address that doesn't exist (`global-not-found.tsx`). */
+  notFound: { metaTitle: string; title: string; text: string; home: string };
   related: string;
   close: string;
   back: string;

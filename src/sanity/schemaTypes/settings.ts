@@ -1,40 +1,45 @@
 import { CogIcon } from "@sanity/icons/Cog";
 import { TagIcon } from "@sanity/icons/Tag";
 import { defineType } from "sanity";
-import { labels, obj, str, txt } from "./fields";
+import { email, labels, obj, str, txt } from "./fields";
 
 export const siteSettings = defineType({
   name: "siteSettings",
-  title: "Site settings",
+  title: "Website-Einstellungen",
   type: "document",
   icon: CogIcon,
   fields: [
-    str("name", { title: "Wordmark", description: "Stands in for the logo." }),
-    obj("metadata", [str("title"), txt("description")], { title: "Search engines", description: "Title and description in search results and link previews." }),
-    str("contactEmail", { title: "Contact e-mail", description: "In the day footer and the imprint." }),
+    str("name", "Wortmarke", { description: "Steht für das Logo." }),
+    obj("metadata", "Suchmaschinen", [str("title", "Titel"), txt("description", "Beschreibung")], {
+      description: "Titel und Beschreibung in Suchergebnissen und Link-Vorschauen.",
+    }),
+    email("contactEmail", "Kontakt-E-Mail", { description: "Im Footer am Tag und im Impressum." }),
   ],
-  preview: { prepare: () => ({ title: "Site settings" }) },
+  preview: { prepare: () => ({ title: "Website-Einstellungen" }) },
 });
 
 export const uiLabels = defineType({
   name: "uiLabels",
-  title: "UI labels",
+  title: "Beschriftungen",
   type: "document",
   icon: TagIcon,
-  description: "Navigation, categories and block titles.",
+  description: "Beschriftungen, die auch am Tag zu sehen sind. Die der Nachtkarte stehen unter Nacht: Beschriftungen der Karte.",
   fields: [
-    labels("nav", ["main", "services", "process", "about", "contact", "contactShort", "menu", "closeMenu", "sound"], { title: "Navigation" }),
-    labels("footer", ["label", "faq", "contact", "imprint"]),
-    labels("map", ["label", "challenges", "more", "tapToOpen"]),
-    labels("path", ["station", "more", "bafaLink", "results", "yourClearing", "roads", "sources"]),
-    labels("categories", ["challenge", "service", "road", "results", "process", "about", "testimonial", "bafa", "faq", "contact", "services"]),
-    labels("blocks", [
-      "noticed", "behind", "support", "about", "forWhom", "benefit", "book", "methods", "roadNoticed", "roadWhy",
-      "roadSupport", "approach", "stations", "education", "more", "formats", "costs", "steps",
-    ], { title: "Block titles" }),
-    str("related"),
-    str("close"),
-    str("back"),
+    labels("nav", "Navigation", {
+      main: "Hauptnavigation (für Screenreader)",
+      menu: "Menü öffnen",
+      closeMenu: "Menü schließen",
+      sound: "Ton",
+    }),
+    labels("footer", "Footer", { label: "Footer (für Screenreader)", contact: "Kontakt", imprint: "Impressum" }),
+    str("close", "Schließen"),
+    str("back", "Zurück"),
+    obj(
+      "notFound",
+      "Seite nicht gefunden",
+      [str("metaTitle", "Titel im Browser-Tab"), str("title", "Titel"), txt("text", "Text"), str("home", "Link zur Startseite")],
+      { description: "Erscheint für eine Adresse, die es nicht gibt." },
+    ),
   ],
-  preview: { prepare: () => ({ title: "UI labels" }) },
+  preview: { prepare: () => ({ title: "Beschriftungen" }) },
 });

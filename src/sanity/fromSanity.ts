@@ -1,5 +1,6 @@
 import type { FixedItemType, SingletonKey } from "@/sanity/fixedDocuments";
 import { fixedItems } from "@/sanity/fixedDocuments";
+import { joinLabels } from "@/sanity/labels";
 import type { SiteDocuments } from "@/content/schema";
 
 /** What SITE_QUERY returns, before `fromSanity` cleans it up. */
@@ -41,7 +42,7 @@ export function fromSanity(raw: RawSiteContent): SiteDocuments {
   return {
     site: doc("site"),
     studio: doc("studio"),
-    ui: doc("ui"),
+    ui: joinLabels(doc("ui"), doc("nightUi")),
     projects: inOrder("project", raw.project ?? []),
     consulting: {
       intro: doc("intro"),

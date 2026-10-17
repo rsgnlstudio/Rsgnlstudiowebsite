@@ -1,5 +1,6 @@
 import type { SiteDocuments } from "@/content/schema";
 import { type FixedItemType, SINGLETONS, type SingletonKey } from "@/sanity/fixedDocuments";
+import { splitLabels } from "@/sanity/labels";
 
 export interface SanityDocumentStub {
   _id: string;
@@ -20,9 +21,11 @@ function keyed(value: unknown): unknown {
 export function toSanity(docs: SiteDocuments): SanityDocumentStub[] {
   const { consulting: c } = docs;
   const imprint = docs.legal.find((p) => p.slug === "imprint");
+  const [ui, nightUi] = splitLabels(docs.ui);
   const singletons: Record<SingletonKey, object | undefined> = {
     site: docs.site,
-    ui: docs.ui,
+    ui,
+    nightUi,
     studio: docs.studio,
     intro: c.intro,
     servicesOverview: { intro: c.servicesIntro },

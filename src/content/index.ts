@@ -2,9 +2,7 @@ import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 import type { LegalPage, SiteContent } from "@/content/schema";
 import { validateContent } from "@/content/validate";
-import { client } from "@/sanity/client";
-import { fromSanity } from "@/sanity/fromSanity";
-import { SITE_QUERY } from "@/sanity/query";
+import { fetchSiteDocuments } from "@/sanity/client";
 
 /**
  * The site's content, from Sanity: the only way copy gets into the site.
@@ -16,7 +14,7 @@ export async function getSiteContent(): Promise<SiteContent> {
   "use cache";
   cacheLife("max");
   cacheTag("content");
-  const content = fromSanity(await client.fetch(SITE_QUERY));
+  const content = await fetchSiteDocuments();
   const problems = validateContent(content);
   if (problems.length) throw new Error(`Incomplete content:\n${problems.join("\n")}`);
   return content;

@@ -6,6 +6,7 @@ import { toSanity } from "@/sanity/toSanity";
 
 interface Def {
   name?: string;
+  title?: string;
   type: string;
   fields?: Def[];
   of?: Def[];
@@ -30,6 +31,17 @@ function unknownFields(value: unknown, def: Def, path: string): string[] {
     });
 }
 
+/** Fields and inline types without a title (the Studio would show one made from the English name), as paths. */
+function untitled(def: Def, path: string): string[] {
+  const own = def.title ? [] : [path];
+  const inline = (d: Def) => d.fields?.length || !named.has(d.type);
+  return [
+    ...own,
+    ...(def.fields ?? []).flatMap((f) => untitled(f, `${path}.${f.name}`)),
+    ...(def.of ?? []).filter(inline).flatMap((m) => untitled(m, `${path}[${m.name ?? m.type}]`)),
+  ];
+}
+
 describe("Studio schema", () => {
   it("has a type for every fixed document", () => {
     expect(FIXED_TYPES.filter((t) => !named.has(t))).toEqual([]);
@@ -37,5 +49,8 @@ describe("Studio schema", () => {
   it("has a field for every piece of content", () => {
     const problems = toSanity(siteDocuments).flatMap((doc) => unknownFields(doc, named.get(doc._type) ?? { type: "missing" }, doc._id));
     expect(problems).toEqual([]);
+  });
+  it("titles every type and field, so the Studio is German throughout", () => {
+    expect((schemaTypes as Def[]).flatMap((t) => untitled(t, t.name!))).toEqual([]);
   });
 });

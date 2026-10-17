@@ -6,28 +6,41 @@ import { listOf } from "./objects";
 
 export const dayStudio = defineType({
   name: "dayStudio",
-  title: "Entry & hints",
+  title: "Start & Hinweise",
   type: "document",
   icon: SunIcon,
   fields: [
-    obj("entry", [str("title"), txt("text"), str("loading"), str("withSound"), str("withoutSound"), str("or")], { title: "Entry screen" }),
-    labels("dayHint", ["mouse", "touch"], { title: "Day hint", description: "At the bottom centre by day: one line for the mouse, one for touch." }),
-    labels("timeOfDay", ["label", "day", "night"], { title: "Day/night switch" }),
+    obj(
+      "entry",
+      "Startbildschirm",
+      [
+        str("title", "Titel"),
+        txt("text", "Text"),
+        str("loading", "Ladehinweis"),
+        str("withSound", "Mit Ton eintreten"),
+        str("withoutSound", "Ohne Ton eintreten"),
+        str("or", "Zwischen den Knöpfen („oder“)"),
+      ],
+    ),
+    labels("dayHint", "Hinweis am Tag", { mouse: "Mit Maus", touch: "Mit Touch" }, {
+      description: "Unten in der Mitte am Tag: eine Zeile für die Maus, eine für Touch.",
+    }),
+    labels("timeOfDay", "Tag/Nacht-Schalter", { label: "Gruppe (für Screenreader)", day: "Knopf für den Tag", night: "Knopf für die Nacht" }),
   ],
-  preview: { prepare: () => ({ title: "Entry & hints" }) },
+  preview: { prepare: () => ({ title: "Start & Hinweise" }) },
 });
 
 export const project = defineType({
   name: "project",
-  title: "Project",
+  title: "Projekt",
   type: "document",
   icon: ImageIcon,
-  description: "What a flower bed opens.",
+  description: "Was ein Blumenbeet öffnet.",
   fields: [
     idField,
-    str("title"),
-    txt("teaser", { description: "Next to the cursor while the bed is hovered, and under the title." }),
-    defineField({ name: "media", type: "array", of: listOf("projectMedia"), validation: (r) => r.required() }),
+    str("title", "Titel"),
+    txt("teaser", "Teaser", { description: "Neben dem Cursor, solange das Beet berührt wird, und unter dem Titel." }),
+    defineField({ name: "media", type: "array", title: "Medien", of: listOf("projectMedia"), validation: (r) => r.required() }),
   ],
   preview: { select: { title: "title", media: "media.0.image" } },
 });

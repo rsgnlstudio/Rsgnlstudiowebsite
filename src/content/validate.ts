@@ -18,7 +18,7 @@ function missingParts(docs: SiteDocuments): string[] {
   const parts: [string, unknown][] = [
     ["site.metadata", docs.site.metadata],
     ...(["entry", "dayHint", "timeOfDay"] as const).map((k): [string, unknown] => [`studio.${k}`, docs.studio[k]]),
-    ...(["nav", "footer", "map", "path", "categories", "blocks"] as const).map((k): [string, unknown] => [`ui.${k}`, docs.ui[k]]),
+    ...(["nav", "footer", "map", "path", "categories", "blocks", "notFound"] as const).map((k): [string, unknown] => [`ui.${k}`, docs.ui[k]]),
     ...docs.projects.map((p): [string, unknown] => [`projects["${p.id}"].media`, p.media]),
     ["consulting.intro.lines", c.intro?.lines],
     ...c.challenges.map((ch): [string, unknown] => [`consulting.challenges["${ch.id}"].result`, ch.result]),

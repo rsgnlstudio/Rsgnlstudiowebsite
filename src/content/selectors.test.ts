@@ -33,6 +33,17 @@ describe("bafaActive", () => {
   it("ends at midnight German time", () => {
     expect(bafaActive(bafa, new Date("2026-12-31T23:00:00Z"))).toBe(false); // 00:00 CET
   });
+  it("ends at midnight in summer too", () => {
+    const summer = { enabledUntil: "2026-07-31" };
+    expect(bafaActive(summer, new Date("2026-07-31T21:59:00Z"))).toBe(true); // 23:59 CEST
+    expect(bafaActive(summer, new Date("2026-07-31T22:00:00Z"))).toBe(false); // 00:00 CEST
+  });
+  it("ends at midnight before the clocks change", () => {
+    // Summer time ends on 25 October 2026, so the midnight before it is still CEST.
+    expect(bafaActive({ enabledUntil: "2026-10-24" }, new Date("2026-10-24T22:00:00Z"))).toBe(false);
+    // Summer time starts on 29 March 2026; the midnight before it is still CET.
+    expect(bafaActive({ enabledUntil: "2026-03-28" }, new Date("2026-03-28T22:59:00Z"))).toBe(true);
+  });
 });
 
 describe("bookingHref", () => {
