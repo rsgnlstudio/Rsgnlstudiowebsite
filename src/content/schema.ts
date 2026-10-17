@@ -2,7 +2,8 @@ import type { ProjectBedId } from "@/config/flowers";
 import type { AreaId, ChallengeId, RoadId, ServiceId } from "@/config/nightMap";
 
 /**
- * The site's content, one type per future Sanity document. Ids link a
+ * The site's content, as `getSiteContent` assembles it from the Sanity
+ * documents (src/sanity/fixedDocuments.ts). Ids link a
  * document to its place in the layout (src/config/flowers.ts,
  * src/config/nightMap.ts); everything else is copy. Lists, not maps:
  * Sanity stores arrays. Long texts are plain strings rendered with
@@ -45,9 +46,19 @@ export interface Studio {
   timeOfDay: { label: string; day: string; night: string };
 }
 
-/** A media slot of a project; `landscape` spans the full width, two `portrait`s share a row. */
+/** An image from Sanity: the asset, the editor's crop and focal point (`hotspot`), alt text, a blur placeholder. */
+export interface ContentImage {
+  asset: { _ref: string };
+  crop?: { top: number; bottom: number; left: number; right: number };
+  hotspot?: { x: number; y: number; width: number; height: number };
+  alt: string;
+  lqip?: string;
+}
+
+/** A media slot of a project; `landscape` spans the full width, two `portrait`s share a row. Empty until an image is set. */
 export interface ProjectMedia {
   aspect: "landscape" | "portrait";
+  image?: ContentImage;
 }
 
 /** `project`: what a project flower bed opens. */
@@ -133,6 +144,8 @@ export interface Process {
 }
 
 export interface About {
+  /** The photo of Simone (4:5); the face should be easy to see. */
+  portrait?: ContentImage;
   name: string;
   role: string;
   intro: string;
