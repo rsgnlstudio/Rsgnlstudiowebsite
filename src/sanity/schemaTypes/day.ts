@@ -27,7 +27,7 @@ export const project = defineType({
     idField,
     str("title"),
     txt("teaser", { description: "Next to the cursor while the bed is hovered, and under the title." }),
-    defineField({ name: "media", type: "array", of: listOf("projectMedia") }),
+    defineField({ name: "media", type: "array", of: listOf("projectMedia"), validation: (r) => r.required() }),
   ],
   preview: { select: { title: "title", media: "media.0.image" } },
 });

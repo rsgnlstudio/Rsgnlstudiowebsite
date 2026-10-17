@@ -27,6 +27,7 @@ export const legalPage = defineType({
           preview: { select: { title: "heading" } },
         }),
       ],
+      validation: (r) => r.required(),
     }),
   ],
   preview: { select: { title: "title" } },

@@ -8,6 +8,10 @@ describe("focalPoint", () => {
   it("follows the hotspot", () => {
     expect(focalPoint({ ...image, hotspot: { x: 0.25, y: 0.8, width: 0.3, height: 0.3 } })).toBe("25% 80%");
   });
+  it("finds the hotspot inside the cropped image", () => {
+    const crop = { top: 0, bottom: 0.5, left: 0.3, right: 0.2 };
+    expect(focalPoint({ ...image, crop, hotspot: { x: 0.4, y: 0.25, width: 0.1, height: 0.1 } })).toBe("20% 50%");
+  });
   it("centres without a hotspot", () => {
     expect(focalPoint(image)).toBe("50% 50%");
   });

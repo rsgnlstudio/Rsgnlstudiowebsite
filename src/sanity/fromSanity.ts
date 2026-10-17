@@ -5,14 +5,22 @@ import type { SiteDocuments } from "@/content/schema";
 /** What SITE_QUERY returns, before `fromSanity` cleans it up. */
 export type RawSiteContent = Record<SingletonKey, unknown> & Record<FixedItemType, unknown[]>;
 
-/** Drops Sanity's own fields (`_id`, `_key`, `_type`, …; references keep `_ref`) and empty values. */
+/** An image whose file was removed in the Studio (Sanity keeps its alt text): no image. */
+const isEmptyImage = (value: object) => "_type" in value && value._type === "contentImage" && !("asset" in value && value.asset);
+
+/**
+ * Drops Sanity's own fields (`_id`, `_key`, `_type`, …; references keep
+ * `_ref`), empty values and images without a file.
+ */
 function clean(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(clean);
   if (!value || typeof value !== "object") return value;
+  if (isEmptyImage(value)) return undefined;
   return Object.fromEntries(
     Object.entries(value)
-      .filter(([k, v]) => v !== null && v !== undefined && (!k.startsWith("_") || k === "_ref"))
-      .map(([k, v]) => [k, clean(v)]),
+      .filter(([k]) => !k.startsWith("_") || k === "_ref")
+      .map(([k, v]) => [k, clean(v)])
+      .filter(([, v]) => v !== null && v !== undefined),
   );
 }
 

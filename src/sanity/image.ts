@@ -14,8 +14,13 @@ export const imageLoader =
   ({ width, quality }) =>
     builder.image(image).width(width).quality(quality ?? 75).auto("format").url();
 
-/** Where to anchor the image when its slot crops it (`object-position`): the editor's hotspot, or the centre. */
+/**
+ * Where to anchor the image when its slot cuts it (`object-position`): the
+ * editor's hotspot, moved into the cropped image the loader delivers, or the centre.
+ */
 export function focalPoint(image: ContentImage): string {
   const { x, y } = image.hotspot ?? { x: 0.5, y: 0.5 };
-  return `${Math.round(x * 100)}% ${Math.round(y * 100)}%`;
+  const { top, bottom, left, right } = image.crop ?? { top: 0, bottom: 0, left: 0, right: 0 };
+  const inCrop = (v: number, start: number, end: number) => Math.min(1, Math.max(0, (v - start) / (1 - start - end || 1)));
+  return `${Math.round(inCrop(x, left, right) * 100)}% ${Math.round(inCrop(y, top, bottom) * 100)}%`;
 }

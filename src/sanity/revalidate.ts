@@ -5,7 +5,7 @@ interface WebhookInput {
   /** From `parseBody`: null when the request carries no signature. */
   isValidSignature: boolean | null;
   fetchContent: () => Promise<SiteDocuments>;
-  revalidate: () => void;
+  revalidate: (tag: "content", profile: "max") => void;
 }
 
 /**
@@ -18,6 +18,8 @@ export async function handleWebhook({ isValidSignature, fetchContent, revalidate
   if (!isValidSignature) return { status: 401 as const };
   const problems = validateContent(await fetchContent());
   if (problems.length) return { status: 422 as const, problems };
-  revalidate();
+  // Stale-while-revalidate: should the content change again before the next
+  // render and be incomplete, that render fails and the last good page stays.
+  revalidate("content", "max");
   return { status: 200 as const };
 }

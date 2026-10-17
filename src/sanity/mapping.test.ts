@@ -36,4 +36,10 @@ describe("Sanity mapping", () => {
     const ids = [...SINGLETONS.map((s) => s._id)];
     expect(docs.filter((d) => SINGLETONS.some((s) => s._id === d._id)).map((d) => d._id).sort()).toEqual(ids.sort());
   });
+  it("treats an image without an asset as no image", () => {
+    const raw = rawFrom(toSanity(siteDocuments));
+    const about = raw.about as Record<string, unknown>;
+    const result = fromSanity({ ...raw, about: { ...about, portrait: { _type: "contentImage", alt: "Simone" } } });
+    expect(result.consulting.about.portrait).toBeUndefined();
+  });
 });

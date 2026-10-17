@@ -25,9 +25,10 @@ describe("handleWebhook", () => {
     expect(result.problems).toContain('consulting.challenges: missing "owner"');
     expect(revalidate).not.toHaveBeenCalled();
   });
-  it("refreshes the site for complete content", async () => {
+  it("refreshes the site for complete content, serving the last good content while it renders", async () => {
     const { result, revalidate } = await run(true);
     expect(result.status).toBe(200);
     expect(revalidate).toHaveBeenCalledTimes(1);
+    expect(revalidate).toHaveBeenCalledWith("content", "max");
   });
 });

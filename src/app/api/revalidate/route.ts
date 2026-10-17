@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
   const result = await handleWebhook({
     isValidSignature,
     fetchContent: async () => fromSanity(await client.fetch(SITE_QUERY)),
-    revalidate: () => revalidateTag("content", { expire: 0 }),
+    revalidate: revalidateTag,
   });
   if (result.status === 422) console.error(`Published content is incomplete, keeping the last good content:\n${result.problems.join("\n")}`);
   return Response.json(result, { status: result.status });

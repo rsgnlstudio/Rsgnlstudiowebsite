@@ -15,9 +15,17 @@ export const str = (name: string, o: FieldOptions = {}) =>
 export const txt = (name: string, o: FieldOptions = {}) =>
   defineField({ name, type: "text", rows: 4, title: o.title, description: o.description, validation: o.optional ? undefined : (r) => r.required() });
 
-/** A group of fields. */
+/** A group of fields; required as a whole, so Sanity checks the fields inside even before one is filled in. */
 export const obj = (name: string, fields: FieldDefinition[], o: FieldOptions = {}) =>
-  defineField({ name, type: "object", title: o.title, description: o.description, fields, options: { collapsible: true } });
+  defineField({
+    name,
+    type: "object",
+    title: o.title,
+    description: o.description,
+    fields,
+    options: { collapsible: true },
+    validation: o.optional ? undefined : (r) => r.required(),
+  });
 
 /** A group of one-line labels. */
 export const labels = (name: string, keys: readonly string[], o: FieldOptions = {}) => obj(name, keys.map((k) => str(k)), o);

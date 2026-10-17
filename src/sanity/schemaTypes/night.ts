@@ -99,7 +99,14 @@ const serviceExtra = defineArrayMember({
       hidden: ({ parent }) => parent?.kind !== "text",
       validation: (r) => r.custom((text, ctx) => ((ctx.parent as { kind?: string })?.kind === "text" && !text ? "Required" : true)),
     }),
-    defineField({ name: "points", type: "array", of: listOf("textBlock"), hidden: ({ parent }) => parent?.kind !== "research" }),
+    defineField({
+      name: "points",
+      type: "array",
+      of: listOf("textBlock"),
+      hidden: ({ parent }) => parent?.kind !== "research",
+      validation: (r) =>
+        r.custom((points, ctx) => ((ctx.parent as { kind?: string })?.kind === "research" && !points?.length ? "Add at least one point." : true)),
+    }),
     defineField({ name: "source", type: "text", rows: 2, hidden: ({ parent }) => parent?.kind !== "research" }),
   ],
   preview: { select: { title: "title", subtitle: "kind" } },
@@ -154,7 +161,7 @@ export const process = defineType({
   fields: [
     str("title"),
     txt("intro"),
-    defineField({ name: "steps", type: "array", of: listOf("twoLines") }),
+    defineField({ name: "steps", type: "array", of: listOf("twoLines"), validation: (r) => r.required() }),
     defineField({
       name: "formats",
       type: "array",
@@ -166,6 +173,7 @@ export const process = defineType({
           preview: { select: { title: "title" } },
         }),
       ],
+      validation: (r) => r.required(),
     }),
     txt("costs"),
   ],
@@ -188,6 +196,7 @@ export const about = defineType({
       name: "stations",
       type: "array",
       of: [defineArrayMember({ type: "object", name: "station", fields: [str("years"), txt("text")], preview: { select: { title: "years", subtitle: "text" } } })],
+      validation: (r) => r.required(),
     }),
     txt("education"),
     txt("more"),
