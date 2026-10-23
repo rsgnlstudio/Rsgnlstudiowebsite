@@ -32,7 +32,8 @@ export interface FlowerBed {
  * The beds that lead somewhere: as a group they glow softly, light up when
  * hovered and open their project in the overlay (`ProjectOverlay`) on click
  * or tap, keyed by `id`. Their copy (title, teaser, media) is the `project`
- * document with the same id (src/content). Imprint and contact live in the
+ * document with the same id (src/content); a project with an `href` (the
+ * shop) opens that page in a new tab instead. Imprint and contact live in the
  * top navigation, so their flowers (marsh marigold, pot marigold) grow in
  * MEADOW_BEDS without a link.
  */

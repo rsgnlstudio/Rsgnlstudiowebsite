@@ -19,7 +19,7 @@ function missingParts(docs: SiteDocuments): string[] {
     ["site.metadata", docs.site.metadata],
     ...(["entry", "dayHint", "timeOfDay"] as const).map((k): [string, unknown] => [`studio.${k}`, docs.studio[k]]),
     ...(["nav", "footer", "map", "path", "categories", "blocks", "notFound"] as const).map((k): [string, unknown] => [`ui.${k}`, docs.ui[k]]),
-    ...docs.projects.map((p): [string, unknown] => [`projects["${p.id}"].media`, p.media]),
+    ...docs.projects.filter((p) => !p.href).map((p): [string, unknown] => [`projects["${p.id}"].media`, p.media]),
     ["consulting.intro.lines", c.intro?.lines],
     ...c.challenges.map((ch): [string, unknown] => [`consulting.challenges["${ch.id}"].result`, ch.result]),
     ...c.services.flatMap((s): [string, unknown][] => [

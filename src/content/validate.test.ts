@@ -48,6 +48,10 @@ describe("validateContent", () => {
   it("needs the imprint", () => {
     expect(validateContent({ ...siteDocuments, legal: [] })).toContain('legal: missing "imprint"');
   });
+  it("needs no media on a project that links to an outside page", () => {
+    const projects = siteDocuments.projects.map((p) => (p.id === "painting" ? { ...p, media: undefined, href: "https://example.com" } : p));
+    expect(validateContent({ ...siteDocuments, projects })).toEqual([]);
+  });
   it("names a missing group of labels", () => {
     const ui = { ...siteDocuments.ui, nav: undefined as never };
     expect(validateContent({ ...siteDocuments, ui })).toContain("ui.nav: missing");
@@ -57,8 +61,8 @@ describe("validateContent", () => {
     expect(validateContent({ ...siteDocuments, ui })).toContain("ui.notFound: missing");
   });
   it("names a missing list a component walks through", () => {
-    const projects = siteDocuments.projects.map((p) => (p.id === "shop" ? { ...p, media: undefined as never } : p));
-    expect(validateContent({ ...siteDocuments, projects })).toContain('projects["shop"].media: missing');
+    const projects = siteDocuments.projects.map((p) => (p.id === "painting" ? { ...p, media: undefined } : p));
+    expect(validateContent({ ...siteDocuments, projects })).toContain('projects["painting"].media: missing');
     const about = { ...siteDocuments.consulting.about, stations: undefined as never };
     expect(validateContent({ ...siteDocuments, consulting: { ...siteDocuments.consulting, about } })).toContain("consulting.about.stations: missing");
   });

@@ -23,7 +23,8 @@ const SIZES: Record<ProjectMedia["aspect"], string> = {
  * The project a flower bed opens (`openBed`, set by the canvas on a click or
  * tap), in the day's slide panel (`SlidePanel`): over two thirds of the
  * screen on desktop, a sheet on mobile. Its copy is the `project` document
- * with the bed's id. Keeps the last project rendered while the panel slides out.
+ * with the bed's id (a project with an `href` never opens here: the bed opens
+ * that page instead). Keeps the last project rendered while the panel slides out.
  */
 export function ProjectOverlay() {
   const { projects, ui } = useContent();
@@ -48,7 +49,7 @@ export function ProjectOverlay() {
           </Heading>
           <p className="mt-4 max-w-prose text-lg opacity-70">{project.teaser}</p>
           <div className="mt-12 grid gap-gutter md:grid-cols-2">
-            {project.media.map((m, i) => (
+            {project.media?.map((m, i) => (
               <ImageSlot key={i} image={m.image} sizes={SIZES[m.aspect]} className={ASPECT[m.aspect]} />
             ))}
           </div>
