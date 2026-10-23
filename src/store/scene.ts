@@ -59,6 +59,8 @@ export interface SceneState {
   testimonialCount: number;
   /** The BAFA subsidy runs (the lantern shows). Written by ContentProvider. */
   bafaActive: boolean;
+  /** Project beds that open an outside page in a new tab instead of the overlay (`href`). Written by ContentProvider. */
+  bedLinks: Partial<Record<ProjectBedId, string>>;
 
   setActiveSection: (id: string | null) => void;
   setSectionProgress: (progress: number) => void;
@@ -74,7 +76,7 @@ export interface SceneState {
   setNightIntro: (state: SceneState["nightIntro"]) => void;
   /** Opens the night panel; a path's panel also lights its path, from its clearing. */
   setPanel: (panel: NightPanel | null) => void;
-  setContentFlags: (flags: { testimonialCount: number; bafaActive: boolean }) => void;
+  setContentFlags: (flags: Pick<SceneState, "testimonialCount" | "bafaActive" | "bedLinks">) => void;
   setPathStation: (station: number) => void;
   setHoveredPlace: (index: number | null) => void;
   /** Clears scroll-derived state, e.g. when a page unmounts. */
@@ -104,6 +106,7 @@ export const useSceneStore = create<SceneState>()((set) => ({
   placeScreen: new Float32Array(PLACES.length * 3),
   testimonialCount: 0,
   bafaActive: false,
+  bedLinks: {},
 
   setActiveSection: (activeSection) => set({ activeSection }),
   setSectionProgress: (sectionProgress) => set({ sectionProgress }),

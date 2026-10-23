@@ -26,15 +26,14 @@ export interface FlowerBed {
   areas: readonly BedArea[];
   plants: number;
   flowers: readonly { kind: FlowerKind; weight: number; tint?: PetalTint }[];
-  /** An outside page the bed leads to, opened in a new tab instead of the overlay. */
-  href?: string;
 }
 
 /**
  * The beds that lead somewhere: as a group they glow softly, light up when
  * hovered and open their project in the overlay (`ProjectOverlay`) on click
- * or tap, keyed by `id`, or their `href` in a new tab. Their copy (title,
- * teaser, media) is the `project` document with the same id (src/content). Imprint and contact live in the
+ * or tap, keyed by `id`. Their copy (title, teaser, media) is the `project`
+ * document with the same id (src/content); a project with an `href` (the
+ * shop) opens that page in a new tab instead. Imprint and contact live in the
  * top navigation, so their flowers (marsh marigold, pot marigold) grow in
  * MEADOW_BEDS without a link.
  */
@@ -80,7 +79,6 @@ export const PROJECT_BEDS = [
     ],
     plants: 50,
     flowers: [{ kind: "cosmos", weight: 1 }],
-    href: "https://www.etsy.com/shop/studiorsgnl",
   },
 ] as const satisfies readonly FlowerBed[];
 

@@ -17,6 +17,7 @@ export function ContentProvider({ content, children }: { content: SiteContent; c
     useSceneStore.getState().setContentFlags({
       testimonialCount: content.consulting.testimonials.length,
       bafaActive: bafaActive(content.consulting.bafa, new Date()),
+      bedLinks: Object.fromEntries(content.projects.flatMap((p) => (p.href ? [[p.id, p.href]] : []))),
     });
   }, [content]);
   return <ContentContext value={content}>{children}</ContentContext>;

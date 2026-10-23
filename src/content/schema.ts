@@ -61,13 +61,16 @@ export interface ProjectMedia {
   image?: ContentImage;
 }
 
-/** `project`: what a project flower bed opens. */
+/** `project`: what a project flower bed opens, in the overlay or, with an `href`, as an outside page. */
 export interface Project {
   id: ProjectBedId;
   title: string;
-  /** Shown next to the cursor while the bed is hovered, and under the overlay's title. */
-  teaser: string;
-  media: readonly ProjectMedia[];
+  /** An outside page (e.g. the Etsy shop) the bed opens in a new tab instead of the overlay. */
+  href?: string;
+  /** Under the overlay's title. Required without `href`. */
+  teaser?: string;
+  /** Required without `href`. */
+  media?: readonly ProjectMedia[];
 }
 
 export interface ConsultingIntro {

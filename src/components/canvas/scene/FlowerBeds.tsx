@@ -4,7 +4,7 @@ import { useFrame, useThree, type RootState } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import { MathUtils, Vector3 } from "three";
 import { qualityPresets } from "@/config/look";
-import { BED_HIT, BED_PULSE, type FlowerBed, PROJECT_BEDS, type ProjectBedId } from "@/config/flowers";
+import { BED_HIT, BED_PULSE, PROJECT_BEDS, type ProjectBedId } from "@/config/flowers";
 import { INTRO_UI_AT } from "@/config/scene";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { useWindowPointer } from "@/hooks/useWindowPointer";
@@ -105,7 +105,7 @@ const INTERACTIVE = "a, button, input, select, textarea, label, dialog, [role='d
  * cursor ray against the beds; the hovered one goes to the store
  * (`hoveredBed`) for the DOM. Day only, mouse only. A click (or a tap on
  * touch screens) on a bed opens its section in the overlay (`openBed`), or
- * its `href` in a new tab;
+ * its outside page in a new tab (`bedLinks`);
  * while it is open, hovering pauses and the open bed stays lit.
  */
 export function FlowerBeds() {
@@ -132,7 +132,7 @@ export function FlowerBeds() {
   // against the beds here, at the click's own position.
   useEffect(() => {
     const onClick = (event: MouseEvent) => {
-      const { night, intro, sceneMode, openBed, setOpenBed } = useSceneStore.getState();
+      const { night, intro, sceneMode, openBed, bedLinks, setOpenBed } = useSceneStore.getState();
       if (openBed || sceneMode === "hidden" || dayOf(night) <= 0.5 || intro < INTRO_UI_AT) return;
       if (event.target instanceof Element && event.target.closest(INTERACTIVE)) return;
       const hit = bedAt(
@@ -141,7 +141,7 @@ export function FlowerBeds() {
         -(event.clientY / window.innerHeight) * 2 + 1,
       );
       if (!hit) return;
-      const href = (PROJECT_BEDS as readonly FlowerBed[]).find((bed) => bed.id === hit)?.href;
+      const href = bedLinks[hit];
       // Opened here, inside the click, so browsers don't block the new tab.
       if (href) window.open(href, "_blank", "noopener,noreferrer");
       else setOpenBed(hit);
